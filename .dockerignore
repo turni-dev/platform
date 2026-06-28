@@ -1,0 +1,16 @@
+.git
+.nx
+node_modules
+dist
+coverage
+tmp
+temp
+logs
+*.log
+.env
+.env.*
+!.env.example
+data
+uploads
+backups
+secrets

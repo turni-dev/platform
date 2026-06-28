@@ -1,0 +1,11 @@
+node_modules
+.nx
+dist
+coverage
+tmp
+temp
+logs
+data
+uploads
+backups
+package-lock.json
