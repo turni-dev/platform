@@ -21,15 +21,29 @@ services:
       retries: 10
       start_period: 15s
 
-  redis:
+  redis-durable:
     image: redis:7.4-alpine
-    container_name: turni-redis
+    container_name: turni-redis-durable
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec", "--save", "60", "1", "--maxmemory-policy", "noeviction"]
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
-      - turni-redis-data:/data
+      - turni-redis-durable-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  redis-ephemeral:
+    image: redis:7.4-alpine
+    container_name: turni-redis-ephemeral
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "no", "--save", "", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "${REDIS_EPHEMERAL_PORT:-6380}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -59,5 +73,5 @@ services:
 
 volumes:
   turni-postgres-data:
-  turni-redis-data:
+  turni-redis-durable-data:
   turni-minio-data:
