@@ -22,6 +22,10 @@ Add a GitHub Actions workflow that runs on pull requests and pushes to `main`:
 
 Add `.github/CODEOWNERS` for contracts and database-sensitive paths. Use `@turni/founders` as the intended owner placeholder until the GitHub organization team is created.
 
+After `verify` succeeds on a push to `main`, build the root `Dockerfile` and publish the backend to GHCR with both `staging` and immutable `sha-<commit>` tags. The image runs compiled JavaScript as the non-root `node` user and exposes an HTTP healthcheck.
+
+Define a staging deployment job behind `STAGING_DEPLOY_ENABLED=true`. It uses the `staging` GitHub environment and calls a restricted remote command, `turni-deploy <immutable-image>`, over SSH. The deploy key must not permit an unrestricted shell.
+
 ## Consequences
 
-The codebase now has a concrete CI gate that can become a required branch-protection check. Staging deployment remains blocked until GHCR, environments, secrets, and deploy users exist.
+The codebase has a concrete CI and image-delivery pipeline. Staging deployment remains disabled until GHCR permissions, the `staging` environment, secrets, deploy user, known-host entry, and restricted `turni-deploy` command exist.

@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  REGISTRY: ghcr.io
+
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -47,3 +50,89 @@ jobs:
 
       - name: Migration gate placeholder
         run: npm run db:migrate
+
+  publish-image:
+    name: publish backend image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.reference }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve image reference
+        id: image
+        shell: bash
+        run: |
+          image_name="${GITHUB_REPOSITORY,,}-backend"
+          echo "name=${image_name}" >> "${GITHUB_OUTPUT}"
+          echo "reference=${REGISTRY}/${image_name}:sha-${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image metadata
+        id: metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}
+          tags: |
+            type=raw,value=staging
+            type=sha,prefix=sha-,format=long
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-staging:
+    name: deploy staging
+    if: vars.STAGING_DEPLOY_ENABLED == 'true'
+    needs: publish-image
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: staging
+    permissions:
+      contents: read
+    env:
+      DEPLOY_IMAGE: ${{ needs.publish-image.outputs.image }}
+      SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
+      SSH_USER: ${{ secrets.STAGING_SSH_USER }}
+    steps:
+      - name: Configure restricted SSH key
+        shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.STAGING_SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${SSH_PRIVATE_KEY}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "${SSH_KNOWN_HOSTS}" > ~/.ssh/known_hosts
+
+      - name: Deploy immutable image
+        shell: bash
+        run: |
+          [[ "${SSH_USER}" =~ ^[a-z_][a-z0-9_-]*$ ]]
+          [[ "${SSH_HOST}" =~ ^[A-Za-z0-9.-]+$ ]]
+          [[ "${DEPLOY_IMAGE}" =~ ^ghcr\.io/[a-z0-9._/-]+:sha-[0-9a-f]{40}$ ]]
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes \
+            "${SSH_USER}@${SSH_HOST}" turni-deploy "${DEPLOY_IMAGE}"
