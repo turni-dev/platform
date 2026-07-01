@@ -1,0 +1,6 @@
+# Update these owners when the GitHub organization/team is created.
+
+/packages/contracts/ @turni/founders
+/apps/backend/src/**/migrations/ @turni/founders
+/apps/backend/src/**/schema*.ts @turni/founders
+/ops/compose/postgres/init/ @turni/founders
