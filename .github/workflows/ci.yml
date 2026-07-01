@@ -39,6 +39,9 @@ jobs:
       - name: Run tests, lint, and typecheck
         run: npm run nx -- run-many -t test lint typecheck
 
+      - name: Run coverage gate
+        run: npm run nx -- run-many -t coverage
+
       - name: Build
         run: npm run nx -- run-many -t build
 

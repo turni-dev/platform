@@ -11,6 +11,7 @@
     "nx": "nx",
     "build": "nx run-many -t build",
     "test": "nx run-many -t test",
+    "coverage": "nx run-many -t coverage",
     "lint": "nx run-many -t lint",
     "typecheck": "nx run-many -t typecheck",
     "eval": "node tools/bootstrap/eval-placeholder.mjs",
@@ -29,12 +30,13 @@
     "@eslint/js": "^9.39.1",
     "@types/node": "^24.10.1",
     "@total-typescript/ts-reset": "^0.6.1",
+    "@vitest/coverage-v8": "^4.1.9",
     "eslint": "^9.39.1",
     "nx": "^21.6.3",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vitest": "^4.0.14"
+    "vitest": "^4.1.9"
   },
   "engines": {
     "node": ">=24.0.0",

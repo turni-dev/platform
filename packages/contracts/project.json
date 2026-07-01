@@ -5,10 +5,13 @@
   "projectType": "library",
   "targets": {
     "build": {
-      "command": "tsc -p packages/contracts/tsconfig.lib.json"
+      "command": "tsc -p packages/contracts/tsconfig.build.json"
     },
     "test": {
       "command": "vitest run --config vitest.config.ts packages/contracts/src"
+    },
+    "coverage": {
+      "command": "vitest run --coverage --coverage.include=packages/contracts/src/**/*.ts --coverage.reportsDirectory=coverage/contracts --config vitest.config.ts packages/contracts/src"
     },
     "lint": {
       "command": "eslint packages/contracts/src/**/*.ts"
