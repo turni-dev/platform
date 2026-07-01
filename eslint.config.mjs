@@ -1,4 +1,5 @@
 import js from '@eslint/js';
+import nxPlugin from '@nx/eslint-plugin';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
@@ -7,6 +8,11 @@ export default tseslint.config(
   },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
+  {
+    plugins: {
+      '@nx': nxPlugin
+    }
+  },
   {
     languageOptions: {
       parserOptions: {
@@ -24,6 +30,28 @@ export default tseslint.config(
         'error',
         {
           fixStyle: 'inline-type-imports'
+        }
+      ]
+    }
+  },
+  {
+    files: ['apps/**/*.{ts,tsx,js,jsx}', 'packages/**/*.{ts,tsx,js,jsx}'],
+    rules: {
+      '@nx/enforce-module-boundaries': [
+        'error',
+        {
+          allow: [],
+          enforceBuildableLibDependency: true,
+          depConstraints: [
+            {
+              sourceTag: 'type:app',
+              onlyDependOnLibsWithTags: ['type:boundary']
+            },
+            {
+              sourceTag: 'type:boundary',
+              onlyDependOnLibsWithTags: ['type:boundary']
+            }
+          ]
         }
       ]
     }
