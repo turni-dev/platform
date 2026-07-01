@@ -1,0 +1,24 @@
+{
+  "name": "contracts",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/contracts/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "command": "tsc -p packages/contracts/tsconfig.lib.json"
+    },
+    "test": {
+      "command": "vitest run --config vitest.config.ts packages/contracts/src"
+    },
+    "lint": {
+      "command": "eslint packages/contracts/src/**/*.ts"
+    },
+    "typecheck": {
+      "command": "tsc -p packages/contracts/tsconfig.lib.json --noEmit"
+    }
+  },
+  "tags": [
+    "scope:contracts",
+    "type:boundary"
+  ]
+}

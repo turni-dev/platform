@@ -1,0 +1,27 @@
+{
+  "name": "backend",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/backend/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "command": "tsc -p apps/backend/tsconfig.app.json"
+    },
+    "serve": {
+      "command": "tsx apps/backend/src/entrypoints/http/main.ts"
+    },
+    "test": {
+      "command": "vitest run --config vitest.config.ts apps/backend/src"
+    },
+    "lint": {
+      "command": "eslint apps/backend/src/**/*.ts"
+    },
+    "typecheck": {
+      "command": "tsc -p apps/backend/tsconfig.app.json --noEmit"
+    }
+  },
+  "tags": [
+    "scope:backend",
+    "type:app"
+  ]
+}
