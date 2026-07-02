@@ -6,6 +6,10 @@ const hnswUrl = new URL(
   './migrations/0006_memory_hnsw.concurrent.sql',
   import.meta.url
 );
+const approvalForeignKeyUrl = new URL(
+  './migrations/0009_memory_approval_fk.sql',
+  import.meta.url
+);
 
 describe('memory migrations', () => {
   it('creates memory tables with exact-revision cascade', async () => {
@@ -49,5 +53,17 @@ describe('memory migrations', () => {
       'USING hnsw (embedding vector_cosine_ops)'
     );
     expect(hnsw).toContain('WITH (m = 16, ef_construction = 64)');
+  });
+
+  it('links revision provenance after approvals exist', async () => {
+    const migration = await readFile(approvalForeignKeyUrl, 'utf8');
+
+    expect(migration).toContain(
+      'ALTER TABLE memory_revisions ADD CONSTRAINT'
+    );
+    expect(migration).toContain(
+      'FOREIGN KEY (source_approval_id) REFERENCES approvals(id)'
+    );
+    expect(migration).toContain('ON DELETE RESTRICT');
   });
 });
