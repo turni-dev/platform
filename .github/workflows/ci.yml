@@ -58,6 +58,11 @@ jobs:
       - name: Apply database migrations
         run: npm run db:migrate
 
+      - name: Verify idempotent staging seed
+        run: |
+          npm run db:seed -- staging
+          npm run db:seed -- staging
+
       - name: Reject raw SQL construction
         shell: bash
         run: |

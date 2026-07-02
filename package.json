@@ -15,6 +15,7 @@
     "lint": "nx run-many -t lint",
     "typecheck": "nx run-many -t typecheck",
     "db:generate": "drizzle-kit generate",
+    "db:seed": "node tools/bootstrap/demo-seed.mjs",
     "secrets:init": "node tools/bootstrap/secret-bootstrap.mjs",
     "eval": "node tools/bootstrap/eval-placeholder.mjs",
     "db:migrate": "node tools/bootstrap/db-migrate.mjs"
