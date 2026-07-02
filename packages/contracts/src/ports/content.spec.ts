@@ -9,7 +9,8 @@ import {
   type EmailResult,
   NotificationSchema,
   type NotificationResult,
-  type NotifyPort
+  type NotifyPort,
+  OwnerRecipientSchema
 } from './content.js';
 
 describe('content and notification port contracts', () => {
@@ -50,6 +51,20 @@ describe('content and notification port contracts', () => {
     ).toBe('approval');
     expectTypeOf<NotifyPort['notifyOwner']>()
       .returns.toEqualTypeOf<Promise<NotificationResult>>();
+  });
+
+  it('requires at least one owner notification channel', () => {
+    const identity = {
+      id: '01900000-0000-7000-8000-000000000001',
+      tenantId: '01900000-0000-7000-8000-000000000002'
+    };
+
+    expect(OwnerRecipientSchema.parse({ ...identity, email: 'owner@turni.ru' }))
+      .toMatchObject({ email: 'owner@turni.ru' });
+    expect(
+      OwnerRecipientSchema.parse({ ...identity, telegramChatId: '12345' })
+    ).toMatchObject({ telegramChatId: '12345' });
+    expect(() => OwnerRecipientSchema.parse(identity)).toThrow();
   });
 
   it('validates the branded transactional email envelope', () => {

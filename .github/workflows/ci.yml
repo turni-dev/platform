@@ -67,7 +67,10 @@ jobs:
           fi
 
       - name: Run tests, lint, and typecheck
-        run: npm run nx -- run-many -t test lint typecheck
+        run: |
+          npm run nx -- run-many -t test --parallel=1
+          npm run nx -- run-many -t lint --parallel=1
+          npm run nx -- run-many -t typecheck --parallel=1
 
       - name: Test migration runner
         run: |
@@ -75,7 +78,7 @@ jobs:
           node --test tools/bootstrap/db-migrate.spec.mjs
 
       - name: Run coverage gate
-        run: npm run nx -- run-many -t coverage
+        run: npm run nx -- run-many -t coverage --parallel=1
 
       - name: Build
         run: npm run nx -- run-many -t build
