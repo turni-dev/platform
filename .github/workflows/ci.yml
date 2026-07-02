@@ -21,8 +21,23 @@ jobs:
     name: verify
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: turni
+          POSTGRES_USER: turni
+          POSTGRES_PASSWORD: turni_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U turni -d turni"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       NX_DAEMON: "false"
+      DATABASE_URL: postgres://turni:turni_ci_password@127.0.0.1:5432/turni
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,13 +57,18 @@ jobs:
       - name: Run tests, lint, and typecheck
         run: npm run nx -- run-many -t test lint typecheck
 
+      - name: Test migration runner
+        run: |
+          npx eslint tools/bootstrap/db-migrate.mjs tools/bootstrap/db-migrate.spec.mjs
+          node --test tools/bootstrap/db-migrate.spec.mjs
+
       - name: Run coverage gate
         run: npm run nx -- run-many -t coverage
 
       - name: Build
         run: npm run nx -- run-many -t build
 
-      - name: Migration gate placeholder
+      - name: Apply database migrations
         run: npm run db:migrate
 
   publish-image:

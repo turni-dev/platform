@@ -48,7 +48,7 @@ describe('memory migrations', () => {
     const hnsw = await readFile(hnswUrl, 'utf8');
 
     expect(base).not.toContain('USING hnsw');
-    expect(hnsw).toContain('CREATE INDEX CONCURRENTLY');
+    expect(hnsw).toContain('CREATE INDEX CONCURRENTLY IF NOT EXISTS');
     expect(hnsw).toContain(
       'USING hnsw (embedding vector_cosine_ops)'
     );

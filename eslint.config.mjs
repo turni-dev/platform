@@ -67,5 +67,17 @@ export default tseslint.config(
         }
       ]
     }
+  },
+  {
+    files: ['tools/**/*.mjs'],
+    ...tseslint.configs.disableTypeChecked,
+    languageOptions: {
+      ...tseslint.configs.disableTypeChecked.languageOptions,
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        URL: 'readonly'
+      }
+    }
   }
 );
