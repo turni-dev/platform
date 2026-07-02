@@ -5,15 +5,22 @@ import { Badge, Button, Input } from './index.js';
 
 describe('UI foundation', () => {
   it('renders native accessible primitives', () => {
+    const button = renderToStaticMarkup(
+      <Button
+        className="custom-button"
+        data-variant="secondary"
+        variant="primary"
+      >
+        Action
+      </Button>
+    );
+    expect(button).toContain('class="turni-button custom-button"');
+    expect(button).toContain('type="button"');
+    expect(button).toContain('data-variant="primary"');
     expect(
       renderToStaticMarkup(
-        <Button className="custom-button" variant="primary">
-          Action
-        </Button>
+        <Input aria-invalid="false" aria-label="Field" invalid />
       )
-    ).toContain('class="turni-button custom-button"');
-    expect(
-      renderToStaticMarkup(<Input aria-label="Field" invalid />)
     ).toContain('aria-invalid="true"');
     expect(renderToStaticMarkup(<Input aria-label="Optional field" />))
       .not.toContain('aria-invalid');

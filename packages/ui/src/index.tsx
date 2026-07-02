@@ -13,11 +13,11 @@ export type ButtonProps = ComponentPropsWithoutRef<'button'> & {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, type = 'button', variant = 'primary', ...props }, ref) => (
     <button
+      {...props}
       ref={ref}
       type={type}
       className={classes('turni-button', className)}
       data-variant={variant}
-      {...props}
     />
   )
 );
@@ -30,10 +30,10 @@ export type InputProps = ComponentPropsWithoutRef<'input'> & {
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, invalid = false, ...props }, ref) => (
     <input
+      {...props}
       ref={ref}
       className={classes('turni-input', className)}
       aria-invalid={invalid || undefined}
-      {...props}
     />
   )
 );
@@ -46,10 +46,10 @@ export type BadgeProps = ComponentPropsWithoutRef<'span'> & {
 export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
   ({ className, tone = 'neutral', ...props }, ref) => (
     <span
+      {...props}
       ref={ref}
       className={classes('turni-badge', className)}
       data-tone={tone}
-      {...props}
     />
   )
 );
