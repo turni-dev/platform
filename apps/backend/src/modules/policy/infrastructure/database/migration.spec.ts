@@ -59,6 +59,8 @@ describe('policy migration', () => {
     expect(migration).not.toMatch(/gen_random_uuid|uuid_generate/i);
     expect(migration).toContain('CONSTRAINT policies_layer_check CHECK');
     expect(migration).toMatch(/CONSTRAINT model_configs_role_check\s+CHECK/);
+    expect(migration).toContain("'complex'");
+    expect(migration).not.toContain("'summarize'");
     expect(migration).toMatch(
       /CONSTRAINT eval_cases_risk_label_check\s+CHECK/
     );

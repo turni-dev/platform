@@ -101,7 +101,7 @@ export const modelConfigs = pgTable(
     check(
       'model_configs_role_check',
       sql`${table.role} in (
-        'classify', 'generate', 'summarize', 'judge', 'embed'
+        'classify', 'generate', 'complex', 'judge', 'embed'
       )`
     ),
     check(

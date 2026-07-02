@@ -1,0 +1,27 @@
+{
+  "name": "llm",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/llm/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "command": "tsc -p packages/llm/tsconfig.build.json"
+    },
+    "test": {
+      "command": "vitest run --config vitest.config.ts packages/llm/src"
+    },
+    "coverage": {
+      "command": "vitest run --coverage --coverage.include=packages/llm/src/**/*.ts --coverage.reportsDirectory=coverage/llm --config vitest.config.ts packages/llm/src"
+    },
+    "lint": {
+      "command": "eslint packages/llm/src/**/*.ts"
+    },
+    "typecheck": {
+      "command": "tsc -p packages/llm/tsconfig.lib.json --noEmit"
+    }
+  },
+  "tags": [
+    "scope:llm",
+    "type:boundary"
+  ]
+}

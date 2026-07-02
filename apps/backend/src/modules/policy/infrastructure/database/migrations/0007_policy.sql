@@ -31,7 +31,7 @@ CREATE TABLE model_configs (
   active boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT model_configs_role_check
-    CHECK (role IN ('classify', 'generate', 'summarize', 'judge', 'embed')),
+    CHECK (role IN ('classify', 'generate', 'complex', 'judge', 'embed')),
   CONSTRAINT model_configs_tier_check
     CHECK (tier IN ('cheap', 'main', 'premium'))
 );
