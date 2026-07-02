@@ -31,7 +31,7 @@ describe('tenancy migration', () => {
     }
 
     expect(migration).toContain(
-      "current_setting('app.tenant_id', true)::uuid"
+      "nullif(current_setting('app.tenant_id', true), '')::uuid"
     );
     expect(migration).not.toMatch(/ALTER TABLE auth_codes .*ROW LEVEL SECURITY/);
   });

@@ -74,16 +74,16 @@ ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sessions FORCE ROW LEVEL SECURITY;
 CREATE POLICY locations_tenant_isolation ON locations
   FOR ALL TO app_rw
-  USING (tenant_id = current_setting('app.tenant_id', true)::uuid)
-  WITH CHECK (tenant_id = current_setting('app.tenant_id', true)::uuid);
+  USING (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid)
+  WITH CHECK (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid);
 CREATE POLICY users_tenant_isolation ON users
   FOR ALL TO app_rw
-  USING (tenant_id = current_setting('app.tenant_id', true)::uuid)
-  WITH CHECK (tenant_id = current_setting('app.tenant_id', true)::uuid);
+  USING (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid)
+  WITH CHECK (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid);
 CREATE POLICY sessions_tenant_isolation ON sessions
   FOR ALL TO app_rw
-  USING (tenant_id = current_setting('app.tenant_id', true)::uuid)
-  WITH CHECK (tenant_id = current_setting('app.tenant_id', true)::uuid);
+  USING (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid)
+  WITH CHECK (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid);
 GRANT SELECT, INSERT, UPDATE, DELETE ON tenants TO app_rw;
 GRANT SELECT, INSERT, UPDATE, DELETE ON locations TO app_rw;
 GRANT SELECT, INSERT, UPDATE, DELETE ON users TO app_rw;

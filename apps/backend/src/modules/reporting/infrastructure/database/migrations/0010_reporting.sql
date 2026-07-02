@@ -53,15 +53,15 @@ ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE events FORCE ROW LEVEL SECURITY;
 CREATE POLICY events_tenant_isolation ON events
   FOR ALL TO app_rw
-  USING (tenant_id = current_setting('app.tenant_id', true)::uuid)
-  WITH CHECK (tenant_id = current_setting('app.tenant_id', true)::uuid);
+  USING (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid)
+  WITH CHECK (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid);
 
 ALTER TABLE usage_counters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE usage_counters FORCE ROW LEVEL SECURITY;
 CREATE POLICY usage_counters_tenant_isolation ON usage_counters
   FOR ALL TO app_rw
-  USING (tenant_id = current_setting('app.tenant_id', true)::uuid)
-  WITH CHECK (tenant_id = current_setting('app.tenant_id', true)::uuid);
+  USING (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid)
+  WITH CHECK (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid);
 
 GRANT SELECT, INSERT ON events TO app_rw;
 REVOKE UPDATE, DELETE ON events FROM app_rw;

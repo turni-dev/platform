@@ -33,15 +33,15 @@ ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subscriptions FORCE ROW LEVEL SECURITY;
 CREATE POLICY subscriptions_tenant_isolation ON subscriptions
   FOR ALL TO app_rw
-  USING (tenant_id = current_setting('app.tenant_id', true)::uuid)
-  WITH CHECK (tenant_id = current_setting('app.tenant_id', true)::uuid);
+  USING (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid)
+  WITH CHECK (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid);
 
 ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE invoices FORCE ROW LEVEL SECURITY;
 CREATE POLICY invoices_tenant_isolation ON invoices
   FOR ALL TO app_rw
-  USING (tenant_id = current_setting('app.tenant_id', true)::uuid)
-  WITH CHECK (tenant_id = current_setting('app.tenant_id', true)::uuid);
+  USING (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid)
+  WITH CHECK (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid);
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON subscriptions TO app_rw;
 GRANT SELECT, INSERT, UPDATE, DELETE ON invoices TO app_rw;

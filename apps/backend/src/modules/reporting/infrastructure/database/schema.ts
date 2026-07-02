@@ -20,7 +20,7 @@ type EventActor = Readonly<{
   id?: string;
 }>;
 
-const tenantSetting = sql`current_setting('app.tenant_id', true)::uuid`;
+const tenantSetting = sql`nullif(current_setting('app.tenant_id', true), '')::uuid`;
 const createdAt = () =>
   timestamp('created_at', { withTimezone: true }).defaultNow().notNull();
 

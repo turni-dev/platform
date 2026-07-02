@@ -22,7 +22,7 @@ type RagSource = Readonly<{
   score: number;
 }>;
 
-const tenantSetting = sql`current_setting('app.tenant_id', true)::uuid`;
+const tenantSetting = sql`nullif(current_setting('app.tenant_id', true), '')::uuid`;
 
 export const approvals = pgTable(
   'approvals',

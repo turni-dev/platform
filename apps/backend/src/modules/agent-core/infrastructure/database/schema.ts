@@ -13,7 +13,7 @@ import {
   uuid
 } from 'drizzle-orm/pg-core';
 
-const tenantSetting = sql`current_setting('app.tenant_id', true)::uuid`;
+const tenantSetting = sql`nullif(current_setting('app.tenant_id', true), '')::uuid`;
 const id = () => uuid('id').primaryKey();
 const createdAt = () =>
   timestamp('created_at', { withTimezone: true }).defaultNow().notNull();

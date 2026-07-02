@@ -37,7 +37,7 @@ ALTER TABLE approvals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE approvals FORCE ROW LEVEL SECURITY;
 CREATE POLICY approvals_tenant_isolation ON approvals
   FOR ALL TO app_rw
-  USING (tenant_id = current_setting('app.tenant_id', true)::uuid)
-  WITH CHECK (tenant_id = current_setting('app.tenant_id', true)::uuid);
+  USING (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid)
+  WITH CHECK (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid);
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON approvals TO app_rw;

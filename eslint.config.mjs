@@ -57,6 +57,18 @@ export default tseslint.config(
     }
   },
   {
+    files: ['apps/backend/src/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.object.name='sql'][callee.property.name='raw']",
+          message: 'Raw SQL construction is forbidden; use parameterized sql templates.'
+        }
+      ]
+    }
+  },
+  {
     files: ['apps/**/*.tsx', 'apps/**/*.jsx'],
     rules: {
       'no-restricted-syntax': [

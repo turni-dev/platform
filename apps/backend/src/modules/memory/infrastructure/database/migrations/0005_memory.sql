@@ -67,16 +67,16 @@ ALTER TABLE memory_chunks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE memory_chunks FORCE ROW LEVEL SECURITY;
 CREATE POLICY memory_files_tenant_isolation ON memory_files
   FOR ALL TO app_rw
-  USING (tenant_id = current_setting('app.tenant_id', true)::uuid)
-  WITH CHECK (tenant_id = current_setting('app.tenant_id', true)::uuid);
+  USING (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid)
+  WITH CHECK (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid);
 CREATE POLICY memory_revisions_tenant_isolation ON memory_revisions
   FOR ALL TO app_rw
-  USING (tenant_id = current_setting('app.tenant_id', true)::uuid)
-  WITH CHECK (tenant_id = current_setting('app.tenant_id', true)::uuid);
+  USING (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid)
+  WITH CHECK (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid);
 CREATE POLICY memory_chunks_tenant_isolation ON memory_chunks
   FOR ALL TO app_rw
-  USING (tenant_id = current_setting('app.tenant_id', true)::uuid)
-  WITH CHECK (tenant_id = current_setting('app.tenant_id', true)::uuid);
+  USING (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid)
+  WITH CHECK (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid);
 GRANT SELECT, INSERT, UPDATE, DELETE ON memory_files TO app_rw;
 GRANT SELECT, INSERT, DELETE ON memory_revisions TO app_rw;
 GRANT SELECT, INSERT, UPDATE, DELETE ON memory_chunks TO app_rw;

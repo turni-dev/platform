@@ -38,6 +38,7 @@ jobs:
     env:
       NX_DAEMON: "false"
       DATABASE_URL: postgres://turni:turni_ci_password@127.0.0.1:5432/turni
+      RLS_TEST_DATABASE_URL: postgres://turni:turni_ci_password@127.0.0.1:5432/turni
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -54,6 +55,17 @@ jobs:
       - name: Validate compose
         run: docker compose config
 
+      - name: Apply database migrations
+        run: npm run db:migrate
+
+      - name: Reject raw SQL construction
+        shell: bash
+        run: |
+          if grep -R --line-number --include='*.ts' 'sql\.raw(' apps/backend/src; then
+            echo 'sql.raw is forbidden in backend source'
+            exit 1
+          fi
+
       - name: Run tests, lint, and typecheck
         run: npm run nx -- run-many -t test lint typecheck
 
@@ -67,9 +79,6 @@ jobs:
 
       - name: Build
         run: npm run nx -- run-many -t build
-
-      - name: Apply database migrations
-        run: npm run db:migrate
 
   publish-image:
     name: publish backend image

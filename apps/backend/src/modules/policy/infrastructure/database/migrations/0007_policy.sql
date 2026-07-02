@@ -92,8 +92,8 @@ ALTER TABLE policies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE policies FORCE ROW LEVEL SECURITY;
 CREATE POLICY policies_tenant_isolation ON policies
   FOR ALL TO app_rw
-  USING (tenant_id = current_setting('app.tenant_id', true)::uuid)
-  WITH CHECK (tenant_id = current_setting('app.tenant_id', true)::uuid);
+  USING (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid)
+  WITH CHECK (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid);
 CREATE POLICY policies_locked_update ON policies
   AS RESTRICTIVE FOR UPDATE TO app_rw
   USING (layer <> 'locked')
