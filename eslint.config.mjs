@@ -20,7 +20,8 @@ export default tseslint.config(
           './apps/backend/tsconfig.app.json',
           './apps/web/tsconfig.json',
           './packages/contracts/tsconfig.lib.json',
-          './packages/llm/tsconfig.lib.json'
+          './packages/llm/tsconfig.lib.json',
+          './packages/ui/tsconfig.lib.json'
         ],
         tsconfigRootDir: import.meta.dirname
       }

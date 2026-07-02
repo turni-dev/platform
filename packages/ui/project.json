@@ -1,0 +1,16 @@
+{
+  "name": "ui",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/ui/src",
+  "projectType": "library",
+  "targets": {
+    "build": { "command": "tsc -p packages/ui/tsconfig.build.json" },
+    "test": { "command": "vitest run --config vitest.config.ts packages/ui/src" },
+    "coverage": {
+      "command": "vitest run --coverage --coverage.include=packages/ui/src/**/*.{ts,tsx} --coverage.reportsDirectory=coverage/ui --config vitest.config.ts packages/ui/src"
+    },
+    "lint": { "command": "eslint packages/ui/src/**/*.{ts,tsx}" },
+    "typecheck": { "command": "tsc -p packages/ui/tsconfig.lib.json --noEmit" }
+  },
+  "tags": ["scope:ui", "type:boundary"]
+}
