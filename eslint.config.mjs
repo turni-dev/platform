@@ -18,6 +18,7 @@ export default tseslint.config(
       parserOptions: {
         project: [
           './apps/backend/tsconfig.app.json',
+          './apps/web/tsconfig.json',
           './packages/contracts/tsconfig.lib.json',
           './packages/llm/tsconfig.lib.json'
         ],
@@ -74,6 +75,26 @@ export default tseslint.config(
     rules: {
       'no-restricted-syntax': [
         'error',
+        {
+          selector: "JSXAttribute[name.name='className'] Literal[value=/\\b(bg|text|p|m|flex|grid|rounded|border)-/]",
+          message: 'Tailwind utility classes are allowed only in packages/ui.'
+        }
+      ]
+    }
+  },
+  {
+    files: ['apps/web/**/*.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "JSXText[value=/\\S/]",
+          message: 'Visible JSX text must come from next-intl.'
+        },
+        {
+          selector: "JSXAttribute[name.name=/^(alt|title|placeholder|aria-label)$/] Literal[value=/\\S/]",
+          message: 'Visible JSX attributes must come from next-intl.'
+        },
         {
           selector: "JSXAttribute[name.name='className'] Literal[value=/\\b(bg|text|p|m|flex|grid|rounded|border)-/]",
           message: 'Tailwind utility classes are allowed only in packages/ui.'

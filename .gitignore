@@ -7,6 +7,7 @@ node_modules/
 .nx/
 dist/
 coverage/
+.next/
 tmp/
 temp/
 
