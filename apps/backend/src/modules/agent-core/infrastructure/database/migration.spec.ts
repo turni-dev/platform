@@ -5,6 +5,10 @@ const migrationUrl = new URL(
   './migrations/0002_agent_core.sql',
   import.meta.url
 );
+const crossContextMigrationUrl = new URL(
+  './migrations/0004_agent_core_channel_fks.sql',
+  import.meta.url
+);
 
 describe('agent-core migration', () => {
   it('creates the complete agent-core table slice', async () => {
@@ -54,5 +58,18 @@ describe('agent-core migration', () => {
 
     expect(migration).not.toMatch(/id uuid [^,\n]*DEFAULT/i);
     expect(migration).not.toMatch(/gen_random_uuid|uuid_generate/i);
+  });
+
+  it('adds channel foreign keys only after channel tables exist', async () => {
+    const migration = await readFile(crossContextMigrationUrl, 'utf8');
+
+    expect(migration).toContain(
+      'actions_conversation_id_conversations_id_fk'
+    );
+    expect(migration).toContain('bookings_guest_id_guests_id_fk');
+    expect(migration).toContain(
+      'bookings_conversation_id_conversations_id_fk'
+    );
+    expect(migration.match(/ON DELETE RESTRICT/g)).toHaveLength(3);
   });
 });
