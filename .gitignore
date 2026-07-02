@@ -51,4 +51,6 @@ compose.override.yml
 *.key
 *.crt
 secrets/
+ops/sops/*.agekey
+ops/sops/*.dec.json
 .gocache/

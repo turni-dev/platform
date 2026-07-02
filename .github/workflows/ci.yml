@@ -72,10 +72,10 @@ jobs:
           npm run nx -- run-many -t lint --parallel=1
           npm run nx -- run-many -t typecheck --parallel=1
 
-      - name: Test migration runner
+      - name: Test bootstrap tools
         run: |
-          npx eslint tools/bootstrap/db-migrate.mjs tools/bootstrap/db-migrate.spec.mjs
-          node --test tools/bootstrap/db-migrate.spec.mjs
+          npx eslint tools/bootstrap/*.mjs
+          node --test tools/bootstrap/*.spec.mjs
 
       - name: Run coverage gate
         run: npm run nx -- run-many -t coverage --parallel=1

@@ -87,6 +87,7 @@ export default tseslint.config(
     languageOptions: {
       ...tseslint.configs.disableTypeChecked.languageOptions,
       globals: {
+        Buffer: 'readonly',
         console: 'readonly',
         process: 'readonly',
         URL: 'readonly'
