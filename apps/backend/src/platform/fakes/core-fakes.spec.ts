@@ -54,6 +54,17 @@ describe('core fake adapters', () => {
     expect(sent.externalId).toBe('fake-message-1');
     expect(fake.sent).toHaveLength(1);
     expect(inbound.externalId).toBe('update-1');
+    await fake.setupWebhook(connection, {
+      url: 'https://example.test/webhook',
+      secret: '1234567890abcdef'
+    });
+    expect(await fake.validateCredentials({ secret: 'token' })).toMatchObject({
+      valid: true,
+      identity: 'fake-bot'
+    });
+    expect(await fake.validateCredentials({ secret: 'invalid' })).toEqual({
+      valid: false
+    });
   });
 
   it('returns paid fake invoices and fetched payments', async () => {
@@ -69,5 +80,9 @@ describe('core fake adapters', () => {
 
     expect(invoice.status).toBe('paid');
     expect(payment.status).toBe('paid');
+    expect(
+      await fake.parseWebhook({ eventId: 'event-1', paymentId: invoice.id })
+    ).toMatchObject({ eventId: 'event-1' });
+    await expect(fake.fetchPayment('missing')).rejects.toThrow();
   });
 });

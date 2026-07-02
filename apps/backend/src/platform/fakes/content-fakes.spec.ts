@@ -37,6 +37,23 @@ describe('content fake adapters', () => {
 
     expect(result.channel).toBe('telegram');
     expect(fake.sent).toHaveLength(1);
+    expect(
+      (
+        await fake.notifyOwner(
+          {
+            id: '01900000-0000-7000-8000-000000000003',
+            tenantId: '01900000-0000-7000-8000-000000000002',
+            email: 'owner@example.ru'
+          },
+          {
+            category: 'alert',
+            title: 'Ошибка',
+            body: 'Нужна проверка',
+            data: {}
+          }
+        )
+      ).channel
+    ).toBe('email');
   });
 
   it('records transactional email without sending it', async () => {

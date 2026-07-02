@@ -20,7 +20,12 @@ describe('operational fake adapters', () => {
 
   it('confirms fake bookings and serves configured knowledge', async () => {
     const fake = new FakeBookingSystem({
-      menu: [{ path: 'menu.md', content: '# Меню', sourceVersion: 'v1' }]
+      available: false,
+      remainingCapacity: 0,
+      menu: [{ path: 'menu.md', content: '# Меню', sourceVersion: 'v1' }],
+      stopList: [
+        { path: 'stop-list.md', content: 'Нет тунца', sourceVersion: 'v1' }
+      ]
     });
     const request = {
       tenantId: '01900000-0000-7000-8000-000000000001',
@@ -29,7 +34,10 @@ describe('operational fake adapters', () => {
       partySize: 2
     };
 
-    expect((await fake.checkAvailability(request)).available).toBe(true);
+    expect(await fake.checkAvailability(request)).toEqual({
+      available: false,
+      remainingCapacity: 0
+    });
     expect(
       (
         await fake.createBooking({
@@ -41,6 +49,12 @@ describe('operational fake adapters', () => {
     ).toBe('confirmed');
     expect(
       await fake.syncMenu({
+        tenantId: request.tenantId,
+        locationId: request.locationId
+      })
+    ).toHaveLength(1);
+    expect(
+      await fake.syncStopList({
         tenantId: request.tenantId,
         locationId: request.locationId
       })
