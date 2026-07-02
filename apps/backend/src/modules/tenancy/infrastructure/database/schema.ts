@@ -2,11 +2,13 @@ import { sql } from 'drizzle-orm';
 import {
   bigint,
   boolean,
+  char,
   check,
   customType,
   index,
   inet,
   jsonb,
+  numeric,
   pgPolicy,
   pgTable,
   smallint,
@@ -167,10 +169,83 @@ export const authCodes = pgTable(
   ]
 );
 
+export const subscriptions = pgTable(
+  'subscriptions',
+  {
+    id: id(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'restrict' }),
+    plan: text('plan').notNull(),
+    status: text('status').notNull(),
+    currentPeriodStart: timestamp('current_period_start', {
+      withTimezone: true
+    }),
+    currentPeriodEnd: timestamp('current_period_end', {
+      withTimezone: true
+    }),
+    createdAt: createdAt()
+  },
+  (table) => [
+    check(
+      'subscriptions_plan_check',
+      sql`${table.plan} in ('trial', 'start', 'pro')`
+    ),
+    check(
+      'subscriptions_status_check',
+      sql`${table.status} in (
+        'trialing', 'active', 'past_due', 'paused', 'cancelled'
+      )`
+    ),
+    index('subscriptions_tenant_idx').on(table.tenantId),
+    pgPolicy('subscriptions_tenant_isolation', {
+      for: 'all',
+      to: 'app_rw',
+      using: sql`${table.tenantId} = ${tenantSetting}`,
+      withCheck: sql`${table.tenantId} = ${tenantSetting}`
+    })
+  ]
+).enableRLS();
+
+export const invoices = pgTable(
+  'invoices',
+  {
+    id: id(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'restrict' }),
+    subscriptionId: uuid('subscription_id')
+      .notNull()
+      .references(() => subscriptions.id, { onDelete: 'restrict' }),
+    amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
+    currency: char('currency', { length: 3 }).default('RUB').notNull(),
+    status: text('status').default('draft').notNull(),
+    dueAt: timestamp('due_at', { withTimezone: true }),
+    paidAt: timestamp('paid_at', { withTimezone: true }),
+    createdAt: createdAt()
+  },
+  (table) => [
+    check('invoices_amount_check', sql`${table.amount} >= 0`),
+    check(
+      'invoices_status_check',
+      sql`${table.status} in ('draft', 'sent', 'paid', 'void')`
+    ),
+    index('invoices_tenant_status_idx').on(table.tenantId, table.status),
+    pgPolicy('invoices_tenant_isolation', {
+      for: 'all',
+      to: 'app_rw',
+      using: sql`${table.tenantId} = ${tenantSetting}`,
+      withCheck: sql`${table.tenantId} = ${tenantSetting}`
+    })
+  ]
+).enableRLS();
+
 export const tenancyTables = [
   tenants,
   locations,
   users,
   sessions,
-  authCodes
+  authCodes,
+  subscriptions,
+  invoices
 ] as const;

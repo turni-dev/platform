@@ -2,8 +2,10 @@ import { getTableConfig } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
 import {
   authCodes,
+  invoices,
   locations,
   sessions,
+  subscriptions,
   tenancyTables,
   tenants,
   users
@@ -16,12 +18,14 @@ describe('tenancy database schema', () => {
       'locations',
       'users',
       'sessions',
-      'auth_codes'
+      'auth_codes',
+      'subscriptions',
+      'invoices'
     ]);
   });
 
   it('enables fail-closed RLS on tenant-scoped tables only', () => {
-    for (const table of [locations, users, sessions]) {
+    for (const table of [locations, users, sessions, subscriptions, invoices]) {
       const config = getTableConfig(table);
 
       expect(config.enableRLS).toBe(true);
@@ -56,7 +60,7 @@ describe('tenancy database schema', () => {
   });
 
   it('uses restrictive foreign keys for tenant business data', () => {
-    const foreignKeys = [locations, users, sessions].flatMap(
+    const foreignKeys = [locations, users, sessions, subscriptions, invoices].flatMap(
       (table) => getTableConfig(table).foreignKeys
     );
 
@@ -69,7 +73,10 @@ describe('tenancy database schema', () => {
       { foreignTable: 'tenants', onDelete: 'restrict' },
       { foreignTable: 'tenants', onDelete: 'restrict' },
       { foreignTable: 'tenants', onDelete: 'restrict' },
-      { foreignTable: 'users', onDelete: 'restrict' }
+      { foreignTable: 'users', onDelete: 'restrict' },
+      { foreignTable: 'tenants', onDelete: 'restrict' },
+      { foreignTable: 'tenants', onDelete: 'restrict' },
+      { foreignTable: 'subscriptions', onDelete: 'restrict' }
     ]);
   });
 
