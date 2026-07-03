@@ -32,7 +32,15 @@ describe('GitHub admin plan', () => {
     assert.equal(branchProtection?.body.enforce_admins, true);
     assert.equal(
       branchProtection?.body.required_pull_request_reviews.require_code_owner_reviews,
-      true
+      false
+    );
+    assert.equal(
+      branchProtection?.body.required_pull_request_reviews.required_approving_review_count,
+      0
+    );
+    assert.equal(
+      branchProtection?.body.required_pull_request_reviews.require_last_push_approval,
+      false
     );
     assert.equal(branchProtection?.body.allow_force_pushes, false);
     assert.equal(branchProtection?.body.allow_deletions, false);
