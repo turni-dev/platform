@@ -3,7 +3,8 @@ import { describe, it } from 'node:test';
 import {
   buildGithubAdminPlan,
   executeGithubAdminPlan,
-  parseGithubAdminMode
+  parseGithubAdminMode,
+  retryGithubOperation
 } from './github-admin.mjs';
 
 describe('GitHub admin plan', () => {
@@ -137,5 +138,33 @@ describe('GitHub admin plan', () => {
     assert.equal(parseGithubAdminMode([]), false);
     assert.equal(parseGithubAdminMode(['--apply']), true);
     assert.throws(() => parseGithubAdminMode(['--force']), /Unknown argument/);
+  });
+
+  it('retries only transient GitHub transport failures', async () => {
+    let attempts = 0;
+    const result = await retryGithubOperation(
+      async () => {
+        attempts += 1;
+        if (attempts === 1) throw new Error('TLS handshake timeout');
+        if (attempts === 2) throw new Error('unexpected EOF');
+        return 'ok';
+      },
+      { sleep: () => Promise.resolve() }
+    );
+    assert.equal(result, 'ok');
+    assert.equal(attempts, 3);
+
+    let forbiddenAttempts = 0;
+    await assert.rejects(
+      retryGithubOperation(
+        () => {
+          forbiddenAttempts += 1;
+          return Promise.reject(new Error('HTTP 403 Forbidden'));
+        },
+        { sleep: () => Promise.resolve() }
+      ),
+      /Forbidden/
+    );
+    assert.equal(forbiddenAttempts, 1);
   });
 });

@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { setTimeout as sleepTimer } from 'node:timers/promises';
 import { pathToFileURL } from 'node:url';
 
 export function buildGithubAdminPlan({ owner, repo, productionReviewerId }) {
@@ -99,6 +100,30 @@ export function parseGithubAdminMode(args) {
   return args.includes('--apply');
 }
 
+export async function retryGithubOperation(
+  operation,
+  {
+    attempts = 3,
+    sleep = sleepTimer
+  } = {}
+) {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const transient = /\bEOF\b|TLS handshake timeout|timed out|connection reset|HTTP 50[234]/i.test(
+        message
+      );
+      if (!transient || attempt === attempts) {
+        throw error;
+      }
+      await sleep(attempt * 1_000);
+    }
+  }
+  throw new Error('GitHub retry loop exhausted');
+}
+
 function runGh(args, input) {
   const executable = process.env.GH_CLI_PATH ?? 'gh';
   return new Promise((resolve, reject) => {
@@ -129,27 +154,31 @@ function runGh(args, input) {
 }
 
 async function requestGithub(operation) {
-  await runGh(
-    [
-      'api',
-      operation.endpoint,
-      '--method',
-      operation.method,
-      '--input',
-      '-',
-      '--silent',
-      '--header',
-      'Accept: application/vnd.github+json',
-      '--header',
-      'X-GitHub-Api-Version: 2026-03-10'
-    ],
-    JSON.stringify(operation.body)
+  await retryGithubOperation(() =>
+    runGh(
+      [
+        'api',
+        operation.endpoint,
+        '--method',
+        operation.method,
+        '--input',
+        '-',
+        '--silent',
+        '--header',
+        'Accept: application/vnd.github+json',
+        '--header',
+        'X-GitHub-Api-Version: 2026-03-10'
+      ],
+      JSON.stringify(operation.body)
+    )
   );
 }
 
 async function main() {
   const apply = parseGithubAdminMode(process.argv.slice(2));
-  const reviewerId = Number(await runGh(['api', 'user', '--jq', '.id']));
+  const reviewerId = Number(
+    await retryGithubOperation(() => runGh(['api', 'user', '--jq', '.id']))
+  );
   const plan = buildGithubAdminPlan({
     owner: 'turni-dev',
     repo: 'platform',
