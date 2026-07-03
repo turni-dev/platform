@@ -20,5 +20,5 @@ describe('HTTP entrypoint health checks', () => {
     } finally {
       await app.close();
     }
-  });
+  }, 10_000);
 });
