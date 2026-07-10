@@ -24,7 +24,7 @@ apps/backend/src/platform/database owns only connection lifecycle, transactions,
 - Business foreign keys use ON DELETE RESTRICT; memory chunks and revisions may cascade as specified.
 - Global prompt, model, and eval tables have no RLS and are read-only for app_rw.
 - Events are range-partitioned from day one with a DEFAULT partition.
-- citext, vector(1024), partial indexes, HNSW cosine, soft deletes, audit columns, and conversation sequence counters follow the Obsidian DDL note.
+- citext, vector(768), partial indexes, HNSW cosine, soft deletes, audit columns, and conversation sequence counters follow the Obsidian DDL note. The 768-dimensional embedding model decision is tracked in ADR 0005.
 
 ## Delivery Slices
 

@@ -106,7 +106,7 @@ export const memoryChunks = pgTable(
     headingPath: text('heading_path'),
     content: text('text').notNull(),
     tokens: integer('tokens'),
-    embedding: vector('embedding', { dimensions: 1024 }),
+    embedding: vector('embedding', { dimensions: 768 }),
     embeddingModel: text('embedding_model').notNull(),
     createdAt: createdAt()
   },
@@ -129,7 +129,8 @@ export const memoryChunks = pgTable(
     ),
     index('memory_chunks_embedding_hnsw_idx')
       .using('hnsw', table.embedding.op('vector_cosine_ops'))
-      .with({ m: 16, ef_construction: 64 }),
+      .with({ m: 16, ef_construction: 64 })
+      .where(sql`${table.embeddingModel} = 'yandex:text-embeddings-v2-doc:768'`),
     pgPolicy('memory_chunks_tenant_isolation', {
       for: 'all',
       to: 'app_rw',

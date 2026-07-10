@@ -44,7 +44,7 @@
 - Create schemas, tests, and migrations under modules/memory/infrastructure/database.
 - Create schemas, tests, and migrations under modules/policy/infrastructure/database.
 
-- [ ] Add files, immutable revisions, chunks, vector(1024), and HNSW cosine metadata.
+- [ ] Add files, immutable revisions, chunks, vector(768), and HNSW cosine metadata; keep the 768-dimensional embedding model decision aligned with ADR 0005.
 - [ ] Add tenant policies and global prompts, model configs, and eval cases.
 - [ ] Revoke global mutations from app_rw and add immutable-row triggers.
 - [ ] Commit the green knowledge and policy slice.

@@ -10,6 +10,14 @@ const approvalForeignKeyUrl = new URL(
   './migrations/0009_memory_approval_fk.sql',
   import.meta.url
 );
+const yandexEmbeddingUrl = new URL(
+  './migrations/0012_memory_yandex_embeddings.sql',
+  import.meta.url
+);
+const yandexHnswUrl = new URL(
+  './migrations/0013_memory_yandex_hnsw.concurrent.sql',
+  import.meta.url
+);
 
 describe('memory migrations', () => {
   it('creates memory tables with exact-revision cascade', async () => {
@@ -65,5 +73,18 @@ describe('memory migrations', () => {
       'FOREIGN KEY (source_approval_id) REFERENCES approvals(id)'
     );
     expect(migration).toContain('ON DELETE RESTRICT');
+  });
+
+  it('migrates memory embeddings to Yandex v2 768 dimensions', async () => {
+    const migration = await readFile(yandexEmbeddingUrl, 'utf8');
+    const hnsw = await readFile(yandexHnswUrl, 'utf8');
+
+    expect(migration).toContain('TYPE vector(768)');
+    expect(migration).toContain('yandex:text-embeddings-v2-doc:768');
+    expect(hnsw).toContain('CREATE INDEX CONCURRENTLY IF NOT EXISTS');
+    expect(hnsw).toContain('USING hnsw (embedding vector_cosine_ops)');
+    expect(hnsw).toContain(
+      "WHERE embedding_model = 'yandex:text-embeddings-v2-doc:768'"
+    );
   });
 });

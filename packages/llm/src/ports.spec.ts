@@ -46,7 +46,7 @@ describe('LLM port contracts', () => {
     expect(() => EmbeddingRequestSchema.parse({ texts: [] })).toThrow();
   });
 
-  it('enforces vector(1024) at the port boundary', () => {
+  it('enforces vector(768) at the port boundary', () => {
     expect(() =>
       EmbeddingResponseSchema.parse({
         model: 'test-model',

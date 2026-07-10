@@ -48,7 +48,7 @@ export interface LlmPort {
 export const EmbeddingRequestSchema = z.strictObject({
   texts: z.array(z.string().min(1)).min(1)
 });
-export const EmbeddingVectorSchema = z.array(z.number().finite()).length(1024);
+export const EmbeddingVectorSchema = z.array(z.number().finite()).length(768);
 export const EmbeddingResponseSchema = z.strictObject({
   model: z.string().min(1),
   vectors: z.array(EmbeddingVectorSchema).min(1)

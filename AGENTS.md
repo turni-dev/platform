@@ -12,7 +12,9 @@ Turni — платформа ИИ-сотрудников (первый шабл�
 - Задачи: «Доска MVP-1» (префиксы С0…С6; бери из лейна «Готово к работе», WIP=1)
 
 ## Стек
-TypeScript strict · Nx-монорепо · NestJS (Fastify) модульный монолит · Drizzle · PostgreSQL (self-host) + pgvector(1024, HNSW cosine) + citext · Redis + BullMQ · XState (FSM) · Next.js + shadcn (Tailwind только в packages/ui) + SCSS · RU-first LLM за LlmPort (GigaChat/YandexGPT primary, ProxyAPI foreign-optional) · Docker Compose (без k8s) · GHCR.
+TypeScript strict · Nx-монорепо · NestJS (Fastify) модульный монолит · Drizzle · PostgreSQL (self-host) + pgvector(vector(768), HNSW cosine; primary embeddings: Yandex Text Embeddings v2) + citext · Redis + BullMQ · XState (FSM) · Next.js + shadcn (Tailwind только в packages/ui) + SCSS · RU-first LLM за LlmPort (YandexGPT primary; Sber/ProxyAPI optional later) · Docker Compose (без k8s) · GHCR.
+
+Embedding note: `EmbeddingsGigaR` is excluded from the current schema because its current public dimension is 2560; see ADR 0005 before changing memory embeddings.
 
 ## Структура
 - `apps/backend`: модульный DDD-монолит; `src/entrypoints/{http,worker}` — composition roots.

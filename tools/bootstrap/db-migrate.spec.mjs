@@ -25,7 +25,9 @@ describe('database migration runner', () => {
         '0008_approvals.sql',
         '0009_memory_approval_fk.sql',
         '0010_reporting.sql',
-        '0011_tenancy_billing.sql'
+        '0011_tenancy_billing.sql',
+        '0012_memory_yandex_embeddings.sql',
+        '0013_memory_yandex_hnsw.concurrent.sql'
       ]
     );
     assert.equal(migrations[5]?.transactional, false);

@@ -27,7 +27,7 @@ describe('memory database schema', () => {
     }
   });
 
-  it('stores 1024-dimensional embeddings with cosine HNSW', () => {
+  it('stores 768-dimensional embeddings with model-scoped cosine HNSW', () => {
     const config = getTableConfig(memoryChunks);
     const embedding = config.columns.find(
       (column) => column.name === 'embedding'
@@ -36,8 +36,9 @@ describe('memory database schema', () => {
       (index) => index.config.name === 'memory_chunks_embedding_hnsw_idx'
     );
 
-    expect(embedding?.getSQLType()).toBe('vector(1024)');
+    expect(embedding?.getSQLType()).toBe('vector(768)');
     expect(hnsw?.config.method).toBe('hnsw');
+    expect(hnsw?.config.where).toBeDefined();
     const indexedEmbedding = hnsw?.config.columns[0];
     expect(
       indexedEmbedding && 'indexConfig' in indexedEmbedding

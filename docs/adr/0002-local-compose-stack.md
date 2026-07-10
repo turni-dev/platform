@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-S1/E1 needs a local dependency stack before database schema, queues, MinIO-backed storage, and integration tests can land. Obsidian decisions require PostgreSQL with `pgvector(1024)` and `citext`, Redis for BullMQ, and MinIO for local S3-compatible storage.
+S1/E1 needs a local dependency stack before database schema, queues, MinIO-backed storage, and integration tests can land. Obsidian decisions require PostgreSQL with `pgvector` for 768-dimensional embeddings and `citext`, Redis for BullMQ, and MinIO for local S3-compatible storage. The embedding model decision is tracked in ADR 0005.
 
 ## Decision
 

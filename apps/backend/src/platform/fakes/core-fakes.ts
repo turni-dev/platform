@@ -79,13 +79,13 @@ export class FakeEmbedding implements EmbeddingPort {
     const parsed = EmbeddingRequestSchema.parse(request);
     const vectors = parsed.texts.map((text) =>
       Array.from(
-        { length: 1024 },
+        { length: 768 },
         (_, index) => (text.length + (index % 17)) / 1000
       )
     );
 
     return Promise.resolve(
-      EmbeddingResponseSchema.parse({ model: 'fake-embedding-1024', vectors })
+      EmbeddingResponseSchema.parse({ model: 'fake-embedding-768', vectors })
     );
   }
 }

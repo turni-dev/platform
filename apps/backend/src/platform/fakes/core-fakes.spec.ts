@@ -22,14 +22,14 @@ describe('core fake adapters', () => {
     expect(fake.requests).toHaveLength(1);
   });
 
-  it('returns deterministic 1024-dimensional embeddings', async () => {
+  it('returns deterministic 768-dimensional embeddings', async () => {
     const fake = new FakeEmbedding();
 
     const first = await fake.embed({ texts: ['Меню'] });
     const second = await fake.embed({ texts: ['Меню'] });
 
     expect(first).toEqual(second);
-    expect(first.vectors[0]).toHaveLength(1024);
+    expect(first.vectors[0]).toHaveLength(768);
   });
 
   it('records normalized messenger sends and parses normalized webhooks', async () => {
