@@ -1,0 +1,89 @@
+name: turni-db-vps
+
+services:
+  postgres:
+    build:
+      context: ../../containers/postgres-db-vps
+    image: turni/postgres-db-vps:pg16
+    container_name: turni-db-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_command=test ! -f /var/lib/postgresql/wal-archive/%f && cp %p /var/lib/postgresql/wal-archive/%f
+      - -c
+      - archive_timeout=${POSTGRES_ARCHIVE_TIMEOUT:-60s}
+      - -c
+      - max_connections=${POSTGRES_MAX_CONNECTIONS:-100}
+      - -c
+      - shared_buffers=${POSTGRES_SHARED_BUFFERS:-1GB}
+      - -c
+      - effective_cache_size=${POSTGRES_EFFECTIVE_CACHE_SIZE:-3GB}
+      - -c
+      - work_mem=${POSTGRES_WORK_MEM:-16MB}
+      - -c
+      - maintenance_work_mem=${POSTGRES_MAINTENANCE_WORK_MEM:-256MB}
+      - -c
+      - checkpoint_completion_target=${POSTGRES_CHECKPOINT_COMPLETION_TARGET:-0.9}
+    ports:
+      - "${POSTGRES_BIND:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - turni-db-data:/var/lib/postgresql/data
+      - turni-db-wal-archive:/var/lib/postgresql/wal-archive
+      - ../postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  postgres-backup:
+    image: pgvector/pgvector:pg16
+    profiles: ["backup"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ${POSTGRES_DB:?POSTGRES_DB is required}
+      PGUSER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      BACKUP_ROOT: /backups
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+    volumes:
+      - turni-db-backups:/backups
+      - turni-db-wal-archive:/wal-archive:ro
+      - ./scripts:/usr/local/bin:ro
+    entrypoint: ["sh", "/usr/local/bin/backup-entrypoint.sh"]
+    command: ["all"]
+
+  backup-sync:
+    image: minio/mc:latest
+    profiles: ["backup"]
+    environment:
+      S3_ENDPOINT: ${S3_ENDPOINT:?S3_ENDPOINT is required}
+      S3_BUCKET: ${S3_BUCKET:?S3_BUCKET is required}
+      S3_PREFIX: ${S3_PREFIX:-turni/postgres}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?S3_ACCESS_KEY is required}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY is required}
+    volumes:
+      - turni-db-backups:/backups:ro
+      - turni-db-wal-archive:/wal-archive:ro
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - 'mc alias set turni "$${S3_ENDPOINT}" "$${S3_ACCESS_KEY}" "$${S3_SECRET_KEY}" && mc mirror --overwrite /backups "turni/$${S3_BUCKET}/$${S3_PREFIX}/backups" && mc mirror --overwrite /wal-archive "turni/$${S3_BUCKET}/$${S3_PREFIX}/wal-archive"'
+
+volumes:
+  turni-db-data:
+  turni-db-wal-archive:
+  turni-db-backups:
