@@ -1,3 +1,4 @@
+import { sql, type SQL } from 'drizzle-orm';
 import { z } from 'zod';
 import type { LlmModelConfigSource, ActiveLlmModelConfig } from './llm-resolver.js';
 
@@ -11,7 +12,7 @@ const activeModelConfigRowsSchema = z.array(
 );
 
 export interface ModelConfigDatabase {
-  execute(query: string, parameters: readonly string[]): Promise<unknown>;
+  execute(query: SQL): Promise<unknown>;
 }
 
 export class DatabaseModelConfigSource implements LlmModelConfigSource {
@@ -20,8 +21,11 @@ export class DatabaseModelConfigSource implements LlmModelConfigSource {
   async getActive(role: ActiveLlmModelConfig['role']): Promise<ActiveLlmModelConfig> {
     const rows = activeModelConfigRowsSchema.parse(
       await this.database.execute(
-        'SELECT role, provider, api_kind, model_id AS model_uri FROM model_configs WHERE role = $1 AND active = true ORDER BY created_at DESC LIMIT 1',
-        [role]
+        sql`SELECT role, provider, api_kind, model_id AS model_uri
+            FROM model_configs
+            WHERE role = ${role} AND active = true
+            ORDER BY created_at DESC
+            LIMIT 1`
       )
     );
     const row = rows[0];

@@ -101,6 +101,16 @@ describe('YandexGptTextAdapter', () => {
         outputSchema: z.strictObject({ answer: z.string() })
       })
     ).rejects.not.toThrow('provider diagnostic containing a secret');
+    await expect(
+      adapter.generate({
+        role: 'generate',
+        messages: [{ role: 'user', content: 'Составь ответ' }],
+        outputSchema: z.strictObject({ answer: z.string() })
+      })
+    ).rejects.toMatchObject({
+      code: 'llm_provider_unavailable',
+      retryable: true
+    });
   });
 
   it('fails closed when the returned structured output does not match the caller schema', async () => {

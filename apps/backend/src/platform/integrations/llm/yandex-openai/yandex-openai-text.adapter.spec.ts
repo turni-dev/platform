@@ -95,5 +95,35 @@ describe('YandexOpenAiTextAdapter', () => {
     await expect(adapter.generate(request)).rejects.not.toThrow(
       'provider diagnostic with a secret'
     );
+    await expect(adapter.generate(request)).rejects.toMatchObject({
+      code: 'llm_provider_unavailable',
+      retryable: false
+    });
+  });
+
+  it('marks rate limiting as retryable without exposing the provider response body', async () => {
+    const adapter = new YandexOpenAiTextAdapter(
+      {
+        apiKey: 'test-api-key',
+        folderId: FOLDER_ID,
+        modelUri: 'gpt://folder-id/deepseek-v4-flash'
+      },
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 429,
+        text: () => Promise.resolve('provider diagnostic with a secret')
+      })
+    );
+
+    await expect(
+      adapter.generate({
+        role: 'generate',
+        messages: [{ role: 'user', content: 'Составь ответ' }],
+        outputSchema: z.strictObject({ answer: z.string() })
+      })
+    ).rejects.toMatchObject({
+      code: 'llm_provider_unavailable',
+      retryable: true
+    });
   });
 });

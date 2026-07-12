@@ -5,6 +5,10 @@ import {
   type StructuredLlmRequest
 } from '@turni/llm';
 import { z } from 'zod';
+import {
+  LlmResilienceError,
+  LlmResilienceErrorCode
+} from '../resilience/llm-resilience.js';
 
 const DEFAULT_BASE_URL = 'https://ai.api.cloud.yandex.net/v1';
 const CHAT_COMPLETIONS_PATH = '/chat/completions';
@@ -77,15 +81,22 @@ type ResponseFormat = Readonly<{
   }>;
 }>;
 
-class YandexOpenAiRequestError extends Error {
-  constructor() {
-    super(REQUEST_FAILED_MESSAGE);
+class YandexOpenAiRequestError extends LlmResilienceError {
+  constructor(status?: number) {
+    super(
+      LlmResilienceErrorCode.ProviderUnavailable,
+      status === undefined || status === 429 || status >= 500
+    );
+    this.message = REQUEST_FAILED_MESSAGE;
+    this.name = 'YandexOpenAiRequestError';
   }
 }
 
-class YandexOpenAiResponseValidationError extends Error {
+class YandexOpenAiResponseValidationError extends LlmResilienceError {
   constructor() {
-    super(RESPONSE_VALIDATION_FAILED_MESSAGE);
+    super(LlmResilienceErrorCode.InvalidResponse, false);
+    this.message = RESPONSE_VALIDATION_FAILED_MESSAGE;
+    this.name = 'YandexOpenAiResponseValidationError';
   }
 }
 
@@ -129,7 +140,7 @@ export class YandexOpenAiTextAdapter implements LlmPort {
       });
 
       if (!response.ok) {
-        throw new YandexOpenAiRequestError();
+        throw new YandexOpenAiRequestError(response.status);
       }
 
       return this.parseResponse(await response.text(), request.outputSchema);

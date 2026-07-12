@@ -6,6 +6,10 @@ import {
   type StructuredLlmRequest
 } from '@turni/llm';
 import { z } from 'zod';
+import {
+  LlmResilienceError,
+  LlmResilienceErrorCode
+} from '../resilience/llm-resilience.js';
 
 const YANDEX_COMPLETION_PATH = '/foundationModels/v1/completion';
 const YANDEX_AUTHORIZATION_HEADER = 'Authorization';
@@ -70,15 +74,22 @@ export type FetchLike = (
   }>
 >;
 
-class YandexGptRequestError extends Error {
-  constructor() {
-    super(YANDEX_REQUEST_FAILED_MESSAGE);
+class YandexGptRequestError extends LlmResilienceError {
+  constructor(status?: number) {
+    super(
+      LlmResilienceErrorCode.ProviderUnavailable,
+      status === undefined || status === 429 || status >= 500
+    );
+    this.message = YANDEX_REQUEST_FAILED_MESSAGE;
+    this.name = 'YandexGptRequestError';
   }
 }
 
-class YandexGptResponseValidationError extends Error {
+class YandexGptResponseValidationError extends LlmResilienceError {
   constructor() {
-    super(YANDEX_RESPONSE_VALIDATION_FAILED_MESSAGE);
+    super(LlmResilienceErrorCode.InvalidResponse, false);
+    this.message = YANDEX_RESPONSE_VALIDATION_FAILED_MESSAGE;
+    this.name = 'YandexGptResponseValidationError';
   }
 }
 
@@ -120,7 +131,7 @@ export class YandexGptTextAdapter implements LlmPort {
       });
 
       if (!response.ok) {
-        throw new YandexGptRequestError();
+        throw new YandexGptRequestError(response.status);
       }
 
       return this.parseResponse<TSchema>(await response.text(), request.outputSchema);

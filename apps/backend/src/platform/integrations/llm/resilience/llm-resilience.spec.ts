@@ -56,6 +56,26 @@ describe('LlmResilience', () => {
     expect(calls).toBe(1);
   });
 
+  it('does not retain a provider outage count after a non-retryable failure', async () => {
+    const sleep: LlmResilienceSleep = () => Promise.resolve();
+    const resilience = new LlmResilience({
+      consecutiveFailureThreshold: 2,
+      cooldownMs: 1_000,
+      maxAttempts: 1,
+      retryDelayMs: 25
+    }, sleep);
+
+    await expect(
+      resilience.execute(MODEL_ID, () => Promise.reject(retryableFailure()))
+    ).rejects.toMatchObject({ code: LlmResilienceErrorCode.ProviderUnavailable });
+    await expect(
+      resilience.execute(MODEL_ID, () => Promise.reject(new Error('invalid request')))
+    ).rejects.toThrow('invalid request');
+    await expect(
+      resilience.execute(MODEL_ID, () => Promise.reject(retryableFailure()))
+    ).rejects.toMatchObject({ code: LlmResilienceErrorCode.ProviderUnavailable });
+  });
+
   it('fails closed per model once the consecutive failure threshold is reached', async () => {
     let calls = 0;
     const attempt: LlmAttempt<void> = () => {

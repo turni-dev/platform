@@ -1,6 +1,7 @@
 export const LlmResilienceErrorCode = {
   CircuitOpen: 'llm_circuit_open',
-  ProviderUnavailable: 'llm_provider_unavailable'
+  ProviderUnavailable: 'llm_provider_unavailable',
+  InvalidResponse: 'llm_invalid_response'
 } as const;
 
 export type LlmResilienceErrorCode =
@@ -58,7 +59,11 @@ export class LlmResilience {
       this.circuits.delete(modelId);
       return response;
     } catch (error) {
-      this.recordFailure(modelId);
+      if (isExplicitlyRetryable(error)) {
+        this.recordFailure(modelId);
+      } else {
+        this.circuits.delete(modelId);
+      }
       throw error;
     }
   }
