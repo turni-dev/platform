@@ -2,6 +2,10 @@ import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 
 const migrationUrl = new URL('./migrations/0007_policy.sql', import.meta.url);
+const modelRoutingMigrationUrl = new URL(
+  './migrations/0014_policy_model_routing.sql',
+  import.meta.url
+);
 
 describe('policy migration', () => {
   it('creates the complete policy table slice', async () => {
@@ -64,5 +68,24 @@ describe('policy migration', () => {
     expect(migration).toMatch(
       /CONSTRAINT eval_cases_risk_label_check\s+CHECK/
     );
+  });
+
+  it('expands model configuration routing without invalidating existing rows', async () => {
+    const migration = await readFile(modelRoutingMigrationUrl, 'utf8');
+
+    expect(migration).toContain('ALTER TABLE model_configs');
+    expect(migration).toContain(
+      "ADD COLUMN provider text NOT NULL DEFAULT 'yandex-ai-studio'"
+    );
+    expect(migration).toContain(
+      "ADD COLUMN api_kind text NOT NULL DEFAULT 'native'"
+    );
+    expect(migration).toMatch(
+      /CONSTRAINT model_configs_provider_check\s+CHECK/
+    );
+    expect(migration).toMatch(
+      /CONSTRAINT model_configs_api_kind_check\s+CHECK/
+    );
+    expect(migration).not.toContain('CREATE TABLE model_configs');
   });
 });

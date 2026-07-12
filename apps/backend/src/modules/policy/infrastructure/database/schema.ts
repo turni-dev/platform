@@ -92,6 +92,8 @@ export const modelConfigs = pgTable(
     role: text('role').notNull(),
     tier: text('tier').notNull(),
     modelId: text('model_id').notNull(),
+    provider: text('provider').default('yandex-ai-studio').notNull(),
+    apiKind: text('api_kind').default('native').notNull(),
     inputPrice: numeric('price_in', { precision: 8, scale: 4 }),
     outputPrice: numeric('price_out', { precision: 8, scale: 4 }),
     active: boolean('active').default(true).notNull(),
@@ -107,6 +109,14 @@ export const modelConfigs = pgTable(
     check(
       'model_configs_tier_check',
       sql`${table.tier} in ('cheap', 'main', 'premium')`
+    ),
+    check(
+      'model_configs_provider_check',
+      sql`${table.provider} in ('yandex-ai-studio', 'gigachat', 'proxyapi')`
+    ),
+    check(
+      'model_configs_api_kind_check',
+      sql`${table.apiKind} in ('native', 'openai-compatible')`
     ),
     uniqueIndex('model_configs_role_tier_model_uidx').on(
       table.role,

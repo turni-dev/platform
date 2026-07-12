@@ -53,8 +53,24 @@ describe('policy database schema', () => {
 
   it('uses text checks for model and eval vocabularies', () => {
     expect(getTableConfig(modelConfigs).checks.map((check) => check.name))
-      .toEqual(['model_configs_role_check', 'model_configs_tier_check']);
+      .toEqual([
+        'model_configs_role_check',
+        'model_configs_tier_check',
+        'model_configs_provider_check',
+        'model_configs_api_kind_check'
+      ]);
     expect(getTableConfig(evalCases).checks.map((check) => check.name))
       .toEqual(['eval_cases_risk_label_check', 'eval_cases_source_check']);
+  });
+
+  it('makes model routing provider-aware with safe defaults', () => {
+    const config = getTableConfig(modelConfigs);
+    const provider = config.columns.find((column) => column.name === 'provider');
+    const apiKind = config.columns.find((column) => column.name === 'api_kind');
+
+    expect(provider?.notNull).toBe(true);
+    expect(provider?.default).toBe('yandex-ai-studio');
+    expect(apiKind?.notNull).toBe(true);
+    expect(apiKind?.default).toBe('native');
   });
 });
