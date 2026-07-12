@@ -1,0 +1,19 @@
+{
+  "name": "core-site",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/core-site/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "command": "next build",
+      "options": { "cwd": "apps/core-site" }
+    },
+    "serve": {
+      "command": "next dev --hostname 0.0.0.0 --port 3002",
+      "options": { "cwd": "apps/core-site" }
+    },
+    "lint": { "command": "eslint apps/core-site/src/**/*.{ts,tsx}" },
+    "typecheck": { "command": "tsc -p apps/core-site/tsconfig.json --noEmit" }
+  },
+  "tags": ["scope:core-site", "type:app"]
+}

@@ -1,11 +1,13 @@
 name: turni-marketing
 
 # Marketing / site track — deliberately kept OUT of the product stack (compose.yml).
-# Owns the CMS (Strapi) datastore, isolated from the RLS-hardened product Postgres.
-# The landing and Strapi app containers join this file once they gain Dockerfiles;
-# until then Strapi runs locally via `nx run cms:serve` against cms-postgres below.
+# Owns everything public-facing and its datastore, fully isolated from the
+# RLS-hardened product Postgres:
+#   - cms-postgres : dedicated Strapi database
+#   - cms          : Strapi CMS (content backend)
+#   - core-site    : Next.js marketing landing (formerly apps/landing)
 #
-# Usage: docker compose -f compose.marketing.yml up -d
+# Usage: docker compose -f compose.marketing.yml up -d --build
 
 services:
   cms-postgres:
@@ -26,6 +28,51 @@ services:
       timeout: 5s
       retries: 10
       start_period: 15s
+
+  cms:
+    build:
+      context: ./apps/cms
+      dockerfile: Dockerfile
+    container_name: turni-cms
+    restart: unless-stopped
+    depends_on:
+      cms-postgres:
+        condition: service_healthy
+    environment:
+      HOST: 0.0.0.0
+      PORT: 1337
+      # Points at the cms-postgres service on the compose network (not localhost).
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: cms-postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${CMS_POSTGRES_DB:-strapi}
+      DATABASE_USERNAME: ${CMS_POSTGRES_USER:-strapi}
+      DATABASE_PASSWORD: ${CMS_POSTGRES_PASSWORD:-strapi_local_password}
+      DATABASE_SSL: "false"
+      # Secrets — dev-only defaults so the local stack boots out of the box.
+      # Override every one of these in any shared/remote environment.
+      APP_KEYS: ${CMS_APP_KEYS:-devKeyA,devKeyB}
+      API_TOKEN_SALT: ${CMS_API_TOKEN_SALT:-devApiTokenSalt}
+      ADMIN_JWT_SECRET: ${CMS_ADMIN_JWT_SECRET:-devAdminJwtSecret}
+      TRANSFER_TOKEN_SALT: ${CMS_TRANSFER_TOKEN_SALT:-devTransferTokenSalt}
+      JWT_SECRET: ${CMS_JWT_SECRET:-devJwtSecret}
+      ENCRYPTION_KEY: ${CMS_ENCRYPTION_KEY:-devEncryptionKey}
+    ports:
+      - "${CMS_PORT:-1337}:1337"
+
+  core-site:
+    build:
+      # Built from the monorepo root: core-site shares the root workspace deps.
+      context: .
+      dockerfile: apps/core-site/Dockerfile
+    container_name: turni-core-site
+    restart: unless-stopped
+    environment:
+      PORT: 3002
+      # Server-side content fetches target the cms service on the compose network.
+      CMS_BASE_URL: http://cms:1337
+    ports:
+      - "${CORE_SITE_PORT:-3002}:3002"
 
 volumes:
   turni-cms-postgres-data:
