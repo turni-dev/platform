@@ -3,7 +3,11 @@
   "compilerOptions": {
     "rootDir": "../..",
     "outDir": "../../dist/apps/backend",
-    "tsBuildInfoFile": "../../dist/apps/backend/tsconfig.tsbuildinfo"
+    "tsBuildInfoFile": "../../dist/apps/backend/tsconfig.tsbuildinfo",
+    "types": [
+      "node",
+      "vitest/globals"
+    ]
   },
   "include": [
     "src/**/*.ts"

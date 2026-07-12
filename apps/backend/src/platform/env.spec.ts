@@ -13,9 +13,14 @@ describe('readHttpEnv', () => {
     delete process.env['HTTP_HOST'];
     delete process.env['HTTP_PORT'];
 
-    expect(readHttpEnv()).toEqual({
+    expect(
+      readHttpEnv({
+        WIDGET_SESSION_SECRET: 'test-session-secret-that-is-long-enough-for-hmac'
+      })
+    ).toEqual({
       HTTP_HOST: '0.0.0.0',
-      HTTP_PORT: 3000
+      HTTP_PORT: 3000,
+      WIDGET_SESSION_SECRET: 'test-session-secret-that-is-long-enough-for-hmac'
     });
   });
 
@@ -23,12 +28,18 @@ describe('readHttpEnv', () => {
     expect(
       readHttpEnv({
         HTTP_HOST: '127.0.0.1',
-        HTTP_PORT: '8080'
+        HTTP_PORT: '8080',
+        WIDGET_SESSION_SECRET: 'test-session-secret-that-is-long-enough-for-hmac'
       })
     ).toEqual({
       HTTP_HOST: '127.0.0.1',
-      HTTP_PORT: 8080
+      HTTP_PORT: 8080,
+      WIDGET_SESSION_SECRET: 'test-session-secret-that-is-long-enough-for-hmac'
     });
+  });
+
+  it('rejects a missing guest session secret', () => {
+    expect(() => readHttpEnv({ HTTP_PORT: '8080' })).toThrow();
   });
 
   it('rejects an out-of-range port', () => {

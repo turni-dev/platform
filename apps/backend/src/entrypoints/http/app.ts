@@ -1,18 +1,44 @@
+import fastifyWebsocket from '@fastify/websocket';
 import { Module } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
-import type { HealthStatus } from '@turni/contracts';
+import type { FastifyRequest } from 'fastify';
+import {
+  GuestSessionRequestSchema,
+  ProblemType,
+  type HealthStatus
+} from '@turni/contracts';
+import { GuestSessionService } from '../../modules/channels/application/guest-session.js';
+import { serializeCabinetStreamEvent } from '../../modules/channels/application/cabinet-sse.js';
+import { CabinetStream } from '../../modules/channels/application/cabinet-stream.js';
+import { WidgetChatConnection } from '../../modules/channels/application/widget-chat-connection.js';
+import { websocketPayloadToText } from './websocket-payload.js';
 
 const healthStatus: HealthStatus = {
   status: 'ok',
   service: 'turni-backend'
 };
 
+const HttpRoute = {
+  Health: '/healthz',
+  GuestSessions: '/api/v1/guest/sessions',
+  GuestChat: '/api/v1/guest/chat',
+  CabinetStream: '/api/v1/streams/cabinet'
+} as const;
+
 class HttpAppModule {}
 
 Module({})(HttpAppModule);
 
-export async function createHttpApp(): Promise<NestFastifyApplication> {
+export type HttpAppOptions = Readonly<{
+  guestSessionSecret?: string;
+  cabinetStream?: CabinetStream;
+  authorizeCabinetStream?: (request: FastifyRequest) => boolean;
+}>;
+
+export async function createHttpApp(
+  options?: HttpAppOptions
+): Promise<NestFastifyApplication> {
   const app = await NestFactory.create<NestFastifyApplication>(
     HttpAppModule,
     new FastifyAdapter({
@@ -24,7 +50,64 @@ export async function createHttpApp(): Promise<NestFastifyApplication> {
   );
 
   const fastify = app.getHttpAdapter().getInstance();
-  fastify.get('/healthz', () => healthStatus);
+  const cabinetStream = options?.cabinetStream ?? new CabinetStream();
+  const authorizeCabinetStream = options?.authorizeCabinetStream ?? (() => false);
+  await fastify.register(fastifyWebsocket);
+  fastify.get(HttpRoute.Health, () => healthStatus);
+
+  fastify.get(HttpRoute.CabinetStream, (request, reply) => {
+    if (!authorizeCabinetStream(request)) {
+      return reply.code(401).send({
+        type: ProblemType.Unauthorized,
+        title: 'Unauthorized',
+        status: 401
+      });
+    }
+
+    reply.hijack();
+    reply.raw.writeHead(200, {
+      'cache-control': 'no-cache, no-transform',
+      connection: 'keep-alive',
+      'content-type': 'text/event-stream'
+    });
+    reply.raw.write(': connected\n\n');
+    const unsubscribe = cabinetStream.subscribe((event) => {
+      reply.raw.write(serializeCabinetStreamEvent(event));
+    });
+    request.raw.once('close', unsubscribe);
+  });
+
+  if (options?.guestSessionSecret) {
+    const guestSessions = new GuestSessionService(options.guestSessionSecret);
+    fastify.post(HttpRoute.GuestSessions, (request, reply) => {
+      const parsedRequest = GuestSessionRequestSchema.safeParse(request.body);
+      if (!parsedRequest.success) {
+        return reply.code(400).send({
+          type: ProblemType.InvalidRequest,
+          title: 'Invalid request',
+          status: 400
+        });
+      }
+
+      return reply.code(201).send(guestSessions.issue(parsedRequest.data));
+    });
+
+    fastify.get(HttpRoute.GuestChat, { websocket: true }, (socket) => {
+      const connection = new WidgetChatConnection(guestSessions);
+      socket.on('message', (rawMessage) => {
+        let rawEvent: unknown;
+        try {
+          rawEvent = JSON.parse(websocketPayloadToText(rawMessage));
+        } catch {
+          rawEvent = undefined;
+        }
+
+        for (const event of connection.receive(rawEvent)) {
+          socket.send(JSON.stringify(event));
+        }
+      });
+    });
+  }
 
   await app.init();
 
