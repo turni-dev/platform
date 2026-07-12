@@ -1,0 +1,31 @@
+name: turni-marketing
+
+# Marketing / site track — deliberately kept OUT of the product stack (compose.yml).
+# Owns the CMS (Strapi) datastore, isolated from the RLS-hardened product Postgres.
+# The landing and Strapi app containers join this file once they gain Dockerfiles;
+# until then Strapi runs locally via `nx run cms:serve` against cms-postgres below.
+#
+# Usage: docker compose -f compose.marketing.yml up -d
+
+services:
+  cms-postgres:
+    image: postgres:16-alpine
+    container_name: turni-cms-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${CMS_POSTGRES_DB:-strapi}
+      POSTGRES_USER: ${CMS_POSTGRES_USER:-strapi}
+      POSTGRES_PASSWORD: ${CMS_POSTGRES_PASSWORD:-strapi_local_password}
+    ports:
+      - "${CMS_POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - turni-cms-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+volumes:
+  turni-cms-postgres-data:
