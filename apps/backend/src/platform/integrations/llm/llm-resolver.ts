@@ -5,6 +5,7 @@ import type {
   StructuredLlmRequest
 } from '@turni/llm';
 import type { z } from 'zod';
+import type { LlmPortRegistryPort } from './llm-port-registry.js';
 
 export type ActiveLlmModelConfig = Readonly<{
   role: LlmRole;
@@ -17,14 +18,12 @@ export interface LlmModelConfigSource {
   getActive(role: LlmRole): Promise<ActiveLlmModelConfig>;
 }
 
-export interface LlmPortRegistry {
-  get(config: ActiveLlmModelConfig): LlmPort;
-}
+export type { LlmPortRegistryPort as LlmPortRegistry } from './llm-port-registry.js';
 
 export class LlmResolver implements LlmPort {
   constructor(
     private readonly configs: LlmModelConfigSource,
-    private readonly adapters: LlmPortRegistry
+    private readonly adapters: LlmPortRegistryPort
   ) {}
 
   async generate<TSchema extends z.ZodType>(
