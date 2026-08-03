@@ -1,0 +1,24 @@
+{
+  "name": "widget",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/widget/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "command": "tsc -p packages/widget/tsconfig.build.json"
+    },
+    "test": {
+      "command": "vitest run --config vitest.config.ts packages/widget/src"
+    },
+    "lint": {
+      "command": "eslint packages/widget/src/**/*.ts"
+    },
+    "typecheck": {
+      "command": "tsc -p packages/widget/tsconfig.lib.json --noEmit"
+    }
+  },
+  "tags": [
+    "scope:widget",
+    "type:boundary"
+  ]
+}
