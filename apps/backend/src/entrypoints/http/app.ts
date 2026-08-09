@@ -11,7 +11,10 @@ import {
 import { GuestSessionService } from '../../modules/channels/application/guest-session.js';
 import { serializeCabinetStreamEvent } from '../../modules/channels/application/cabinet-sse.js';
 import { CabinetStream } from '../../modules/channels/application/cabinet-stream.js';
-import { WidgetChatConnection } from '../../modules/channels/application/widget-chat-connection.js';
+import {
+  WidgetChatConnection,
+  type WidgetMessageHandler
+} from '../../modules/channels/application/widget-chat-connection.js';
 import { websocketPayloadToText } from './websocket-payload.js';
 
 const healthStatus: HealthStatus = {
@@ -32,6 +35,7 @@ Module({})(HttpAppModule);
 
 export type HttpAppOptions = Readonly<{
   guestSessionSecret?: string;
+  widgetMessageHandler?: WidgetMessageHandler;
   cabinetStream?: CabinetStream;
   authorizeCabinetStream?: (request: FastifyRequest) => boolean;
 }>;
@@ -93,18 +97,20 @@ export async function createHttpApp(
     });
 
     fastify.get(HttpRoute.GuestChat, { websocket: true }, (socket) => {
-      const connection = new WidgetChatConnection(guestSessions);
+      const connection = new WidgetChatConnection(guestSessions, options.widgetMessageHandler);
       socket.on('message', (rawMessage) => {
-        let rawEvent: unknown;
-        try {
-          rawEvent = JSON.parse(websocketPayloadToText(rawMessage));
-        } catch {
-          rawEvent = undefined;
-        }
+        void (async (): Promise<void> => {
+          let rawEvent: unknown;
+          try {
+            rawEvent = JSON.parse(websocketPayloadToText(rawMessage));
+          } catch {
+            rawEvent = undefined;
+          }
 
-        for (const event of connection.receive(rawEvent)) {
-          socket.send(JSON.stringify(event));
-        }
+          for (const event of await connection.receive(rawEvent)) {
+            socket.send(JSON.stringify(event));
+          }
+        })();
       });
     });
   }

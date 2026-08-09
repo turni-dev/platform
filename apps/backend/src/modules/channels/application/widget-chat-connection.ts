@@ -10,13 +10,24 @@ import {
 } from '@turni/contracts';
 import type { GuestSessionService } from './guest-session.js';
 
+export type WidgetMessageHandler = (
+  input: Readonly<{
+    clientMsgId: string;
+    text: string;
+    receivedAt: Date;
+  }>
+) => Promise<readonly WidgetServerEvent[]>;
+
 export class WidgetChatConnection {
   private activeSession = false;
   private readonly receivedMessageIds = new Set<string>();
 
-  constructor(private readonly sessions: GuestSessionService) {}
+  constructor(
+    private readonly sessions: GuestSessionService,
+    private readonly handleMessage?: WidgetMessageHandler
+  ) {}
 
-  receive(rawEvent: unknown, now = new Date()): readonly WidgetServerEvent[] {
+  async receive(rawEvent: unknown, now = new Date()): Promise<readonly WidgetServerEvent[]> {
     const parsedEvent = WidgetClientEventSchema.safeParse(rawEvent);
     if (!parsedEvent.success) {
       return [this.error(WidgetErrorCode.InvalidEvent)];
@@ -50,7 +61,7 @@ export class WidgetChatConnection {
     }
 
     this.receivedMessageIds.add(parsedEvent.data.clientMsgId);
-    return [
+    const acceptedEvents: readonly WidgetServerEvent[] = [
       WidgetServerEventSchema.parse({
         type: WidgetServerEventType.MessageNew,
         id: parsedEvent.data.clientMsgId,
@@ -60,6 +71,23 @@ export class WidgetChatConnection {
       }),
       this.status('typing')
     ];
+
+    if (this.handleMessage === undefined) {
+      return acceptedEvents;
+    }
+
+    try {
+      const completedEvents = WidgetServerEventSchema.array().parse(
+        await this.handleMessage({
+          clientMsgId: parsedEvent.data.clientMsgId,
+          text: parsedEvent.data.text,
+          receivedAt: now
+        })
+      );
+      return [...acceptedEvents, ...completedEvents];
+    } catch {
+      return acceptedEvents;
+    }
   }
 
   private error(
