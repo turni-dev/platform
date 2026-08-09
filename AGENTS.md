@@ -1,61 +1,47 @@
-# AGENTS.md — Turni
+# AGENTS.md - Turni
 
-Turni — платформа ИИ-сотрудников (первый шаблон «администратор общепита»). Монорепо.
-**Единственный источник правды — заметки в Obsidian** (через Obsidian MCP, папка «1. Projects/Личное/ИИ сотрудник или команда»). Перед реализацией задачи открой профильную заметку. Если код и заметки расходятся — заметки главнее; не выдумывай, помечай вопросы.
+Turni is a TypeScript/Nx monorepo for AI employees; MVP-1 starts with a restaurant administrator.
 
-## Источник правды (читать по теме)
-- Обзор: «Обзор проекта», «Платформа — ядро продукта», «Решения и видение»
-- Стек/решения: «Тех-решения (консилиум)», «Принятые решения — производство (свод)»
-- Архитектура: «Архитектура и задачи разработки», «Порты и адаптеры», «Проектирование — данные и API», «Проектирование — ревью специалистов», «Схема БД — детально», «НФТ и фронт-архитектура»
-- LLM: «LLM-рантайм — RU-first (замена OpenRouter)»
-- Policy/качество: «Сценарии MVP-1 и policy-матрица», «Eval-датасет seed (MVP-1)», «Аналитика и качество», «Безопасность и доверие»
-- Задачи: «Доска MVP-1» (префиксы С0…С6; бери из лейна «Готово к работе», WIP=1)
+## Source Of Truth
 
-## Стек
-TypeScript strict · Nx-монорепо · NestJS (Fastify) модульный монолит · Drizzle · PostgreSQL (self-host) + pgvector(vector(768), HNSW cosine; primary embeddings: Yandex Text Embeddings v2) + citext · Redis + BullMQ · XState (FSM) · Next.js + shadcn (Tailwind только в packages/ui) + SCSS · RU-first LLM за LlmPort (YandexGPT primary; Sber/ProxyAPI optional later) · Docker Compose (без k8s) · GHCR.
+Obsidian notes in `1. Projects/Личное/ИИ сотрудник или команда` are authoritative. Before implementation, read the task card in `Доска MVP-1` (take only `Готово к работе`, WIP=1) and its linked spec. If notes and code differ, follow notes and record the question.
 
-Embedding note: `EmbeddingsGigaR` is excluded from the current schema because its current public dimension is 2560; see ADR 0005 before changing memory embeddings.
+Read only the relevant notes: overview (`Обзор проекта`, `Платформа — ядро продукта`), architecture/data/API, LLM runtime, policy/eval/security, or NFR/frontend architecture. Do not load unrelated notes.
 
-## Структура
-- `apps/backend`: модульный DDD-монолит; `src/entrypoints/{http,worker}` — composition roots.
-- `apps/backend/src/modules/{channels,agent-core,memory,policy,approvals,reporting,tenancy}`: каждый bounded context содержит `domain`, `application`, `infrastructure`.
-- `apps/backend/src/platform`: database · queue · tenant-context · observability · integrations/{llm/{gigachat,yandexgpt,proxyapi,ru-embeddings},telegram,yookassa,s3,strapi,smtp} · fakes.
-- `apps/`: web · landing · cms.
-- `packages/`: contracts · ui · widget · fsm · llm. Сюда выносится только код, реально используемый несколькими системами, или стабильные внешние границы.
-- `tools/bootstrap` · `ops/{compose,containers,observability,sops}` · `docs/adr/`.
+## Architecture
 
-Backend-модуль не импортирует `infrastructure` другого модуля. Drizzle-схемы, миграции и репозитории принадлежат bounded context; `platform/database` содержит соединение, транзакции и `withTenant`. Vendor SDK разрешён только в `platform/integrations`. `packages/llm` содержит только `LlmPort`, vendor-neutral DTO и валидацию.
+- Strict TypeScript, Nx, NestJS/Fastify modular monolith, Drizzle/Postgres+pgvector/citext, Redis/BullMQ, XState, Next.js, shadcn, SCSS, Docker Compose, GHCR.
+- RU-first LLM behind `LlmPort`: YandexGPT primary; Sber/ProxyAPI only later; never OpenRouter. Yandex Text Embeddings v2 is 768-dimensional; see ADR 0005 before changing it.
+- `apps/backend/src/modules/<context>/{domain,application,infrastructure}` owns its bounded context. Entrypoints are `src/entrypoints/{http,worker}`.
+- Shared external boundaries only: `packages/contracts`, `ui`, `widget`, `fsm`, `llm`. Code, paths and DB use English/kebab-case; UI uses Russian and next-intl.
+- `platform/database` owns connections, transactions and `withTenant`; integrations own vendor SDKs. A backend module never imports another module's infrastructure.
 
-Имена: npm-scope `@turni/*`; lowercase, kebab-case; английский в коде/путях/БД, UI — русский.
+## Non-Negotiables
 
-## Железные правила (нарушение = красный ревью)
-1. Ничего мимо PolicyEngine (default-deny). Аллергены/деньги/жалобы → всегда approval (locked-политики, read-only в UI).
-2. Vendor-тип не пересекает границу порта — только наши Zod-DTO (anti-corruption). Внешние сервисы только за портами; у каждого есть Fake-адаптер.
-3. Мультитенантность: всё через `withTenant` (SET LOCAL app.tenant_id), FORCE RLS, роль app_rw NOBYPASSRLS. «Голый» db в worker запрещён (CI-grep на sql.raw). RLS не обходить.
-4. strict TS (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`), `any` запрещён eslint'ом, no-floating-promises. Zod на каждой границе (HTTP/WS/очереди/env/LLM-вывод). Единственный источник типов — `@turni/contracts`.
-5. Промпты в БД, immutable-версии; `active=true` ставит ТОЛЬКО CI после зелёного eval. Eval-гейт FN≤2% — блокирующий.
-6. PII: redaction перед LLM (fail-closed) + hash+encrypt+mask; тела сообщений не в логи (pino redact). RU-first; foreign (ProxyAPI) только с redaction. **НЕ использовать OpenRouter** (недоступен в РФ).
-7. Idempotency на мутирующих POST и вебхуках (Postgres, не Redis). Undo 30с. FSM-статусы = text+CHECK (не enum). id = UUIDv7.
-8. Миграции expand/contract; `CREATE INDEX CONCURRENTLY` вне транзакции. Секреты только sops/age — не в коде/логах/промптах.
-9. Гостю не стримим (policy видит весь ответ целиком) + typing-индикатор. p95 ≤10с. Агент всегда раскрывает, что он ИИ.
-10. OWASP Top 10:2025 + OWASP LLM Top 10 — обязательный минимум.
+1. Every action passes `PolicyEngine` (default deny). Allergens, money and complaints always require locked approval policies.
+2. Vendor types stay inside integrations. Boundaries use our Zod DTOs and each external port has a Fake adapter.
+3. Tenant data uses `withTenant`, `SET LOCAL app.tenant_id`, FORCE RLS and `app_rw` with NOBYPASSRLS. No raw worker DB access or RLS bypass.
+4. Keep strict TS: no `any`, no floating promises, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`. Validate every HTTP/WS/queue/env/LLM boundary with Zod; contracts are the only type source.
+5. Prompts are immutable DB versions; only CI may activate one after a green eval. FN <=2% blocks release.
+6. Redact PII before LLM (fail closed); hash/encrypt/mask storage; never log message bodies or secrets. Foreign providers require redaction.
+7. Mutating POST/webhooks are Postgres-idempotent; undo is 30 seconds; FSM statuses are text+CHECK; IDs are UUIDv7.
+8. Use expand/contract migrations; concurrent indexes outside transactions; secrets only through sops/age.
+9. Guests receive completed policy-checked responses, never tokens; show typing; p95 <=10s; disclose that the agent is AI.
+10. Meet OWASP Top 10:2025 and OWASP LLM Top 10.
 
-## Как работать над задачей
-1. Возьми задачу из «Доска MVP-1» (лейн «Готово к работе»; префикс спринта и исполнитель — в карточке). Прочитай связанную спеку-заметку.
-2. Mini-спека (цель / вход / выход / критерии / ловушки) — первым комментом к задаче.
-3. Trunk-based: ветка ≤2 дня, PR ≤400 строк, фичефлаги (деплой ≠ релиз).
-4. DoD: PR в main · тесты + eval-гейт зелёные · события аналитики · ничего мимо policy · ADR/доки обновлены.
-5. CODEOWNERS (`packages/contracts`, миграции) — без ревью фаундера не менять.
+## Delivery Loop
 
-## Команды (заполнить при скаффолде)
-- `npm install`
-- `docker compose up` — Postgres+pgvector, Redis, MinIO
-- `npm run nx -- run-many -t serve | test | lint | typecheck`
-- `npm run eval` — eval-гейт (FN≤2%)
-- `npm run db:migrate` — миграции (expand/contract)
+1. Add a mini-spec comment to the card: goal, input, output, criteria and traps.
+2. Keep scope narrow: branch <=2 days, PR <=400 lines, feature flag where deploy differs from release. Respect CODEOWNERS; do not change contracts or migrations without founder review.
+3. Write the focused test first. After each edit run affected tests/typecheck/lint; run full affected workflows and eval when closing the card.
+4. Commit atomic verified changes. DoD: main, tests and eval green, analytics events, policy preserved, docs/ADR updated, card closed with a comment.
 
-## Не делать
-- LLM напрямую в domain (только через `LlmPort`). OpenRouter — нет (RU-first).
-- Хардкод строк UI в JSX (i18n-словарь next-intl). Tailwind вне `packages/ui`.
-- Пользовательский текст в shell-командах (homoglyph/инъекции). Сырой vendor-тип за границей порта.
-- Токен-стрим гостю. Прямой доступ к prod-БД в обход `withTenant`.
+## Efficient Agent Work
+
+- Read targeted files/notes and batch independent inspections. Do not re-read known context or produce progress narration without new information.
+- Use subagents only for independent, non-overlapping files; they reduce latency, not total token cost.
+- Start a new session after a completed, committed logical task. Escalate immediately for policy bypass, red eval, PII leak or pilot incident.
+
+## Commands
+
+`npm install` · `docker compose up` · `npm run nx -- run-many -t serve|test|lint|typecheck` · `npm run eval` · `npm run db:migrate`
