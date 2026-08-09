@@ -15,8 +15,12 @@ import { FakePolicyClassifier } from '../../../modules/policy/application/fake-p
 import { PolicyCascade } from '../../../modules/policy/application/policy-cascade.js';
 import { PolicyEngine } from '../../../modules/policy/domain/policy-engine.js';
 import { FakeDomainEventBus } from '../../../modules/reporting/application/fake-domain-event-bus.js';
+import { WidgetRoutingKeyService } from '../../../modules/channels/application/widget-routing-key.js';
+import { FakeGuestSessionContextResolver } from '../../../modules/channels/application/guest-session-context.js';
+import type { GuestSessionContext } from '../../../modules/channels/application/guest-session-context.js';
 
 const sessionSecret = 'test-session-secret-that-is-long-enough-for-hmac';
+const routingSecret = 'test-routing-secret-that-is-long-enough-for-hmac';
 const guestMessageId = '01900000-0000-7000-8000-000000000001';
 const agentMessageId = '01900000-0000-7000-8000-000000000002';
 const pipelineIds = {
@@ -26,11 +30,33 @@ const pipelineIds = {
   correlationId: '01900000-0000-7000-8000-000000000013'
 } as const;
 
-async function issueSession(app: Awaited<ReturnType<typeof createHttpApp>>): Promise<string> {
+function routingFixture(): Readonly<{ widgetKey: string; context: GuestSessionContext }> {
+  const claims = {
+    tenantId: pipelineIds.tenantId,
+    agentId: '01900000-0000-7000-8000-000000000014',
+    connectionId: '01900000-0000-7000-8000-000000000015',
+    expiresAt: Math.floor(Date.now() / 1_000) + 3_600,
+    kid: 'test'
+  };
+  return {
+    widgetKey: new WidgetRoutingKeyService(routingSecret).issue(claims),
+    context: {
+      tenantId: claims.tenantId,
+      agentId: claims.agentId,
+      connectionId: claims.connectionId,
+      sessionId: '01900000-0000-7000-8000-000000000016'
+    }
+  };
+}
+
+async function issueSession(
+  app: Awaited<ReturnType<typeof createHttpApp>>,
+  widgetKey: string
+): Promise<string> {
   const response = await app.inject({
     method: 'POST',
     url: '/api/v1/guest/sessions',
-    payload: { widgetKey: 'widget_public_demo' }
+    payload: { widgetKey }
   });
 
   return GuestSessionSchema.parse(response.json()).token;
@@ -107,6 +133,7 @@ function createPipelineHandler(entries: readonly FrontlineFaqEntry[]): Readonly<
 
 describe('FAQ chat WebSocket composition', () => {
   it('delivers a completed FAQ agent reply without a token stream', async () => {
+    const routing = routingFixture();
     const pipeline = createPipelineHandler([
       {
         tenantId: pipelineIds.tenantId,
@@ -116,11 +143,15 @@ describe('FAQ chat WebSocket composition', () => {
     ]);
     const app = await createHttpApp({
       guestSessionSecret: sessionSecret,
-      widgetMessageHandler: pipeline.handler
+      widgetRoutingSecret: routingSecret,
+      widgetMessageHandler: pipeline.handler,
+      guestSessionContextResolver: new FakeGuestSessionContextResolver({
+        [routing.widgetKey]: routing.context
+      })
     });
 
     try {
-      const sessionToken = await issueSession(app);
+      const sessionToken = await issueSession(app, routing.widgetKey);
       const fastify = app.getHttpAdapter().getInstance();
       const socket = await fastify.injectWS('/api/v1/guest/chat');
       try {
@@ -168,13 +199,18 @@ describe('FAQ chat WebSocket composition', () => {
         response: 'Не должно быть отправлено.'
       }
     ]);
+    const routing = routingFixture();
     const app = await createHttpApp({
       guestSessionSecret: sessionSecret,
-      widgetMessageHandler: pipeline.handler
+      widgetRoutingSecret: routingSecret,
+      widgetMessageHandler: pipeline.handler,
+      guestSessionContextResolver: new FakeGuestSessionContextResolver({
+        [routing.widgetKey]: routing.context
+      })
     });
 
     try {
-      const sessionToken = await issueSession(app);
+      const sessionToken = await issueSession(app, routing.widgetKey);
       const fastify = app.getHttpAdapter().getInstance();
       const socket = await fastify.injectWS('/api/v1/guest/chat');
       try {

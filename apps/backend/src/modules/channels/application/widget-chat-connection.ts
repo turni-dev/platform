@@ -9,22 +9,26 @@ import {
   type WidgetServerEvent
 } from '@turni/contracts';
 import type { GuestSessionService } from './guest-session.js';
+import type { GuestSessionContext, GuestSessionContextResolver } from './guest-session-context.js';
 
 export type WidgetMessageHandler = (
   input: Readonly<{
     clientMsgId: string;
     text: string;
     receivedAt: Date;
+    context: GuestSessionContext;
   }>
 ) => Promise<readonly WidgetServerEvent[]>;
 
 export class WidgetChatConnection {
   private activeSession = false;
+  private context: GuestSessionContext | undefined;
   private readonly receivedMessageIds = new Set<string>();
 
   constructor(
     private readonly sessions: GuestSessionService,
-    private readonly handleMessage?: WidgetMessageHandler
+    private readonly handleMessage?: WidgetMessageHandler,
+    private readonly contexts?: GuestSessionContextResolver
   ) {}
 
   async receive(rawEvent: unknown, now = new Date()): Promise<readonly WidgetServerEvent[]> {
@@ -35,7 +39,11 @@ export class WidgetChatConnection {
 
     if (parsedEvent.data.type === WidgetClientEventType.SessionResume) {
       try {
-        this.sessions.verify(parsedEvent.data.token, now);
+        const routing = this.sessions.verify(parsedEvent.data.token, now);
+        if (this.contexts === undefined) throw new Error('Missing session context resolver.');
+        const context = await this.contexts.resolve(routing.widgetKey);
+        if (context.tenantId !== routing.tenantId || context.agentId !== routing.agentId || context.connectionId !== routing.connectionId) throw new Error('Invalid session context.');
+        this.context = Object.freeze(context);
         this.activeSession = true;
         return [
           WidgetServerEventSchema.parse({
@@ -48,7 +56,7 @@ export class WidgetChatConnection {
       }
     }
 
-    if (!this.activeSession) {
+    if (!this.activeSession || this.context === undefined) {
       return [this.error(WidgetErrorCode.InvalidSession)];
     }
 
@@ -81,7 +89,8 @@ export class WidgetChatConnection {
         await this.handleMessage({
           clientMsgId: parsedEvent.data.clientMsgId,
           text: parsedEvent.data.text,
-          receivedAt: now
+          receivedAt: now,
+          context: this.context
         })
       );
       return [...acceptedEvents, ...completedEvents];

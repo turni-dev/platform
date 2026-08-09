@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { GuestSessionService } from '../guest-session.js';
+import { FakeGuestSessionContextResolver } from '../guest-session-context.js';
+import { WidgetRoutingKeyService } from '../widget-routing-key.js';
 import {
   WidgetChatConnection,
   type WidgetMessageHandler
@@ -25,8 +27,11 @@ describe('WidgetChatConnection', () => {
   });
 
   it('appends a completed agent reply only after an accepted guest message', async () => {
-    const sessions = new GuestSessionService(secret);
-    const session = sessions.issue({ widgetKey: 'widget_public_demo' }, now);
+    const routingKeys = new WidgetRoutingKeyService(secret);
+    const widgetKey = routingKeys.issue({ tenantId: '01900000-0000-7000-8000-000000000010', agentId: '01900000-0000-7000-8000-000000000011', connectionId: '01900000-0000-7000-8000-000000000012', expiresAt: 1_900_000_000, kid: 'primary' });
+    const sessions = new GuestSessionService(secret, routingKeys);
+    const session = sessions.issue({ widgetKey }, now);
+    const contexts = new FakeGuestSessionContextResolver({ [widgetKey]: { tenantId: '01900000-0000-7000-8000-000000000010', agentId: '01900000-0000-7000-8000-000000000011', connectionId: '01900000-0000-7000-8000-000000000012', sessionId: '01900000-0000-7000-8000-000000000013' } });
     const handledMessages: unknown[] = [];
     const handler: WidgetMessageHandler = (message) => {
       handledMessages.push(message);
@@ -40,7 +45,7 @@ describe('WidgetChatConnection', () => {
         }
       ]);
     };
-    const connection = new WidgetChatConnection(sessions, handler);
+    const connection = new WidgetChatConnection(sessions, handler, contexts);
 
     await expect(connection.receive({ type: 'session.resume', token: session.token }, now)).resolves.toEqual([
       { type: 'session.ok', token: session.token }
@@ -72,8 +77,9 @@ describe('WidgetChatConnection', () => {
     expect(handledMessages).toEqual([
       {
         clientMsgId: '01900000-0000-7000-8000-000000000002',
-        text: 'Можно забронировать стол?',
-        receivedAt: now
+          text: 'Можно забронировать стол?',
+          receivedAt: now,
+          context: { tenantId: '01900000-0000-7000-8000-000000000010', agentId: '01900000-0000-7000-8000-000000000011', connectionId: '01900000-0000-7000-8000-000000000012', sessionId: '01900000-0000-7000-8000-000000000013' }
       }
     ]);
     await expect(connection.receive(message, now)).resolves.toEqual([]);

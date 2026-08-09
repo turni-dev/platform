@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { IsoDateTimeSchema, UuidSchema } from '../common.js';
 
-const WidgetKeySchema = z.string().trim().min(1).max(128);
+const WidgetKeySchema = z.string().trim().min(1).max(1024);
 const GuestSessionTokenSchema = z.string().min(32).max(2048);
 const MessageTextSchema = z.string().trim().min(1).max(4000);
 

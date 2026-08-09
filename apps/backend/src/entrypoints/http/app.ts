@@ -9,6 +9,8 @@ import {
   type HealthStatus
 } from '@turni/contracts';
 import { GuestSessionService } from '../../modules/channels/application/guest-session.js';
+import type { GuestSessionContextResolver } from '../../modules/channels/application/guest-session-context.js';
+import { WidgetRoutingKeyService } from '../../modules/channels/application/widget-routing-key.js';
 import { serializeCabinetStreamEvent } from '../../modules/channels/application/cabinet-sse.js';
 import { CabinetStream } from '../../modules/channels/application/cabinet-stream.js';
 import {
@@ -35,6 +37,8 @@ Module({})(HttpAppModule);
 
 export type HttpAppOptions = Readonly<{
   guestSessionSecret?: string;
+  widgetRoutingSecret?: string;
+  guestSessionContextResolver?: GuestSessionContextResolver;
   widgetMessageHandler?: WidgetMessageHandler;
   cabinetStream?: CabinetStream;
   authorizeCabinetStream?: (request: FastifyRequest) => boolean;
@@ -43,6 +47,21 @@ export type HttpAppOptions = Readonly<{
 export async function createHttpApp(
   options?: HttpAppOptions
 ): Promise<NestFastifyApplication> {
+  const guestSessionSecret = options?.guestSessionSecret;
+  let widgetRoutingKeys: WidgetRoutingKeyService | undefined;
+  if (guestSessionSecret !== undefined) {
+    if (options?.widgetRoutingSecret === undefined) {
+      throw new Error('Widget routing secret is required when guest sessions are enabled.');
+    }
+    if (options.widgetRoutingSecret === guestSessionSecret) {
+      throw new Error('Widget routing secret must differ from guest session secret.');
+    }
+    if (options.guestSessionContextResolver === undefined) {
+      throw new Error('Guest session context resolver is required when guest sessions are enabled.');
+    }
+    widgetRoutingKeys = new WidgetRoutingKeyService(options.widgetRoutingSecret);
+  }
+
   const app = await NestFactory.create<NestFastifyApplication>(
     HttpAppModule,
     new FastifyAdapter({
@@ -81,8 +100,8 @@ export async function createHttpApp(
     request.raw.once('close', unsubscribe);
   });
 
-  if (options?.guestSessionSecret) {
-    const guestSessions = new GuestSessionService(options.guestSessionSecret);
+  if (guestSessionSecret !== undefined && widgetRoutingKeys !== undefined) {
+    const guestSessions = new GuestSessionService(guestSessionSecret, widgetRoutingKeys);
     fastify.post(HttpRoute.GuestSessions, (request, reply) => {
       const parsedRequest = GuestSessionRequestSchema.safeParse(request.body);
       if (!parsedRequest.success) {
@@ -93,11 +112,23 @@ export async function createHttpApp(
         });
       }
 
-      return reply.code(201).send(guestSessions.issue(parsedRequest.data));
+      try {
+        return reply.code(201).send(guestSessions.issue(parsedRequest.data));
+      } catch {
+        return reply.code(400).send({
+          type: ProblemType.InvalidRequest,
+          title: 'Invalid request',
+          status: 400
+        });
+      }
     });
 
     fastify.get(HttpRoute.GuestChat, { websocket: true }, (socket) => {
-      const connection = new WidgetChatConnection(guestSessions, options.widgetMessageHandler);
+      const connection = new WidgetChatConnection(
+        guestSessions,
+        options?.widgetMessageHandler,
+        options?.guestSessionContextResolver
+      );
       socket.on('message', (rawMessage) => {
         void (async (): Promise<void> => {
           let rawEvent: unknown;
