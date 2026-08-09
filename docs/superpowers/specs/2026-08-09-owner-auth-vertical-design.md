@@ -29,6 +29,12 @@ Auth DTOs live in `packages/contracts` as Zod schemas. Turni owns the applicatio
 
 Bootstrap registration is the sole operation that starts without a tenant context. It runs in a narrowly scoped transaction that creates the tenant before creating RLS-protected user and session rows; every later read or mutation uses `withTenant`.
 
+## Reference-code adoption
+
+The implementation starts by copying the reference project's `domain/auth` and `domain/user` directories into a temporary adaptation branch, preserving their tests as behavioral evidence. The adaptation then removes unsupported files rather than retaining dead compatibility layers. It replaces Prisma repositories with Turni Postgres/RLS repositories, class-validator DTOs with `packages/contracts` Zod schemas, global Nest wiring with bounded-context composition, and Redis-only persistence with the ownership model above.
+
+We retain and adapt the tested OTP, resend, refresh, token, notification, and device-service flow. We do not retain the reference's unsafe refresh-as-access guard, plaintext refresh persistence, or fingerprint-only auto-login. The final repository contains only Turni modules and tests; the copied source path itself is not committed.
+
 ## HTTP and browser shape
 
 Public endpoints are `POST /auth/register/request`, `POST /auth/register/verify`, `POST /auth/login/request`, `POST /auth/login/verify`, `POST /auth/refresh`, and `POST /auth/logout`. Protected identity lookup is `GET /auth/me`. Auth cookies use a narrow path, HTTPS-only production settings, and Origin/CSRF checks for cookie-authenticated mutations.
