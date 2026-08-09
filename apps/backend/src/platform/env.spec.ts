@@ -15,12 +15,16 @@ describe('readHttpEnv', () => {
 
     expect(
       readHttpEnv({
-        WIDGET_SESSION_SECRET: 'test-session-secret-that-is-long-enough-for-hmac'
+        DATABASE_URL: 'postgresql://turni:turni@localhost:5432/turni',
+        WIDGET_SESSION_SECRET: 'test-session-secret-that-is-long-enough-for-hmac',
+        WIDGET_ROUTING_SECRET: 'test-routing-secret-that-is-long-enough-for-hmac'
       })
     ).toEqual({
       HTTP_HOST: '0.0.0.0',
       HTTP_PORT: 3000,
-      WIDGET_SESSION_SECRET: 'test-session-secret-that-is-long-enough-for-hmac'
+      DATABASE_URL: 'postgresql://turni:turni@localhost:5432/turni',
+      WIDGET_SESSION_SECRET: 'test-session-secret-that-is-long-enough-for-hmac',
+      WIDGET_ROUTING_SECRET: 'test-routing-secret-that-is-long-enough-for-hmac'
     });
   });
 
@@ -29,12 +33,16 @@ describe('readHttpEnv', () => {
       readHttpEnv({
         HTTP_HOST: '127.0.0.1',
         HTTP_PORT: '8080',
-        WIDGET_SESSION_SECRET: 'test-session-secret-that-is-long-enough-for-hmac'
+        DATABASE_URL: 'postgresql://turni:turni@localhost:5432/turni',
+        WIDGET_SESSION_SECRET: 'test-session-secret-that-is-long-enough-for-hmac',
+        WIDGET_ROUTING_SECRET: 'test-routing-secret-that-is-long-enough-for-hmac'
       })
     ).toEqual({
       HTTP_HOST: '127.0.0.1',
       HTTP_PORT: 8080,
-      WIDGET_SESSION_SECRET: 'test-session-secret-that-is-long-enough-for-hmac'
+      DATABASE_URL: 'postgresql://turni:turni@localhost:5432/turni',
+      WIDGET_SESSION_SECRET: 'test-session-secret-that-is-long-enough-for-hmac',
+      WIDGET_ROUTING_SECRET: 'test-routing-secret-that-is-long-enough-for-hmac'
     });
   });
 
@@ -45,8 +53,22 @@ describe('readHttpEnv', () => {
   it('rejects an out-of-range port', () => {
     expect(() =>
       readHttpEnv({
-        HTTP_PORT: '65536'
+        HTTP_PORT: '65536',
+        DATABASE_URL: 'postgresql://turni:turni@localhost:5432/turni',
+        WIDGET_SESSION_SECRET: 'test-session-secret-that-is-long-enough-for-hmac',
+        WIDGET_ROUTING_SECRET: 'test-routing-secret-that-is-long-enough-for-hmac'
       })
     ).toThrow();
+  });
+
+  it('requires a database URL and distinct 32-byte widget secrets', () => {
+    const secret = 'test-session-secret-that-is-long-enough-for-hmac';
+
+    expect(() => readHttpEnv({ WIDGET_SESSION_SECRET: secret, WIDGET_ROUTING_SECRET: secret })).toThrow();
+    expect(() => readHttpEnv({
+      DATABASE_URL: 'postgresql://turni:turni@localhost:5432/turni',
+      WIDGET_SESSION_SECRET: secret,
+      WIDGET_ROUTING_SECRET: secret
+    })).toThrow();
   });
 });
