@@ -88,6 +88,12 @@ jobs:
       - name: Build
         run: npm run nx -- run-many -t build
 
+      - name: Test widget gzip size check
+        run: npm run nx -- run widget:check-size-test
+
+      - name: Check widget gzip size
+        run: npm run nx -- run widget:check-size
+
   publish-image:
     name: publish backend image
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

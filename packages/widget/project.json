@@ -7,6 +7,15 @@
     "build": {
       "command": "tsc -p packages/widget/tsconfig.build.json"
     },
+    "check-size": {
+      "dependsOn": [
+        "build"
+      ],
+      "command": "node tools/widget/check-bundle-size.mjs dist/packages/widget/index.js"
+    },
+    "check-size-test": {
+      "command": "vitest run tools/widget/check-bundle-size.spec.mjs"
+    },
     "test": {
       "command": "vitest run --config vitest.config.ts packages/widget/src"
     },

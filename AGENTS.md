@@ -36,6 +36,11 @@ Read only the relevant notes: overview (`Обзор проекта`, `Платф
 3. Write the focused test first. After each edit run affected tests/typecheck/lint; run full affected workflows and eval when closing the card.
 4. Commit atomic verified changes. DoD: main, tests and eval green, analytics events, policy preserved, docs/ADR updated, card closed with a comment.
 
+## Test and Artifact Hygiene
+
+- Put all new tests in a sibling `__tests__/` directory; do not colocate `*.spec.*` files with production code.
+- Do not leave generated `.js`, `.d.ts`, or `.map` artifacts in source directories. Generated outputs belong only in configured build directories and must be removed before committing.
+
 ## Efficient Agent Work
 
 - Read targeted files/notes and batch independent inspections. Do not re-read known context or produce progress narration without new information.
