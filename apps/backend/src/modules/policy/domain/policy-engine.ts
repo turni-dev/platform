@@ -24,45 +24,18 @@ interface PolicyGuard {
   readonly matches: (normalizedText: string) => boolean;
 }
 
-const LOCKED_APPROVAL_GUARDS: readonly PolicyGuard[] = Object.freeze([
-  {
-    rule: 'prompt-injection',
-    verdict: 'approval',
-    riskScore: 10,
-    locked: true,
-    matches: (text) =>
-      /игнорир\S* (?:предыдущ\S* |все )?инструкц|системн\S* промпт|reveal (?:the )?system prompt|ignore (?:all )?(?:previous )?instructions/u.test(
-        text
-      )
-  },
-  {
-    rule: 'allergy-health',
-    verdict: 'approval',
-    riskScore: 10,
-    locked: true,
-    matches: (text) =>
-      /аллерги\S*|аллерген\S*|анафилакс|диабет\S*|беременност\S*|медицин\S*|здоровь\S*/u.test(
-        text
-      )
-  },
-  {
-    rule: 'money',
-    verdict: 'approval',
-    riskScore: 9,
-    locked: true,
-    matches: (text) =>
-      /предоплат\S*|оплат\S*|сч[её]т\S*|ден[еь]г\S*|стоимост\S*|цен[ауые]\S*|чаев\S*/u.test(
-        text
-      )
-  },
-  {
-    rule: 'complaint-refund',
-    verdict: 'approval',
-    riskScore: 8,
-    locked: true,
-    matches: (text) => /жалоб\S*|жалова\S*|претензи\S*|возврат\S*|верните ден/u.test(text)
-  }
-]);
+const LOCKED_APPROVAL_GUARDS: readonly PolicyGuard[] = Object.freeze(
+  LOCKED_POLICY_SEEDS.map((seed) => {
+    const rule = compilePolicyRule(seed);
+    return Object.freeze({
+      rule: rule.id,
+      verdict: rule.verdict,
+      riskScore: rule.riskScore,
+      locked: rule.locked,
+      matches: rule.matches
+    });
+  })
+);
 
 const NON_LOCKED_GUARDS: readonly PolicyGuard[] = Object.freeze([
   {
@@ -132,3 +105,5 @@ export class PolicyEngine {
     return selectedGuard === undefined ? DEFAULT_DENY_OUTCOME : toOutcome(selectedGuard);
   }
 }
+import { LOCKED_POLICY_SEEDS } from './locked-policy-seeds.js';
+import { compilePolicyRule } from './policy-rule-format.js';
