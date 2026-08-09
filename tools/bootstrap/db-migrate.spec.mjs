@@ -27,7 +27,8 @@ describe('database migration runner', () => {
         '0010_reporting.sql',
         '0011_tenancy_billing.sql',
         '0012_memory_yandex_embeddings.sql',
-        '0013_memory_yandex_hnsw.concurrent.sql'
+        '0013_memory_yandex_hnsw.concurrent.sql',
+        '0014_policy_model_routing.sql'
       ]
     );
     assert.equal(migrations[5]?.transactional, false);

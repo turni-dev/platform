@@ -76,6 +76,7 @@ jobs:
           npm run nx -- run-many -t test --parallel=1
           npm run nx -- run-many -t lint --parallel=1
           npm run nx -- run-many -t typecheck --parallel=1
+          npm run eval
 
       - name: Test bootstrap tools
         run: |

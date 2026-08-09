@@ -3,6 +3,7 @@ import { LlmPortRegistry } from './llm-port-registry.js';
 import { LlmResolver } from './llm-resolver.js';
 import { LlmResilience } from './resilience/llm-resilience.js';
 import { ResilientLlmPort } from './resilience/resilient-llm-port.js';
+import { RedactingLlmPort } from '@turni/llm';
 import { YandexOpenAiTextAdapter } from './yandex-openai/yandex-openai-text.adapter.js';
 import { YandexGptTextAdapter } from './yandexgpt/yandexgpt-text.adapter.js';
 
@@ -35,34 +36,38 @@ export function createYandexLlmRuntime(config: YandexLlmRuntimeConfig): LlmResol
       provider: 'yandex-ai-studio',
       apiKind: 'openai-compatible',
       create: (model) =>
-        new ResilientLlmPort(
-          new YandexOpenAiTextAdapter(
-          {
-            apiKey: config.apiKey,
-            folderId: config.folderId,
-            modelUri: model.modelUri
-          },
-          (url, init) => config.fetch(url, init)
-          ),
-          `${model.provider}:${model.modelUri}`,
-          resilience
+        new RedactingLlmPort(
+          new ResilientLlmPort(
+            new YandexOpenAiTextAdapter(
+              {
+                apiKey: config.apiKey,
+                folderId: config.folderId,
+                modelUri: model.modelUri
+              },
+              (url, init) => config.fetch(url, init)
+            ),
+            `${model.provider}:${model.modelUri}`,
+            resilience
+          )
         )
     },
     {
       provider: 'yandex-ai-studio',
       apiKind: 'native',
       create: (model) =>
-        new ResilientLlmPort(
-          new YandexGptTextAdapter(
-          {
-            baseUrl: 'https://llm.api.cloud.yandex.net',
-            apiKey: config.apiKey,
-            modelUri: model.modelUri
-          },
-          (url, init) => config.fetch(url, init)
-          ),
-          `${model.provider}:${model.modelUri}`,
-          resilience
+        new RedactingLlmPort(
+          new ResilientLlmPort(
+            new YandexGptTextAdapter(
+              {
+                baseUrl: 'https://llm.api.cloud.yandex.net',
+                apiKey: config.apiKey,
+                modelUri: model.modelUri
+              },
+              (url, init) => config.fetch(url, init)
+            ),
+            `${model.provider}:${model.modelUri}`,
+            resilience
+          )
         )
     }
   ]);
