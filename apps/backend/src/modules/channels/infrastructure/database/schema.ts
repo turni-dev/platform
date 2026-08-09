@@ -107,6 +107,38 @@ export const guests = pgTable(
   ]
 ).enableRLS();
 
+export const guestSessions = pgTable(
+  'guest_sessions',
+  {
+    id: id(),
+    tenantId: uuid('tenant_id').notNull(),
+    agentId: uuid('agent_id').notNull(),
+    connectionId: uuid('connection_id')
+      .notNull()
+      .references(() => channelConnections.id, { onDelete: 'restrict' }),
+    guestId: uuid('guest_id').references(() => guests.id, {
+      onDelete: 'restrict'
+    }),
+    tokenHash: bytea('token_hash').notNull(),
+    tokenKid: text('token_kid').notNull(),
+    issuedAt: timestamp('issued_at', { withTimezone: true }).notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    createdAt: createdAt()
+  },
+  (table) => [
+    uniqueIndex('guest_sessions_token_hash_uidx').on(table.tokenHash),
+    index('guest_sessions_tenant_expires_idx').on(table.tenantId, table.expiresAt),
+    pgPolicy('guest_sessions_tenant_isolation', {
+      for: 'all',
+      to: 'app_rw',
+      using: sql`${table.tenantId} = ${tenantSetting}`,
+      withCheck: sql`${table.tenantId} = ${tenantSetting}`
+    })
+  ]
+).enableRLS();
+
 export const conversations = pgTable(
   'conversations',
   {
@@ -220,6 +252,7 @@ export const webhookInbox = pgTable(
 export const channelTables = [
   channelConnections,
   guests,
+  guestSessions,
   conversations,
   messages,
   webhookInbox
