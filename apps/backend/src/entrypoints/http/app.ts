@@ -8,9 +8,7 @@ import {
   ProblemType,
   type HealthStatus
 } from '@turni/contracts';
-import { GuestSessionService } from '../../modules/channels/application/guest-session.js';
-import type { GuestSessionContextResolver } from '../../modules/channels/application/guest-session-context.js';
-import { WidgetRoutingKeyService } from '../../modules/channels/application/widget-routing-key.js';
+import type { DurableGuestSessionService } from '../../modules/channels/application/durable-guest-session.js';
 import { serializeCabinetStreamEvent } from '../../modules/channels/application/cabinet-sse.js';
 import { CabinetStream } from '../../modules/channels/application/cabinet-stream.js';
 import {
@@ -36,9 +34,7 @@ class HttpAppModule {}
 Module({})(HttpAppModule);
 
 export type HttpAppOptions = Readonly<{
-  guestSessionSecret?: string;
-  widgetRoutingSecret?: string;
-  guestSessionContextResolver?: GuestSessionContextResolver;
+  guestSessionService?: DurableGuestSessionService;
   widgetMessageHandler?: WidgetMessageHandler;
   cabinetStream?: CabinetStream;
   authorizeCabinetStream?: (request: FastifyRequest) => boolean;
@@ -47,21 +43,6 @@ export type HttpAppOptions = Readonly<{
 export async function createHttpApp(
   options?: HttpAppOptions
 ): Promise<NestFastifyApplication> {
-  const guestSessionSecret = options?.guestSessionSecret;
-  let widgetRoutingKeys: WidgetRoutingKeyService | undefined;
-  if (guestSessionSecret !== undefined) {
-    if (options?.widgetRoutingSecret === undefined) {
-      throw new Error('Widget routing secret is required when guest sessions are enabled.');
-    }
-    if (options.widgetRoutingSecret === guestSessionSecret) {
-      throw new Error('Widget routing secret must differ from guest session secret.');
-    }
-    if (options.guestSessionContextResolver === undefined) {
-      throw new Error('Guest session context resolver is required when guest sessions are enabled.');
-    }
-    widgetRoutingKeys = new WidgetRoutingKeyService(options.widgetRoutingSecret);
-  }
-
   const app = await NestFactory.create<NestFastifyApplication>(
     HttpAppModule,
     new FastifyAdapter({
@@ -100,9 +81,9 @@ export async function createHttpApp(
     request.raw.once('close', unsubscribe);
   });
 
-  if (guestSessionSecret !== undefined && widgetRoutingKeys !== undefined) {
-    const guestSessions = new GuestSessionService(guestSessionSecret, widgetRoutingKeys);
-    fastify.post(HttpRoute.GuestSessions, (request, reply) => {
+  if (options?.guestSessionService !== undefined) {
+    const guestSessions = options.guestSessionService;
+    fastify.post(HttpRoute.GuestSessions, async (request, reply) => {
       const parsedRequest = GuestSessionRequestSchema.safeParse(request.body);
       if (!parsedRequest.success) {
         return reply.code(400).send({
@@ -113,7 +94,7 @@ export async function createHttpApp(
       }
 
       try {
-        return reply.code(201).send(guestSessions.issue(parsedRequest.data));
+        return reply.code(201).send(await guestSessions.issue(parsedRequest.data));
       } catch {
         return reply.code(400).send({
           type: ProblemType.InvalidRequest,
@@ -126,11 +107,11 @@ export async function createHttpApp(
     fastify.get(HttpRoute.GuestChat, { websocket: true }, (socket) => {
       const connection = new WidgetChatConnection(
         guestSessions,
-        options?.widgetMessageHandler,
-        options?.guestSessionContextResolver
+        options?.widgetMessageHandler
       );
+      let received = Promise.resolve();
       socket.on('message', (rawMessage) => {
-        void (async (): Promise<void> => {
+        received = received.then(async (): Promise<void> => {
           let rawEvent: unknown;
           try {
             rawEvent = JSON.parse(websocketPayloadToText(rawMessage));
@@ -141,7 +122,7 @@ export async function createHttpApp(
           for (const event of await connection.receive(rawEvent)) {
             socket.send(JSON.stringify(event));
           }
-        })();
+        }).catch(() => undefined);
       });
     });
   }

@@ -15,9 +15,13 @@ import { FakePolicyClassifier } from '../../../modules/policy/application/fake-p
 import { PolicyCascade } from '../../../modules/policy/application/policy-cascade.js';
 import { PolicyEngine } from '../../../modules/policy/domain/policy-engine.js';
 import { FakeDomainEventBus } from '../../../modules/reporting/application/fake-domain-event-bus.js';
+import { DurableGuestSessionService } from '../../../modules/channels/application/durable-guest-session.js';
+import { GuestSessionService } from '../../../modules/channels/application/guest-session.js';
+import type {
+  GuestSessionStorePort,
+  GuestSessionStoreRecord
+} from '../../../modules/channels/application/guest-session-store.port.js';
 import { WidgetRoutingKeyService } from '../../../modules/channels/application/widget-routing-key.js';
-import { FakeGuestSessionContextResolver } from '../../../modules/channels/application/guest-session-context.js';
-import type { GuestSessionContext } from '../../../modules/channels/application/guest-session-context.js';
 
 const sessionSecret = 'test-session-secret-that-is-long-enough-for-hmac';
 const routingSecret = 'test-routing-secret-that-is-long-enough-for-hmac';
@@ -30,7 +34,7 @@ const pipelineIds = {
   correlationId: '01900000-0000-7000-8000-000000000013'
 } as const;
 
-function routingFixture(): Readonly<{ widgetKey: string; context: GuestSessionContext }> {
+function routingFixture(): Readonly<{ widgetKey: string; service: DurableGuestSessionService }> {
   const claims = {
     tenantId: pipelineIds.tenantId,
     agentId: '01900000-0000-7000-8000-000000000014',
@@ -38,14 +42,25 @@ function routingFixture(): Readonly<{ widgetKey: string; context: GuestSessionCo
     expiresAt: Math.floor(Date.now() / 1_000) + 3_600,
     kid: 'test'
   };
+  const routingKeys = new WidgetRoutingKeyService(routingSecret);
+  const rows: GuestSessionStoreRecord[] = [];
+  const store: GuestSessionStorePort = {
+    insert: (row) => {
+      rows.push(row);
+      return Promise.resolve();
+    },
+    findByTokenHash: ({ tenantId, tokenHash }) =>
+      Promise.resolve(rows.find((row) => row.tenantId === tenantId && Buffer.from(row.tokenHash).equals(Buffer.from(tokenHash)))),
+    revoke: () => Promise.resolve(true),
+    markUsedByTokenHash: () => Promise.resolve(true)
+  };
   return {
-    widgetKey: new WidgetRoutingKeyService(routingSecret).issue(claims),
-    context: {
-      tenantId: claims.tenantId,
-      agentId: claims.agentId,
-      connectionId: claims.connectionId,
-      sessionId: '01900000-0000-7000-8000-000000000016'
-    }
+    widgetKey: routingKeys.issue(claims),
+    service: new DurableGuestSessionService(
+      new GuestSessionService(sessionSecret, routingKeys),
+      store,
+      { next: () => '01900000-0000-7000-8000-000000000016' }
+    )
   };
 }
 
@@ -142,12 +157,8 @@ describe('FAQ chat WebSocket composition', () => {
       }
     ]);
     const app = await createHttpApp({
-      guestSessionSecret: sessionSecret,
-      widgetRoutingSecret: routingSecret,
-      widgetMessageHandler: pipeline.handler,
-      guestSessionContextResolver: new FakeGuestSessionContextResolver({
-        [routing.widgetKey]: routing.context
-      })
+      guestSessionService: routing.service,
+      widgetMessageHandler: pipeline.handler
     });
 
     try {
@@ -201,12 +212,8 @@ describe('FAQ chat WebSocket composition', () => {
     ]);
     const routing = routingFixture();
     const app = await createHttpApp({
-      guestSessionSecret: sessionSecret,
-      widgetRoutingSecret: routingSecret,
-      widgetMessageHandler: pipeline.handler,
-      guestSessionContextResolver: new FakeGuestSessionContextResolver({
-        [routing.widgetKey]: routing.context
-      })
+      guestSessionService: routing.service,
+      widgetMessageHandler: pipeline.handler
     });
 
     try {

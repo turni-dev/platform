@@ -8,8 +8,8 @@ import {
   WidgetStatusKind,
   type WidgetServerEvent
 } from '@turni/contracts';
-import type { GuestSessionService } from './guest-session.js';
-import type { GuestSessionContext, GuestSessionContextResolver } from './guest-session-context.js';
+import type { DurableGuestSessionService } from './durable-guest-session.js';
+import type { GuestSessionContext } from './guest-session-context.js';
 
 export type WidgetMessageHandler = (
   input: Readonly<{
@@ -26,9 +26,8 @@ export class WidgetChatConnection {
   private readonly receivedMessageIds = new Set<string>();
 
   constructor(
-    private readonly sessions: GuestSessionService,
-    private readonly handleMessage?: WidgetMessageHandler,
-    private readonly contexts?: GuestSessionContextResolver
+    private readonly sessions: DurableGuestSessionService,
+    private readonly handleMessage?: WidgetMessageHandler
   ) {}
 
   async receive(rawEvent: unknown, now = new Date()): Promise<readonly WidgetServerEvent[]> {
@@ -39,10 +38,7 @@ export class WidgetChatConnection {
 
     if (parsedEvent.data.type === WidgetClientEventType.SessionResume) {
       try {
-        const routing = this.sessions.verify(parsedEvent.data.token, now);
-        if (this.contexts === undefined) throw new Error('Missing session context resolver.');
-        const context = await this.contexts.resolve(routing.widgetKey);
-        if (context.tenantId !== routing.tenantId || context.agentId !== routing.agentId || context.connectionId !== routing.connectionId) throw new Error('Invalid session context.');
+        const context = await this.sessions.verify(parsedEvent.data.token, now);
         this.context = Object.freeze(context);
         this.activeSession = true;
         return [

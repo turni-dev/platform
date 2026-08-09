@@ -4,9 +4,7 @@ import { createHttpApp } from './app.js';
 
 async function bootstrap(): Promise<void> {
   const env = readHttpEnv();
-  const app = await createHttpApp({
-    guestSessionSecret: env.WIDGET_SESSION_SECRET
-  });
+  const app = await createHttpApp();
 
   await app.listen({
     host: env.HTTP_HOST,
