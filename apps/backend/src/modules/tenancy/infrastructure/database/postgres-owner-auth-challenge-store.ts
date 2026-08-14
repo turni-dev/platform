@@ -13,6 +13,10 @@ import {
   maxOwnerAuthAttempts,
   normalizeOwnerEmail
 } from '../../domain/owner-auth-challenge.js';
+import {
+  timestampColumn,
+  timestampParam
+} from '../../../../platform/database/sql-timestamp.js';
 
 // `auth_codes` is the single pre-tenant bootstrap table: a challenge is issued
 // before the requester is known to belong to any tenant, so it carries no
@@ -31,8 +35,8 @@ const ChallengeRowSchema = z.strictObject({
   email: z.string(),
   code_hash: z.string(),
   attempts: z.number().int(),
-  expires_at: z.date(),
-  consumed_at: z.date().nullable()
+  expires_at: timestampColumn,
+  consumed_at: timestampColumn.nullable()
 });
 const AttemptRowsSchema = z.array(z.strictObject({ attempts: z.number().int() }));
 const ConsumedRowsSchema = z.array(z.strictObject({ id: z.uuidv7() }));
@@ -52,7 +56,7 @@ export class PostgresOwnerAuthChallengeStore implements OwnerAuthChallengeStoreP
           INSERT INTO auth_codes (id, email, code_hash, expires_at)
           VALUES (
             ${challenge.id}, ${challenge.email}, ${challenge.codeHash},
-            ${challenge.expiresAt}
+            ${timestampParam(challenge.expiresAt)}
           )
         `)
         .then(() => undefined)
@@ -74,7 +78,7 @@ export class PostgresOwnerAuthChallengeStore implements OwnerAuthChallengeStoreP
             FROM auth_codes
             WHERE email = ${email}
               AND consumed_at IS NULL
-              AND expires_at > ${lookup.now}
+              AND expires_at > ${timestampParam(lookup.now)}
             ORDER BY created_at DESC
             LIMIT 1
           `)
@@ -105,7 +109,7 @@ export class PostgresOwnerAuthChallengeStore implements OwnerAuthChallengeStoreP
         SET attempts = attempts + 1
         WHERE id = ${attempt.id}
           AND consumed_at IS NULL
-          AND expires_at > ${attempt.now}
+          AND expires_at > ${timestampParam(attempt.now)}
           AND attempts < ${maxOwnerAuthAttempts}
         RETURNING attempts
       `,
@@ -121,10 +125,10 @@ export class PostgresOwnerAuthChallengeStore implements OwnerAuthChallengeStoreP
     return this.transactionRows(
       sql`
         UPDATE auth_codes
-        SET consumed_at = ${consumption.consumedAt}
+        SET consumed_at = ${timestampParam(consumption.consumedAt)}
         WHERE id = ${consumption.id}
           AND consumed_at IS NULL
-          AND expires_at > ${consumption.consumedAt}
+          AND expires_at > ${timestampParam(consumption.consumedAt)}
         RETURNING id
       `,
       (rows) => ConsumedRowsSchema.parse(rows).length === 1

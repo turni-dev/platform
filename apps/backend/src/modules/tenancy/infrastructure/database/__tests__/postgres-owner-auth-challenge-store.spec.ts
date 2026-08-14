@@ -67,7 +67,7 @@ describe('PostgresOwnerAuthChallengeStore', () => {
 
     expect(database.transactionCalls).toBe(1);
     expect(lastQuery(database).sql).toContain('INSERT INTO auth_codes');
-    expect(lastQuery(database).params).toEqual([challengeId, email, codeHash, expiresAt]);
+    expect(lastQuery(database).params).toEqual([challengeId, email, codeHash, expiresAt.toISOString()]);
   });
 
   it('reads only an unconsumed, unexpired challenge for the email', async () => {
@@ -78,7 +78,8 @@ describe('PostgresOwnerAuthChallengeStore', () => {
         email,
         code_hash: codeHash,
         attempts: 2,
-        expires_at: expiresAt,
+        // The driver hands timestamps back as text, never as Date instances.
+        expires_at: expiresAt.toISOString(),
         consumed_at: null
       }
     ];
@@ -92,7 +93,7 @@ describe('PostgresOwnerAuthChallengeStore', () => {
     expect(lastQuery(database).sql).toContain('consumed_at IS NULL');
     expect(lastQuery(database).sql).toContain('expires_at >');
     expect(lastQuery(database).sql).toContain('ORDER BY created_at DESC');
-    expect(lastQuery(database).params).toEqual([email, now]);
+    expect(lastQuery(database).params).toEqual([email, now.toISOString()]);
   });
 
   it('returns nothing when no active challenge exists', async () => {
@@ -113,7 +114,7 @@ describe('PostgresOwnerAuthChallengeStore', () => {
     expect(lastQuery(database).sql).toContain('attempts <');
     expect(lastQuery(database).sql).toContain('consumed_at IS NULL');
     expect(lastQuery(database).sql).toContain('RETURNING attempts');
-    expect(lastQuery(database).params).toEqual([challengeId, now, maxOwnerAuthAttempts]);
+    expect(lastQuery(database).params).toEqual([challengeId, now.toISOString(), maxOwnerAuthAttempts]);
   });
 
   it('reports an exhausted challenge when no row is incremented', async () => {
@@ -135,7 +136,7 @@ describe('PostgresOwnerAuthChallengeStore', () => {
     expect(lastQuery(database).sql).toContain('UPDATE auth_codes');
     expect(lastQuery(database).sql).toContain('consumed_at IS NULL');
     expect(lastQuery(database).sql).toContain('expires_at >');
-    expect(lastQuery(database).params).toEqual([now, challengeId, now]);
+    expect(lastQuery(database).params).toEqual([now.toISOString(), challengeId, now.toISOString()]);
 
     database.transactionHandle.updated = [];
     await expect(store.consume({ id: challengeId, consumedAt: now })).resolves.toBe(false);

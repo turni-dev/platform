@@ -71,6 +71,21 @@ services:
       retries: 10
       start_period: 10s
 
+  # Local inbox for the owner auth codes. Started explicitly:
+  # docker compose --profile mail up -d mailpit
+  # SMTP on 1025 (no auth required), web UI and JSON API on 8025.
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: turni-mailpit
+    restart: unless-stopped
+    profiles: ["mail"]
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+
 volumes:
   turni-postgres-data:
   turni-redis-durable-data:

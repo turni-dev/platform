@@ -116,6 +116,33 @@ describe('owner auth HTTP surface', () => {
     }
   });
 
+  it('reports an unexpected failure as a server error instead of blaming the request', async () => {
+    const fixture = ownerAuthFixture();
+    const options = ownerAuthOptions(fixture);
+    const failing: HttpAppOptions = {
+      ownerAuth: {
+        ...options.ownerAuth!,
+        service: Object.assign(Object.create(fixture.service) as typeof fixture.service, {
+          requestCode: (): Promise<never> =>
+            Promise.reject(new Error('permission denied for table auth_codes'))
+        })
+      }
+    };
+    const app = await createHttpApp(failing);
+    try {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/register/request',
+        payload: { email }
+      });
+
+      expect(response.statusCode).toBe(500);
+      expect(response.body).not.toContain('auth_codes');
+    } finally {
+      await app.close();
+    }
+  });
+
   it('answers a repeated request with a retry hint instead of a second code', async () => {
     const fixture = ownerAuthFixture();
     const app = await createHttpApp(ownerAuthOptions(fixture));

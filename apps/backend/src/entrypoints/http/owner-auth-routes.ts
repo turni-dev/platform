@@ -204,7 +204,7 @@ function sendCookies(reply: FastifyReply, cookies: readonly string[]): FastifyRe
 
 function authFailure(reply: FastifyReply, error: unknown): FastifyReply {
   if (!(error instanceof OwnerAuthError)) {
-    return invalidRequest(reply);
+    return internalFailure(reply, error);
   }
 
   if (error.code === OwnerAuthErrorCode.RateLimited) {
@@ -227,6 +227,20 @@ function authFailure(reply: FastifyReply, error: unknown): FastifyReply {
   }
 
   return unauthorized(reply);
+}
+
+/**
+ * An error the auth flow does not model is ours, not the caller's. The caller
+ * sees nothing but a generic failure; the cause goes to the operator's log.
+ */
+function internalFailure(reply: FastifyReply, error: unknown): FastifyReply {
+  console.error('owner auth failed', error);
+
+  return reply.code(500).send({
+    type: ProblemType.InvalidRequest,
+    title: 'Internal error',
+    status: 500
+  });
 }
 
 function invalidRequest(reply: FastifyReply): FastifyReply {

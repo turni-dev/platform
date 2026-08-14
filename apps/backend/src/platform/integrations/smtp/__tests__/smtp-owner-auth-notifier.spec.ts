@@ -82,6 +82,28 @@ describe('SmtpOwnerAuthNotifier', () => {
       expiresAt: new Date(now.getTime() + 20_000)
     });
 
-    expect(context.transport.sent[0]?.text).toContain('1 минуты');
+    expect(context.transport.sent[0]?.text).toContain('1 минуту');
+  });
+
+  it('agrees the noun with the number of minutes', async () => {
+    const cases: ReadonlyArray<readonly [number, string]> = [
+      [1, '1 минуту'],
+      [2, '2 минуты'],
+      [4, '4 минуты'],
+      [5, '5 минут'],
+      [11, '11 минут'],
+      [21, '21 минуту']
+    ];
+
+    for (const [minutes, expected] of cases) {
+      const context = build();
+
+      await context.notifier.sendCode({
+        ...message,
+        expiresAt: new Date(now.getTime() + minutes * 60_000)
+      });
+
+      expect(context.transport.sent[0]?.text).toContain(expected);
+    }
   });
 });

@@ -49,11 +49,29 @@ export class SmtpOwnerAuthNotifier implements OwnerAuthNotifierPort {
         subject: 'Код входа в Turni',
         text:
           `Код для входа: ${parsed.code}\n\n` +
-          `Он действует ${minutes} минуты и подходит только для одного входа. ` +
+          `Он действует ${minutes} ${minuteNoun(minutes)} и подходит только для одного входа. ` +
           'Если вы его не запрашивали, просто удалите это письмо.\n'
       });
     } catch {
       throw new Error('Owner auth code delivery failed');
     }
   }
+}
+
+/** Russian counts the noun with the number: 1 минуту, 2 минуты, 5 минут. */
+function minuteNoun(minutes: number): string {
+  const tens = minutes % 100;
+  const ones = minutes % 10;
+
+  if (tens >= 11 && tens <= 14) {
+    return 'минут';
+  }
+  if (ones === 1) {
+    return 'минуту';
+  }
+  if (ones >= 2 && ones <= 4) {
+    return 'минуты';
+  }
+
+  return 'минут';
 }

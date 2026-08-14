@@ -10,6 +10,10 @@ import {
   type OwnerSessionRecord,
   type OwnerSessionStorePort
 } from '../../application/owner-session-store.port.js';
+import {
+  timestampColumn,
+  timestampParam
+} from '../../../../platform/database/sql-timestamp.js';
 
 const tokenHash = z.instanceof(Uint8Array).refine((value) => value.length === 32);
 
@@ -32,8 +36,8 @@ const SessionRowSchema = z.strictObject({
   tenant_id: z.uuidv7(),
   user_id: z.uuidv7(),
   token_hash: tokenHash,
-  idle_expires_at: z.date(),
-  absolute_expires_at: z.date(),
+  idle_expires_at: timestampColumn,
+  absolute_expires_at: timestampColumn,
   ip: z.string().nullable(),
   ua: z.string().nullable()
 });
@@ -72,7 +76,8 @@ export class PostgresOwnerSessionStore implements OwnerSessionStorePort {
           ) VALUES (
             ${session.id}, ${session.tenantId}, ${session.userId}, ${session.tokenHash},
             ${session.ipAddress ?? null}, ${session.userAgent ?? null},
-            ${session.idleExpiresAt}, ${session.absoluteExpiresAt}
+            ${timestampParam(session.idleExpiresAt)},
+            ${timestampParam(session.absoluteExpiresAt)}
           )
         `)
         .then(() => undefined)
@@ -92,8 +97,8 @@ export class PostgresOwnerSessionStore implements OwnerSessionStorePort {
           FROM sessions
           WHERE tenant_id = ${lookup.tenantId}
             AND token_hash = ${lookup.tokenHash}
-            AND idle_expires_at > ${lookup.now}
-            AND absolute_expires_at > ${lookup.now}
+            AND idle_expires_at > ${timestampParam(lookup.now)}
+            AND absolute_expires_at > ${timestampParam(lookup.now)}
           LIMIT 1
         `)
       );
@@ -118,11 +123,11 @@ export class PostgresOwnerSessionStore implements OwnerSessionStorePort {
         await transaction.execute(sql`
           UPDATE sessions
           SET token_hash = ${rotation.nextTokenHash},
-            idle_expires_at = ${rotation.idleExpiresAt}
+            idle_expires_at = ${timestampParam(rotation.idleExpiresAt)}
           WHERE tenant_id = ${rotation.tenantId}
             AND token_hash = ${rotation.currentTokenHash}
-            AND idle_expires_at > ${rotation.now}
-            AND absolute_expires_at > ${rotation.now}
+            AND idle_expires_at > ${timestampParam(rotation.now)}
+            AND absolute_expires_at > ${timestampParam(rotation.now)}
           RETURNING id, tenant_id, user_id, token_hash, idle_expires_at,
             absolute_expires_at, ip, ua
         `)

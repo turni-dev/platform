@@ -10,6 +10,10 @@ import {
   type GuestSessionStorePort,
   type GuestSessionStoreRecord
 } from '../../application/guest-session-store.port.js';
+import {
+  timestampColumn,
+  timestampParam
+} from '../../../../platform/database/sql-timestamp.js';
 
 const uuidV7 = z.uuidv7();
 const tokenHash = z.instanceof(Uint8Array).refine((value) => value.length === 32);
@@ -32,11 +36,11 @@ const GuestSessionDatabaseRowSchema = z.strictObject({
   guest_id: uuidV7.nullable(),
   token_hash: tokenHash,
   token_kid: z.string().trim().min(1).max(128),
-  issued_at: z.date(),
-  expires_at: z.date(),
-  revoked_at: z.date().nullable(),
-  last_used_at: z.date().nullable(),
-  created_at: z.date()
+  issued_at: timestampColumn,
+  expires_at: timestampColumn,
+  revoked_at: timestampColumn.nullable(),
+  last_used_at: timestampColumn.nullable(),
+  created_at: timestampColumn
 });
 
 const UpdatedRowsSchema = z.array(z.strictObject({ id: uuidV7 }));
@@ -74,7 +78,7 @@ export class PostgresGuestSessionStore implements GuestSessionStorePort {
         ) VALUES (
           ${session.id}, ${session.tenantId}, ${session.agentId}, ${session.connectionId},
           ${session.guestId ?? null}, ${session.tokenHash}, ${session.tokenKid},
-          ${session.issuedAt}, ${session.expiresAt}
+          ${timestampParam(session.issuedAt)}, ${timestampParam(session.expiresAt)}
         )
       `).then(() => undefined)
     );
@@ -110,7 +114,7 @@ export class PostgresGuestSessionStore implements GuestSessionStorePort {
     return withTenant(this.database, revocation.tenantId, (transaction) =>
       wasUpdated(transaction, sql`
         UPDATE guest_sessions
-        SET revoked_at = ${revocation.revokedAt}
+        SET revoked_at = ${timestampParam(revocation.revokedAt)}
         WHERE tenant_id = ${revocation.tenantId}
           AND token_hash = ${revocation.tokenHash}
           AND revoked_at IS NULL
@@ -127,11 +131,11 @@ export class PostgresGuestSessionStore implements GuestSessionStorePort {
     return withTenant(this.database, usage.tenantId, (transaction) =>
       wasUpdated(transaction, sql`
         UPDATE guest_sessions
-        SET last_used_at = ${usage.lastUsedAt}
+        SET last_used_at = ${timestampParam(usage.lastUsedAt)}
         WHERE tenant_id = ${usage.tenantId}
           AND token_hash = ${usage.tokenHash}
           AND revoked_at IS NULL
-          AND expires_at > ${usage.lastUsedAt}
+          AND expires_at > ${timestampParam(usage.lastUsedAt)}
         RETURNING id
       `)
     );
