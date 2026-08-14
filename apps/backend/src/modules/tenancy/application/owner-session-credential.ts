@@ -10,11 +10,11 @@ type OwnerSessionHint = z.infer<typeof OwnerSessionHintSchema>;
 
 export interface IssuedOwnerSessionCredential {
   readonly credential: string;
-  readonly tokenHash: Uint8Array;
+  readonly tokenHash: Uint8Array<ArrayBuffer>;
 }
 
 export interface VerifiedOwnerSessionCredential extends OwnerSessionHint {
-  readonly tokenHash: Uint8Array;
+  readonly tokenHash: Uint8Array<ArrayBuffer>;
 }
 
 /**
@@ -83,6 +83,6 @@ export class OwnerSessionCredentialService {
   }
 }
 
-function hashOpaque(opaque: string): Uint8Array {
-  return createHash('sha256').update(opaque).digest();
+function hashOpaque(opaque: string): Uint8Array<ArrayBuffer> {
+  return new Uint8Array(createHash('sha256').update(opaque).digest());
 }
