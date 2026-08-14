@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createNodemailerTransport } from '../nodemailer-transport.js';
 
+const connection = {
+  host: 'smtp.turni.ru',
+  port: 465,
+  secure: true,
+  user: 'no-reply@turni.ru',
+  password: 'smtp-password'
+};
+
 const message = {
   from: 'Turni <no-reply@turni.ru>',
   to: 'owner@turni.ru',
@@ -9,21 +17,28 @@ const message = {
 };
 
 describe('createNodemailerTransport', () => {
-  it('hands the connection url to the vendor client once', () => {
+  it('hands the connection settings to the vendor client once', () => {
     const created: unknown[] = [];
-    createNodemailerTransport('smtps://user:secret@smtp.turni.ru:465', {
+    createNodemailerTransport(connection, {
       create: (options) => {
         created.push(options);
         return { sendMail: () => Promise.resolve({}) };
       }
     });
 
-    expect(created).toEqual(['smtps://user:secret@smtp.turni.ru:465']);
+    expect(created).toEqual([
+      {
+        host: 'smtp.turni.ru',
+        port: 465,
+        secure: true,
+        auth: { user: 'no-reply@turni.ru', pass: 'smtp-password' }
+      }
+    ]);
   });
 
   it('delegates a send and hides the vendor result', async () => {
     const sent: unknown[] = [];
-    const transport = createNodemailerTransport('smtps://smtp.turni.ru', {
+    const transport = createNodemailerTransport(connection, {
       create: () => ({
         sendMail: (mail) => {
           sent.push(mail);
@@ -37,7 +52,7 @@ describe('createNodemailerTransport', () => {
   });
 
   it('propagates a vendor failure to the caller', async () => {
-    const transport = createNodemailerTransport('smtps://smtp.turni.ru', {
+    const transport = createNodemailerTransport(connection, {
       create: () => ({
         sendMail: () => Promise.reject(new Error('421 service unavailable'))
       })
