@@ -48,6 +48,15 @@ The browser never talks to the backend origin: Next.js rewrites `/api/v1/*` onto
 app builds with webpack, because Turbopack cannot resolve the NodeNext `.js`
 specifiers inside `@turni/contracts`, which is consumed as TypeScript source.
 
+The funnel is measured with three analytics events — `owner.registered`,
+`owner.signed_in` and `owner.signed_out` — appended to the partitioned `events`
+table inside the tenant context they belong to. Their props carry session ids
+only: the owner email is PII and never leaves the auth tables. A failed publish
+is logged and swallowed, because a missing metric must not cost a sign-in.
+Token refresh is not recorded, and neither is a code request: the first would
+drown the funnel, the second happens before a tenant exists and `events` has
+nowhere to put a pre-tenant row.
+
 The backend refuses to start without `OWNER_AUTH_SECRET`, the SMTP settings and
 `APP_ORIGIN`, so the auth path can never be half-configured.
 

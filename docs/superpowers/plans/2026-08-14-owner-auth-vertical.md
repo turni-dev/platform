@@ -90,7 +90,31 @@ independently reviewable slices, each with its own tests and commit.
   columns read back as text, an access cookie the server-rendered cabinet
   could not see, and a sign-out that reported success after a refusal. All are
   fixed under test (`2957a20`, `b076faf`).
-- Remaining: a manual real-SMTP smoke against the founder's mailbox.
+- Real-SMTP smoke done 2026-08-15: the backend ran against the production
+  relay from `.env` (`mail.hosting.reg.ru:465`, implicit TLS, from
+  `noreply@turni.ru`) with the local database, and the founder registered from
+  their own mailbox in the browser. The code arrived, was consumed once, and
+  left a tenant, an `owner_directory` row, one live session and both analytics
+  events behind.
+
+### Slice 6 — Analytics for the auth funnel (done 2026-08-15)
+
+- `OwnerAuthAnalytics` turns a verified code and a sign-out into
+  `owner.registered`, `owner.signed_in` (with `registration: true|false`) and
+  `owner.signed_out`. Props carry session ids only — the owner email is PII and
+  stays in the auth tables — and a failed publish is swallowed so a missing
+  metric can never cost a sign-in.
+- `PostgresDomainEventStore` appends envelopes to the partitioned `events`
+  table inside the tenant context of the event, which is the only way past
+  FORCE RLS on an append-only table.
+- Logout moved from `sessions.revoke` to `service.signOut`, so the HTTP layer
+  stays free of analytics and `OwnerSessionService.revoke` now names the
+  session it closed.
+- Refresh is deliberately not recorded: it fires every ten minutes per open
+  tab and would drown the funnel. A code request is not recorded either — it
+  happens before a tenant exists, and `events` has no pre-tenant partition.
+- Proved against Postgres on 2026-08-15: all three events land with the right
+  tenant, and no row carries an email.
 
 ## Verification per slice
 
