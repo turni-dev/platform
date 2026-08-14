@@ -55,3 +55,4 @@ secrets/
 ops/sops/*.agekey
 ops/sops/*.dec.json
 .gocache/
+.playwright-mcp/
