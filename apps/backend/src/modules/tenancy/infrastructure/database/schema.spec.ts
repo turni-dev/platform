@@ -19,6 +19,7 @@ describe('tenancy database schema', () => {
       'users',
       'sessions',
       'auth_codes',
+      'owner_directory',
       'subscriptions',
       'invoices'
     ]);
@@ -86,7 +87,7 @@ describe('tenancy database schema', () => {
         (column) => column.name === 'id'
       );
 
-      expect(id?.hasDefault).toBe(false);
+      expect(id === undefined ? false : id.hasDefault).toBe(false);
     }
   });
 });

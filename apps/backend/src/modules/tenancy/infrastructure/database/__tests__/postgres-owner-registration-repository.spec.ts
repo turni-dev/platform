@@ -17,6 +17,7 @@ type RecordedQuery = Readonly<{ sql: string; params: readonly unknown[] }>;
 class FakeTransaction implements TenantTransaction {
   public readonly queries: RecordedQuery[] = [];
   public failOnUsersInsert = false;
+  public directoryRows: readonly unknown[] = [];
 
   public execute(query: SQL): Promise<unknown> {
     const compiled = new PgDialect().sqlToQuery(query);
@@ -27,6 +28,9 @@ class FakeTransaction implements TenantTransaction {
     }
     if (compiled.sql.includes('INSERT INTO users') && this.failOnUsersInsert) {
       return Promise.reject(new Error('duplicate key value violates unique constraint'));
+    }
+    if (compiled.sql.includes('FROM owner_directory')) {
+      return Promise.resolve(this.directoryRows);
     }
     return Promise.resolve([]);
   }
@@ -49,7 +53,8 @@ function statementOrder(database: FakeDatabase): readonly string[] {
     ['INSERT INTO tenants', 'tenants'],
     ["set_config('app.tenant_id'", 'set-context'],
     ["current_setting('app.tenant_id'", 'assert-context'],
-    ['INSERT INTO users', 'users']
+    ['INSERT INTO users', 'users'],
+    ['INSERT INTO owner_directory', 'directory']
   ] as const;
 
   return database.transactionHandle.queries.flatMap(
@@ -75,12 +80,19 @@ describe('PostgresOwnerRegistrationRepository', () => {
       'tenants',
       'set-context',
       'assert-context',
-      'users'
+      'users',
+      'directory'
     ]);
-    const ownerInsert = database.transactionHandle.queries.at(-1);
+    const ownerInsert = database.transactionHandle.queries.find((query) =>
+      query.sql.includes('INSERT INTO users')
+    );
+    const directoryInsert = database.transactionHandle.queries.find((query) =>
+      query.sql.includes('INSERT INTO owner_directory')
+    );
     expect(ownerInsert?.params).toContain(email);
     expect(ownerInsert?.params).toContain('owner');
     expect(ownerInsert?.params).not.toContain('  Owner@Turni.RU ');
+    expect(directoryInsert?.params).toEqual([email, tenantId, userId]);
   });
 
   it('creates the tenant only after the name passes validation', async () => {
@@ -101,5 +113,30 @@ describe('PostgresOwnerRegistrationRepository', () => {
     await expect(
       repository.createTenantWithOwner({ tenantId, userId, tenantName, email })
     ).rejects.toThrow('duplicate key value violates unique constraint');
+  });
+});
+
+describe('PostgresOwnerRegistrationRepository owner lookup', () => {
+  it('resolves a known owner from the pre-tenant directory', async () => {
+    const database = new FakeDatabase();
+    database.transactionHandle.directoryRows = [
+      { email, tenant_id: tenantId, user_id: userId }
+    ];
+    const repository = new PostgresOwnerRegistrationRepository(database);
+
+    await expect(
+      repository.findOwnerByEmail('  Owner@Turni.RU ')
+    ).resolves.toEqual({ email, tenantId, userId });
+
+    const lookup = database.transactionHandle.queries.at(-1);
+    expect(lookup?.sql).toContain('FROM owner_directory');
+    expect(lookup?.params).toEqual([email]);
+  });
+
+  it('reports an unknown email without leaking a partial match', async () => {
+    const database = new FakeDatabase();
+    const repository = new PostgresOwnerRegistrationRepository(database);
+
+    await expect(repository.findOwnerByEmail(email)).resolves.toBeUndefined();
   });
 });

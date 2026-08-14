@@ -169,6 +169,21 @@ export const authCodes = pgTable(
   ]
 );
 
+export const ownerDirectory = pgTable(
+  'owner_directory',
+  {
+    email: citext('email').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'restrict' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    createdAt: createdAt()
+  },
+  (table) => [index('owner_directory_tenant_idx').on(table.tenantId)]
+);
+
 export const subscriptions = pgTable(
   'subscriptions',
   {
@@ -246,6 +261,7 @@ export const tenancyTables = [
   users,
   sessions,
   authCodes,
+  ownerDirectory,
   subscriptions,
   invoices
 ] as const;
