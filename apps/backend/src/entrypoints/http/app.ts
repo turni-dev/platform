@@ -15,6 +15,10 @@ import {
   WidgetChatConnection,
   type WidgetMessageHandler
 } from '../../modules/channels/application/widget-chat-connection.js';
+import {
+  registerOwnerAuthRoutes,
+  type OwnerAuthHttpOptions
+} from './owner-auth-routes.js';
 import { websocketPayloadToText } from './websocket-payload.js';
 
 const healthStatus: HealthStatus = {
@@ -34,6 +38,7 @@ class HttpAppModule {}
 Module({})(HttpAppModule);
 
 export type HttpAppOptions = Readonly<{
+  ownerAuth?: OwnerAuthHttpOptions;
   guestSessionService?: DurableGuestSessionService;
   widgetMessageHandler?: WidgetMessageHandler;
   cabinetStream?: CabinetStream;
@@ -58,6 +63,10 @@ export async function createHttpApp(
   const authorizeCabinetStream = options?.authorizeCabinetStream ?? (() => false);
   await fastify.register(fastifyWebsocket);
   fastify.get(HttpRoute.Health, () => healthStatus);
+
+  if (options?.ownerAuth !== undefined) {
+    registerOwnerAuthRoutes(fastify, options.ownerAuth);
+  }
 
   fastify.get(HttpRoute.CabinetStream, (request, reply) => {
     if (!authorizeCabinetStream(request)) {
