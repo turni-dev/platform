@@ -14,8 +14,16 @@ export const OwnerDirectoryEntrySchema = z.strictObject({
   userId: z.uuidv7()
 });
 
+export const OwnerProfileSchema = z.strictObject({
+  userId: z.uuidv7(),
+  tenantId: z.uuidv7(),
+  tenantName: z.string().trim().min(1).max(200),
+  email: OwnerEmailSchema
+});
+
 export type OwnerRegistration = z.infer<typeof OwnerRegistrationSchema>;
 export type OwnerDirectoryEntry = z.infer<typeof OwnerDirectoryEntrySchema>;
+export type OwnerProfile = z.infer<typeof OwnerProfileSchema>;
 
 export interface OwnerRegistrationRepositoryPort {
   /**
@@ -30,4 +38,11 @@ export interface OwnerRegistrationRepositoryPort {
    * points at stay behind FORCE RLS.
    */
   findOwnerByEmail(email: string): Promise<OwnerDirectoryEntry | undefined>;
+  /**
+   * Reads the owner an authenticated session points at. Unlike the directory
+   * lookup this one runs inside the tenant context, so RLS answers it.
+   */
+  findOwnerProfile(
+    owner: Readonly<{ tenantId: string; userId: string }>
+  ): Promise<OwnerProfile | undefined>;
 }

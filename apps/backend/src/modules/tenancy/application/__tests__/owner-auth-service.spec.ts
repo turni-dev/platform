@@ -14,6 +14,7 @@ import type {
 } from '../owner-auth-challenge-store.port.js';
 import type {
   OwnerDirectoryEntry,
+  OwnerProfile,
   OwnerRegistration,
   OwnerRegistrationRepositoryPort
 } from '../owner-registration-repository.port.js';
@@ -98,6 +99,26 @@ class FakeRegistrationRepository implements OwnerRegistrationRepositoryPort {
 
   public findOwnerByEmail(lookup: string): Promise<OwnerDirectoryEntry | undefined> {
     return Promise.resolve(this.directory.find((entry) => entry.email === lookup));
+  }
+
+  public findOwnerProfile(
+    owner: Readonly<{ tenantId: string; userId: string }>
+  ): Promise<OwnerProfile | undefined> {
+    const registration = this.registrations.find(
+      (candidate) =>
+        candidate.tenantId === owner.tenantId && candidate.userId === owner.userId
+    );
+
+    return Promise.resolve(
+      registration === undefined
+        ? undefined
+        : {
+            userId: registration.userId,
+            tenantId: registration.tenantId,
+            tenantName: registration.tenantName,
+            email: registration.email
+          }
+    );
   }
 }
 

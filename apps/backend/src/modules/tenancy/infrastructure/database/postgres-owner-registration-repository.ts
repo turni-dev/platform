@@ -7,8 +7,10 @@ import {
 import { z } from 'zod';
 import {
   OwnerDirectoryEntrySchema,
+  OwnerProfileSchema,
   OwnerRegistrationSchema,
   type OwnerDirectoryEntry,
+  type OwnerProfile,
   type OwnerRegistration,
   type OwnerRegistrationRepositoryPort
 } from '../../application/owner-registration-repository.port.js';
@@ -18,6 +20,13 @@ const DirectoryRowSchema = z.strictObject({
   email: z.string(),
   tenant_id: z.uuidv7(),
   user_id: z.uuidv7()
+});
+
+const ProfileRowSchema = z.strictObject({
+  user_id: z.uuidv7(),
+  tenant_id: z.uuidv7(),
+  tenant_name: z.string(),
+  email: z.string()
 });
 
 export class PostgresOwnerRegistrationRepository
@@ -74,6 +83,42 @@ export class PostgresOwnerRegistrationRepository
             email: row.email,
             tenantId: row.tenant_id,
             userId: row.user_id
+          })
+        );
+
+      return rows[0];
+    });
+  }
+
+  public async findOwnerProfile(
+    owner: Readonly<{ tenantId: string; userId: string }>
+  ): Promise<OwnerProfile | undefined> {
+    return this.database.transaction(async (transaction) => {
+      await enterTenantContext(transaction, owner.tenantId);
+
+      const rows = z
+        .array(ProfileRowSchema)
+        .parse(
+          await transaction.execute(sql`
+            SELECT
+              users.id AS user_id,
+              users.tenant_id,
+              tenants.name AS tenant_name,
+              users.email
+            FROM users
+            JOIN tenants ON tenants.id = users.tenant_id
+            WHERE users.tenant_id = ${owner.tenantId}
+              AND users.id = ${owner.userId}
+              AND users.role = ${OwnerRole}
+            LIMIT 1
+          `)
+        )
+        .map((row) =>
+          OwnerProfileSchema.parse({
+            userId: row.user_id,
+            tenantId: row.tenant_id,
+            tenantName: row.tenant_name,
+            email: row.email
           })
         );
 

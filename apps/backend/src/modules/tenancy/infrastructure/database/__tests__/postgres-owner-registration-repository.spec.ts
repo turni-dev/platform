@@ -18,6 +18,7 @@ class FakeTransaction implements TenantTransaction {
   public readonly queries: RecordedQuery[] = [];
   public failOnUsersInsert = false;
   public directoryRows: readonly unknown[] = [];
+  public profileRows: readonly unknown[] = [];
 
   public execute(query: SQL): Promise<unknown> {
     const compiled = new PgDialect().sqlToQuery(query);
@@ -31,6 +32,9 @@ class FakeTransaction implements TenantTransaction {
     }
     if (compiled.sql.includes('FROM owner_directory')) {
       return Promise.resolve(this.directoryRows);
+    }
+    if (compiled.sql.includes('FROM users')) {
+      return Promise.resolve(this.profileRows);
     }
     return Promise.resolve([]);
   }
@@ -138,5 +142,36 @@ describe('PostgresOwnerRegistrationRepository owner lookup', () => {
     const repository = new PostgresOwnerRegistrationRepository(database);
 
     await expect(repository.findOwnerByEmail(email)).resolves.toBeUndefined();
+  });
+});
+
+describe('PostgresOwnerRegistrationRepository owner profile', () => {
+  it('reads the profile inside the tenant context', async () => {
+    const database = new FakeDatabase();
+    database.transactionHandle.profileRows = [
+      { user_id: userId, tenant_id: tenantId, tenant_name: tenantName, email }
+    ];
+    const repository = new PostgresOwnerRegistrationRepository(database);
+
+    await expect(repository.findOwnerProfile({ tenantId, userId })).resolves.toEqual({
+      userId,
+      tenantId,
+      tenantName,
+      email
+    });
+
+    expect(statementOrder(database)).toEqual(['set-context', 'assert-context']);
+    const lookup = database.transactionHandle.queries.at(-1);
+    expect(lookup?.sql).toContain('FROM users');
+    expect(lookup?.params).toEqual([tenantId, userId, 'owner']);
+  });
+
+  it('reports a missing owner instead of inventing one', async () => {
+    const database = new FakeDatabase();
+    const repository = new PostgresOwnerRegistrationRepository(database);
+
+    await expect(
+      repository.findOwnerProfile({ tenantId, userId })
+    ).resolves.toBeUndefined();
   });
 });
