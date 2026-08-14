@@ -52,7 +52,12 @@ independently reviewable slices, each with its own tests and commit.
   stored as a hash in `sessions`, with rotation revoking the predecessor.
 - Acceptance: registration is atomic, rotation invalidates the predecessor,
   cross-tenant and revoked credentials are rejected.
-- Blocked on founder review if device metadata columns are required.
+- Founder decision 2026-08-14: `users` is under FORCE RLS with a NOBYPASSRLS
+  role, so login cannot resolve a tenant from an email. Migration
+  `0016_owner_directory` adds the only pre-tenant mapping
+  (`email citext PK → tenant_id, user_id`, no RLS, granted to `app_rw`),
+  written inside the bootstrap transaction. A SECURITY DEFINER lookup was
+  rejected as an RLS bypass. Device metadata columns stay deferred.
 
 ### Slice 4 — HTTP surface
 
