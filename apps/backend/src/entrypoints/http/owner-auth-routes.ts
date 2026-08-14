@@ -138,11 +138,8 @@ export function registerOwnerAuthRoutes(
 
     const presented = readCookie(request.headers.cookie, AuthCookieName.Refresh);
     if (presented !== undefined) {
-      try {
-        await options.sessions.revoke(presented);
-      } catch {
-        // A credential we cannot verify is already worthless; the cookies still go.
-      }
+      // A credential the service cannot close is already worthless; cookies still go.
+      await options.service.signOut(presented, new Date());
     }
 
     return sendCookies(reply, clearedAuthCookies(cookies)).code(204).send();

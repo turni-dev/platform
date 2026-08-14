@@ -13,6 +13,7 @@ import {
   normalizeOwnerEmail,
   ownerAuthChallengeLifetimeMs
 } from '../domain/owner-auth-challenge.js';
+import type { OwnerAuthAnalytics } from './owner-auth-analytics.js';
 import type { OwnerAuthChallengeStorePort } from './owner-auth-challenge-store.port.js';
 import type { OwnerAuthNotifierPort } from './owner-auth-notifier.port.js';
 import type { OwnerAuthThrottle } from './owner-auth-throttle.js';
@@ -67,6 +68,8 @@ export interface OwnerAuthServiceDependencies {
   readonly ids: OwnerSessionIdGeneratorPort;
   readonly secret: string;
   readonly generateCode?: () => string;
+  /** Absent in tests and in deployments that do not record analytics yet. */
+  readonly analytics?: OwnerAuthAnalytics;
 }
 
 export interface VerifiedOwnerAuth {
@@ -182,19 +185,62 @@ export class OwnerAuthService {
       request.now
     );
 
+    const analytics = this.dependencies.analytics;
+    if (analytics !== undefined) {
+      const event = {
+        tenantId: owner.tenantId,
+        userId: owner.userId,
+        sessionId: session.sessionId,
+        at: request.now
+      };
+      if (owner.registered) {
+        await analytics.ownerRegistered(event);
+      }
+      await analytics.ownerSignedIn({ ...event, registration: owner.registered });
+    }
+
     return { identity: owner.identity, session };
+  }
+
+  /**
+   * Closes a session on the owner's request and records it. A credential the
+   * session service cannot verify is already worthless, so the caller is told
+   * nothing happened rather than being handed the error.
+   */
+  public async signOut(refreshCredential: string, now = new Date()): Promise<boolean> {
+    let revoked;
+    try {
+      revoked = await this.dependencies.sessions.revoke(refreshCredential);
+    } catch {
+      return false;
+    }
+
+    if (revoked === undefined) {
+      return false;
+    }
+
+    await this.dependencies.analytics?.ownerSignedOut({
+      tenantId: revoked.tenantId,
+      sessionId: revoked.sessionId,
+      at: now
+    });
+
+    return true;
   }
 
   private async resolveOwner(email: string): Promise<{
     readonly tenantId: string;
     readonly userId: string;
     readonly identity: OwnerIdentity;
+    /** True when this verification created the tenant rather than finding it. */
+    readonly registered: boolean;
   }> {
     const known = await this.dependencies.registrations.findOwnerByEmail(email);
     if (known !== undefined) {
       return {
         tenantId: known.tenantId,
         userId: known.userId,
+        registered: false,
         identity: this.identity(known.tenantId, known.userId, email, tenantNameFor(email))
       };
     }
@@ -210,7 +256,12 @@ export class OwnerAuthService {
       email
     });
 
-    return { tenantId, userId, identity: this.identity(tenantId, userId, email, tenantName) };
+    return {
+      tenantId,
+      userId,
+      registered: true,
+      identity: this.identity(tenantId, userId, email, tenantName)
+    };
   }
 
   private identity(

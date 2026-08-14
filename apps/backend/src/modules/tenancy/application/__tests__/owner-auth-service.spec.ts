@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { InMemoryKeyValueCache } from '../../../../platform/cache/in-memory-key-value-cache.js';
+import { FakeDomainEventBus } from '../../../reporting/application/fake-domain-event-bus.js';
+import { OwnerAuthAnalytics } from '../owner-auth-analytics.js';
 import {
   hashOwnerAuthCode,
   maxOwnerAuthAttempts,
@@ -168,17 +170,19 @@ function build(): {
   readonly registrations: FakeRegistrationRepository;
   readonly notifier: RecordingNotifier;
   readonly sessions: FakeSessionStore;
+  readonly events: FakeDomainEventBus;
 } {
   const challenges = new FakeChallengeStore();
   const registrations = new FakeRegistrationRepository();
   const notifier = new RecordingNotifier();
   const sessionStore = new FakeSessionStore();
+  const events = new FakeDomainEventBus();
   let cacheClock = now.getTime();
   let sequence = 0;
   const ids = {
     next: () => {
       sequence += 1;
-      return `01900000-0000-7000-8000-00000000000${sequence}`;
+      return `01900000-0000-7000-8000-0000000000${String(sequence).padStart(2, '0')}`;
     }
   };
 
@@ -186,6 +190,7 @@ function build(): {
     challenges,
     registrations,
     notifier,
+    events,
     sessions: sessionStore,
     advanceCacheTo: (instant: Date) => {
       cacheClock = instant.getTime();
@@ -206,7 +211,8 @@ function build(): {
       ),
       ids,
       secret,
-      generateCode: () => code
+      generateCode: () => code,
+      analytics: new OwnerAuthAnalytics(events, ids)
     })
   };
 }
@@ -304,6 +310,65 @@ describe('OwnerAuthService.verifyCode', () => {
     expect(context.registrations.registrations).toHaveLength(1);
   });
 
+  it('records a registration and the sign-in that came with it', async () => {
+    const context = build();
+    await context.service.requestCode({ email, ip, now });
+
+    const verified = await context.service.verifyCode({ email, code, ip, now });
+
+    expect(context.events.publishedEvents.map((event) => event.name)).toEqual([
+      'owner.registered',
+      'owner.signed_in'
+    ]);
+    expect(context.events.publishedEvents[1]?.props).toEqual({
+      sessionId: verified.session.sessionId,
+      registration: true
+    });
+    expect(
+      context.events.publishedEvents.every(
+        (event) => event.tenantId === verified.identity.tenantId
+      )
+    ).toBe(true);
+  });
+
+  it('records a returning owner as a sign-in without a registration', async () => {
+    const context = build();
+    await context.service.requestCode({ email, ip, now });
+    await context.service.verifyCode({ email, code, ip, now });
+
+    const later = new Date(now.getTime() + ownerAuthResendCooldownMs);
+    context.advanceCacheTo(later);
+    await context.service.requestCode({ email, ip, now: later });
+    await context.service.verifyCode({ email, code, ip, now: later });
+
+    expect(context.events.publishedEvents.map((event) => event.name)).toEqual([
+      'owner.registered',
+      'owner.signed_in',
+      'owner.signed_in'
+    ]);
+    expect(context.events.publishedEvents[2]?.props).toMatchObject({
+      registration: false
+    });
+  });
+
+  it('records nothing when the code is refused', async () => {
+    const context = build();
+    await context.service.requestCode({ email, ip, now });
+
+    await expect(
+      context.service.verifyCode({ email, code: '000000', ip, now })
+    ).rejects.toThrow('Invalid owner auth code');
+    expect(context.events.publishedEvents).toEqual([]);
+  });
+
+  it('never puts the owner email into an analytics event', async () => {
+    const context = build();
+    await context.service.requestCode({ email, ip, now });
+    await context.service.verifyCode({ email, code, ip, now });
+
+    expect(JSON.stringify(context.events.publishedEvents)).not.toContain(email);
+  });
+
   it('refuses a code once its challenge has expired', async () => {
     const context = build();
     await context.service.requestCode({ email, ip, now });
@@ -316,5 +381,31 @@ describe('OwnerAuthService.verifyCode', () => {
         now: new Date(now.getTime() + ownerAuthChallengeLifetimeMs)
       })
     ).rejects.toThrow('Invalid owner auth code');
+  });
+});
+
+describe('OwnerAuthService.signOut', () => {
+  it('revokes the session and records the sign-out', async () => {
+    const context = build();
+    await context.service.requestCode({ email, ip, now });
+    const verified = await context.service.verifyCode({ email, code, ip, now });
+
+    const signedOut = await context.service.signOut(
+      verified.session.refreshCredential,
+      now
+    );
+
+    expect(signedOut).toBe(true);
+    expect(context.events.publishedEvents.at(-1)?.name).toBe('owner.signed_out');
+    expect(context.events.publishedEvents.at(-1)?.props).toEqual({
+      sessionId: verified.session.sessionId
+    });
+  });
+
+  it('records nothing for a credential it cannot verify', async () => {
+    const context = build();
+
+    expect(await context.service.signOut('not-a-credential', now)).toBe(false);
+    expect(context.events.publishedEvents).toEqual([]);
   });
 });

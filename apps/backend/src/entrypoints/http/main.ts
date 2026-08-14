@@ -4,7 +4,10 @@ import { GuestSessionService } from '../../modules/channels/application/guest-se
 import { UuidV7Generator } from '../../modules/channels/application/uuid-v7-generator.js';
 import { PostgresGuestSessionStore } from '../../modules/channels/infrastructure/database/postgres-guest-session-store.js';
 import { WidgetRoutingKeyService } from '../../modules/channels/application/widget-routing-key.js';
+import { DatabaseDomainEventBus } from '../../modules/reporting/infrastructure/database-domain-event-bus.js';
+import { PostgresDomainEventStore } from '../../modules/reporting/infrastructure/database/postgres-domain-event-store.js';
 import { OwnerAccessTokenService } from '../../modules/tenancy/application/owner-access-token.js';
+import { OwnerAuthAnalytics } from '../../modules/tenancy/application/owner-auth-analytics.js';
 import { OwnerAuthService } from '../../modules/tenancy/application/owner-auth-service.js';
 import { OwnerAuthThrottle } from '../../modules/tenancy/application/owner-auth-throttle.js';
 import { OwnerSessionCredentialService } from '../../modules/tenancy/application/owner-session-credential.js';
@@ -102,7 +105,11 @@ function composeOwnerAuth(
       ),
       sessions,
       ids,
-      secret: env.OWNER_AUTH_SECRET
+      secret: env.OWNER_AUTH_SECRET,
+      analytics: new OwnerAuthAnalytics(
+        new DatabaseDomainEventBus(new PostgresDomainEventStore(database)),
+        ids
+      )
     })
   };
 }

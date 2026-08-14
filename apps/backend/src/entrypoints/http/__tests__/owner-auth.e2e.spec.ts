@@ -370,6 +370,31 @@ describe('owner session lifecycle', () => {
     }
   });
 
+  it('records the whole browser path as analytics events', async () => {
+    const fixture = ownerAuthFixture();
+    const cookies = await signedIn(fixture);
+    const app = await createHttpApp(ownerAuthOptions(fixture));
+    try {
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/logout',
+        headers: {
+          origin,
+          cookie: `${AuthCookieName.Refresh}=${cookies.refresh}`
+        }
+      });
+
+      expect(fixture.events.publishedEvents.map((event) => event.name)).toEqual([
+        'owner.registered',
+        'owner.signed_in',
+        'owner.signed_out'
+      ]);
+      expect(JSON.stringify(fixture.events.publishedEvents)).not.toContain(email);
+    } finally {
+      await app.close();
+    }
+  });
+
   it('treats a logout without a session as already logged out', async () => {
     const app = await createHttpApp(ownerAuthOptions(ownerAuthFixture()));
     try {

@@ -129,7 +129,10 @@ describe('OwnerSessionService', () => {
       tenantId
     });
 
-    await expect(service.revoke(issued.refreshCredential)).resolves.toBe(true);
+    await expect(service.revoke(issued.refreshCredential)).resolves.toEqual({
+      sessionId: issued.sessionId,
+      tenantId
+    });
     await expect(service.refresh(issued.refreshCredential, now)).rejects.toThrow(
       'Invalid owner session'
     );

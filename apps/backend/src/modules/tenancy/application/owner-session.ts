@@ -30,6 +30,11 @@ export interface IssuedOwnerSession {
   readonly absoluteExpiresAt: Date;
 }
 
+export interface RevokedOwnerSession {
+  readonly sessionId: string;
+  readonly tenantId: string;
+}
+
 /**
  * Owns the durable half of owner authentication: a session row is the only
  * authority for a live session, and every rotation replaces its stored hash
@@ -93,13 +98,19 @@ export class OwnerSessionService {
     return this.issued(rotated, successor.credential, now);
   }
 
-  public async revoke(refreshCredential: string): Promise<boolean> {
+  /** Names the session it closed, so the caller can record the sign-out. */
+  public async revoke(
+    refreshCredential: string
+  ): Promise<RevokedOwnerSession | undefined> {
     const presented = this.credentials.verify(refreshCredential);
-
-    return this.store.revoke({
+    const revoked = await this.store.revoke({
       tenantId: presented.tenantId,
       tokenHash: presented.tokenHash
     });
+
+    return revoked
+      ? { sessionId: presented.sessionId, tenantId: presented.tenantId }
+      : undefined;
   }
 
   private issued(

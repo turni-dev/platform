@@ -1,4 +1,6 @@
 import { InMemoryKeyValueCache } from '../../../platform/cache/in-memory-key-value-cache.js';
+import { FakeDomainEventBus } from '../../../modules/reporting/application/fake-domain-event-bus.js';
+import { OwnerAuthAnalytics } from '../../../modules/tenancy/application/owner-auth-analytics.js';
 import { maxOwnerAuthAttempts } from '../../../modules/tenancy/domain/owner-auth-challenge.js';
 import { OwnerAccessTokenService } from '../../../modules/tenancy/application/owner-access-token.js';
 import { OwnerAuthService } from '../../../modules/tenancy/application/owner-auth-service.js';
@@ -207,6 +209,7 @@ export interface OwnerAuthFixture {
   readonly owners: InMemoryRegistrationRepository;
   readonly sessionStore: InMemorySessionStore;
   readonly notifier: RecordingOwnerAuthNotifier;
+  readonly events: FakeDomainEventBus;
 }
 
 /** Composes the owner auth stack over in-memory stores so HTTP tests stay real. */
@@ -214,6 +217,7 @@ export function ownerAuthFixture(): OwnerAuthFixture {
   const owners = new InMemoryRegistrationRepository();
   const sessionStore = new InMemorySessionStore();
   const notifier = new RecordingOwnerAuthNotifier();
+  const events = new FakeDomainEventBus();
   const accessTokens = new OwnerAccessTokenService(ownerAuthSecret);
   let clock = Date.now();
   let sequence = 0;
@@ -237,6 +241,7 @@ export function ownerAuthFixture(): OwnerAuthFixture {
     owners,
     sessionStore,
     notifier,
+    events,
     accessTokens,
     sessions,
     service: new OwnerAuthService({
@@ -247,7 +252,8 @@ export function ownerAuthFixture(): OwnerAuthFixture {
       sessions,
       ids,
       secret: ownerAuthSecret,
-      generateCode: () => ownerAuthCode
+      generateCode: () => ownerAuthCode,
+      analytics: new OwnerAuthAnalytics(events, ids)
     })
   };
 }
