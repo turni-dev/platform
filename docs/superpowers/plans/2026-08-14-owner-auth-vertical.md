@@ -82,8 +82,15 @@ independently reviewable slices, each with its own tests and commit.
   (screens, `/api/v1` rewrite, webpack build).
 - `apps/web` builds with webpack rather than Turbopack: Turbopack cannot
   resolve the NodeNext `.js` specifiers inside `@turni/contracts`.
-- Remaining: browser e2e through a fake SMTP inbox, plus a manual real-SMTP
-  smoke against the founder's mailbox.
+- Browser run done 2026-08-15 against Postgres, the `mailpit` dev inbox
+  (`docker compose --profile mail up -d mailpit`) and both servers: register →
+  code from the inbox → cabinet, login as the same owner without a second
+  tenant, refresh, and sign-out that closes the cabinet. It found four defects
+  the fakes had hidden — a `Date` parameter the driver refuses, timestamp
+  columns read back as text, an access cookie the server-rendered cabinet
+  could not see, and a sign-out that reported success after a refusal. All are
+  fixed under test (`2957a20`, `b076faf`).
+- Remaining: a manual real-SMTP smoke against the founder's mailbox.
 
 ## Verification per slice
 

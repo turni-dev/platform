@@ -33,8 +33,11 @@ would be an RLS bypass in everything but name. `auth_codes` and
 enters a tenant context first.
 
 The session leaves the backend as two HttpOnly cookies: a short-lived HS256
-access token scoped to `/api/v1`, and an opaque refresh credential scoped to
+access token scoped to `/`, and an opaque refresh credential scoped to
 `/api/v1/auth`, both `SameSite=Strict` and `Secure` outside local development.
+The access cookie covers the whole site because the cabinet renders on the
+server and authenticates a plain page load, which a cookie scoped to `/api/v1`
+would never reach; the refresh credential stays narrow.
 Postgres stores only the hash of the refresh credential; rotation replaces the
 stored hash in the same statement that reads it, so a replayed predecessor
 matches nothing. Cookie-authenticated mutations (`/refresh`, `/logout`) require
@@ -65,3 +68,8 @@ the limits mean anything globally.
 
 Device metadata and trusted-device risk signals are deferred; adding them is a
 migration and needs founder review.
+
+Every raw `sql` template writes timestamps as ISO text cast back to
+`timestamptz` and reads them through `timestampColumn`: postgres-js refuses a
+`Date` parameter and returns timestamp columns as text. Fake adapters hide
+this, so a new store is only proven by a run against Postgres.
