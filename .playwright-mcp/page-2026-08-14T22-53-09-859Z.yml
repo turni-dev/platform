@@ -1,0 +1,12 @@
+- generic [active] [ref=f4e1]:
+  - button "Open Next.js Dev Tools" [ref=f4e15] [cursor=pointer]
+  - alert [ref=f4e19]
+  - main [ref=f4e28]:
+    - generic [ref=f4e29]:
+      - heading "Вход в кабинет" [level=1] [ref=f4e30]
+      - generic [ref=f4e31]:
+        - generic [ref=f4e32]: Рабочая почта
+        - textbox "Рабочая почта" [ref=f4e33]
+        - button "Получить код" [ref=f4e34] [cursor=pointer]
+      - link "Ещё нет кабинета? Создать" [ref=f4e35] [cursor=pointer]:
+        - /url: /register

@@ -55,20 +55,22 @@ export async function verifyOwnerCode(
 }
 
 /**
- * Ends the session. It never reports a failure: the browser is leaving the
- * cabinet either way, and the server clears the cookies when it can.
+ * Ends the session and says whether the server actually ended it. A refused
+ * logout leaves the session alive, so the cabinet must not pretend otherwise.
  */
-export async function signOutOwner(options?: OwnerAuthClientOptions): Promise<void> {
+export async function signOutOwner(options?: OwnerAuthClientOptions): Promise<boolean> {
   const call = options?.fetch ?? fetch;
 
   try {
-    await call(`${options?.baseUrl ?? ''}/api/v1/auth/logout`, {
+    const response = await call(`${options?.baseUrl ?? ''}/api/v1/auth/logout`, {
       method: 'POST',
       credentials: 'same-origin',
       cache: 'no-store'
     });
+
+    return response.ok;
   } catch {
-    // Nothing to recover: the next request without a session lands on /login.
+    return false;
   }
 }
 

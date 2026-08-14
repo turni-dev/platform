@@ -8,7 +8,8 @@ describe('Russian message catalog', () => {
       emptyTitle: 'Нет активных диалогов',
       emptyBody: 'Новые обращения гостей появятся здесь.',
       signedInAs: 'Вы вошли как {email}',
-      signOut: 'Выйти'
+      signOut: 'Выйти',
+      signOutFailed: 'Не удалось выйти. Попробуйте ещё раз.'
     });
   });
 

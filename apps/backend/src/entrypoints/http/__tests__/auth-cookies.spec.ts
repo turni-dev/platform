@@ -28,11 +28,13 @@ describe('issuedAuthCookies', () => {
     );
   });
 
-  it('keeps the access token readable across the api but not by scripts', () => {
+  it('keeps the access token readable across the whole site but not by scripts', () => {
+    // The cabinet renders on the server, which reads the request cookies of a
+    // page load: a token scoped to /api/v1 would never reach it.
     const cookies = issuedAuthCookies(session, authCookieOptions({ secure: true }), now);
 
     expect(cookies.find((cookie) => cookie.startsWith(`${AuthCookieName.Access}=`))).toBe(
-      `${AuthCookieName.Access}=header.payload.signature; Path=/api/v1; ` +
+      `${AuthCookieName.Access}=header.payload.signature; Path=/; ` +
         'Max-Age=600; HttpOnly; Secure; SameSite=Strict'
     );
   });
@@ -70,7 +72,7 @@ describe('issuedAuthCookies', () => {
 describe('clearedAuthCookies', () => {
   it('expires both cookies on their own paths', () => {
     expect(clearedAuthCookies(authCookieOptions({ secure: true }))).toEqual([
-      `${AuthCookieName.Access}=; Path=/api/v1; Max-Age=0; HttpOnly; Secure; SameSite=Strict`,
+      `${AuthCookieName.Access}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`,
       `${AuthCookieName.Refresh}=; Path=/api/v1/auth; Max-Age=0; HttpOnly; Secure; SameSite=Strict`
     ]);
   });

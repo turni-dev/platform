@@ -2,8 +2,9 @@ import { ownerAccessTokenLifetimeMs } from '../../modules/tenancy/application/ow
 
 /**
  * Browser-facing session transport. Both credentials stay in HttpOnly cookies so
- * no script can read them, and the refresh credential is scoped to the auth path
- * so it never travels with ordinary API calls.
+ * no script can read them. The access token covers the whole site because the
+ * cabinet renders on the server and authenticates a plain page load; the refresh
+ * credential stays on the auth path so it never travels with anything else.
  */
 export const AuthCookieName = {
   Access: 'turni_access',
@@ -11,7 +12,7 @@ export const AuthCookieName = {
 } as const;
 
 export const AuthCookiePath = {
-  Access: '/api/v1',
+  Access: '/',
   Refresh: '/api/v1/auth'
 } as const;
 

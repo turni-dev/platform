@@ -1,0 +1,11 @@
+- generic [active] [ref=f4e1]:
+  - button "Open Next.js Dev Tools" [ref=f4e15] [cursor=pointer]
+  - alert [ref=f4e19]
+  - main [ref=f4e20]:
+    - generic [ref=f4e21]:
+      - heading "owner-browser" [level=1] [ref=f4e22]
+      - paragraph [ref=f4e23]: Вы вошли как owner-browser@turni.ru
+      - button "Выйти" [ref=f4e24]
+    - generic [ref=f4e25]:
+      - heading "Нет активных диалогов" [level=2] [ref=f4e26]
+      - paragraph [ref=f4e27]: Новые обращения гостей появятся здесь.

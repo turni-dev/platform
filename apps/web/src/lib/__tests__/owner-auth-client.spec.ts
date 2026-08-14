@@ -127,7 +127,9 @@ describe('signOutOwner', () => {
   it('posts the logout with the cookies the browser holds', async () => {
     const calls: { url: string; init?: RequestInit }[] = [];
 
-    await signOutOwner({ fetch: respondWith(204, undefined, calls) });
+    await expect(signOutOwner({ fetch: respondWith(204, undefined, calls) })).resolves.toBe(
+      true
+    );
 
     expect(calls[0]?.url).toBe('/api/v1/auth/logout');
     expect(calls[0]?.init?.method).toBe('POST');
@@ -139,7 +141,11 @@ describe('signOutOwner', () => {
       signOutOwner({
         fetch: (() => Promise.reject(new Error('offline'))) as unknown as typeof fetch
       })
-    ).resolves.toBeUndefined();
+    ).resolves.toBe(false);
+  });
+
+  it('reports a refused logout, because that session is still alive', async () => {
+    await expect(signOutOwner({ fetch: respondWith(403, undefined) })).resolves.toBe(false);
   });
 });
 

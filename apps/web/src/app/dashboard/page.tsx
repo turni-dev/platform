@@ -22,7 +22,7 @@ export default async function DashboardPage(): Promise<React.JSX.Element> {
       <header className={styles['header']}>
         <h1>{identity.tenantName}</h1>
         <p>{t('signedInAs', { email: identity.email })}</p>
-        <SignOutButton label={t('signOut')} />
+        <SignOutButton label={t('signOut')} failureLabel={t('signOutFailed')} />
       </header>
       <section className={styles['empty']}>
         <h2>{t('emptyTitle')}</h2>
