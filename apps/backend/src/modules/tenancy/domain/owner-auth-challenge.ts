@@ -12,11 +12,11 @@ export interface StoredOwnerAuthChallenge {
   readonly codeHash: string;
   readonly attempts: number;
   readonly expiresAt: Date;
-  readonly consumedAt?: Date;
+  readonly consumedAt?: Date | undefined;
 }
 
 export interface OwnerAuthChallengeDecisionInput {
-  readonly challenge?: StoredOwnerAuthChallenge;
+  readonly challenge?: StoredOwnerAuthChallenge | undefined;
   readonly email: string;
   readonly code: string;
   readonly secret: string;
