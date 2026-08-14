@@ -6,7 +6,16 @@ describe('Russian message catalog', () => {
     expect(messages.Dashboard).toEqual({
       title: 'Turni',
       emptyTitle: 'Нет активных диалогов',
-      emptyBody: 'Новые обращения гостей появятся здесь.'
+      emptyBody: 'Новые обращения гостей появятся здесь.',
+      signedInAs: 'Вы вошли как {email}',
+      signOut: 'Выйти'
     });
+  });
+
+  it('spells the owner auth screens out in Russian', () => {
+    expect(messages.Auth.verifySubtitle).toContain('{email}');
+    expect(Object.values(messages.Auth).every((text) => text.trim().length > 0)).toBe(
+      true
+    );
   });
 });

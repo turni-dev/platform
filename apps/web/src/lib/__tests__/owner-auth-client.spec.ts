@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   fetchOwnerIdentity,
   requestOwnerCode,
+  signOutOwner,
   verifyOwnerCode
-} from '../owner-auth-client.js';
+} from '../owner-auth-client';
 
 const identity = {
   userId: '01900000-0000-7000-8000-000000000001',
@@ -119,6 +120,26 @@ describe('verifyOwnerCode', () => {
         fetch: respondWith(200, { ...identity, role: 'staff' })
       })
     ).resolves.toEqual({ status: 'error', code: 'unavailable' });
+  });
+});
+
+describe('signOutOwner', () => {
+  it('posts the logout with the cookies the browser holds', async () => {
+    const calls: { url: string; init?: RequestInit }[] = [];
+
+    await signOutOwner({ fetch: respondWith(204, undefined, calls) });
+
+    expect(calls[0]?.url).toBe('/api/v1/auth/logout');
+    expect(calls[0]?.init?.method).toBe('POST');
+    expect(calls[0]?.init?.credentials).toBe('same-origin');
+  });
+
+  it('never fails the caller when the backend is unreachable', async () => {
+    await expect(
+      signOutOwner({
+        fetch: (() => Promise.reject(new Error('offline'))) as unknown as typeof fetch
+      })
+    ).resolves.toBeUndefined();
   });
 });
 

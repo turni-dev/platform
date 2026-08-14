@@ -54,6 +54,24 @@ export async function verifyOwnerCode(
   return post(`/api/v1/auth/${flow}/verify`, body.data, OwnerIdentitySchema, options);
 }
 
+/**
+ * Ends the session. It never reports a failure: the browser is leaving the
+ * cabinet either way, and the server clears the cookies when it can.
+ */
+export async function signOutOwner(options?: OwnerAuthClientOptions): Promise<void> {
+  const call = options?.fetch ?? fetch;
+
+  try {
+    await call(`${options?.baseUrl ?? ''}/api/v1/auth/logout`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      cache: 'no-store'
+    });
+  } catch {
+    // Nothing to recover: the next request without a session lands on /login.
+  }
+}
+
 /** Resolves the signed-in owner, or nothing when the session is gone. */
 export async function fetchOwnerIdentity(
   options?: OwnerAuthClientOptions
