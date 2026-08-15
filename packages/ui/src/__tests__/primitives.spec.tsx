@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/postcss';
 import postcss from 'postcss';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { Badge, Button, Input } from '../index.js';
+import { Badge, Button, Input, Textarea } from '../index.js';
 
 describe('UI foundation', () => {
   it('composes a button onto its child when asChild is enabled', () => {
@@ -16,6 +16,23 @@ describe('UI foundation', () => {
 
     expect(button).toMatch(/^<a\b/);
     expect(button).toContain('data-variant="secondary"');
+  });
+
+  it('keeps the selected button variant authoritative over child data attributes', () => {
+    const button = renderToStaticMarkup(
+      <Button asChild variant="primary">
+        <a data-variant="secondary" href="/agents">Agents</a>
+      </Button>
+    );
+
+    expect(button).toContain('bg-turni-accent');
+    expect(button).toContain('text-turni-accent-contrast');
+    expect(button).not.toContain('data-[variant=primary]');
+  });
+
+  it('rejects disabled when Button composes onto a child', () => {
+    // @ts-expect-error disabled is only available for native buttons
+    <Button asChild disabled><a href="/agents">Agents</a></Button>;
   });
 
   it('uses a button type by default and merges custom classes', () => {
@@ -43,6 +60,18 @@ describe('UI foundation', () => {
     expect(renderToStaticMarkup(<Input aria-label="Optional field" />)).not.toContain(
       'aria-invalid'
     );
+  });
+
+  it('renders a native textarea, forwards attrs and maps invalid to ARIA', () => {
+    const ref = { current: null } as React.RefObject<HTMLTextAreaElement | null>;
+    const textarea = renderToStaticMarkup(
+      <Textarea ref={ref} aria-label="Notes" rows={4} invalid />
+    );
+
+    expect(textarea).toMatch(/^<textarea\b/);
+    expect(textarea).toContain('aria-label="Notes"');
+    expect(textarea).toContain('rows="4"');
+    expect(textarea).toContain('aria-invalid="true"');
   });
 
   it('publishes the requested badge tone', () => {

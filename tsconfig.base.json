@@ -33,7 +33,7 @@
         "packages/llm/src/index.ts"
       ],
       "@turni/ui": [
-        "packages/ui/src/index.ts"
+        "packages/ui/src/index.tsx"
       ],
       "@turni/widget": [
         "packages/widget/src/index.ts"

@@ -7,15 +7,20 @@ function classes(base: string, custom: string | undefined): string {
   return custom ? `${base} ${custom}` : base;
 }
 
-export type ButtonProps = ComponentPropsWithoutRef<'button'> & {
-  asChild?: boolean;
-  variant?: 'primary' | 'secondary';
-};
+type ButtonVariantProps = { variant?: 'primary' | 'secondary' };
+type NativeButtonProps = ComponentPropsWithoutRef<'button'> &
+  ButtonVariantProps & { asChild?: false };
+type ComposedButtonProps = Omit<
+  ComponentPropsWithoutRef<'button'>,
+  'disabled'
+> &
+  ButtonVariantProps & { asChild: true; disabled?: never };
+export type ButtonProps = NativeButtonProps | ComposedButtonProps;
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ asChild = false, className, type, variant = 'primary', ...props }, ref) => {
     const classNames = classes(
-      'inline-flex min-h-[var(--turni-control-height)] cursor-pointer items-center justify-center rounded-[var(--turni-radius-md)] border border-turni-accent px-[var(--turni-space-4)] font-[inherit] focus-visible:outline-[var(--turni-focus-width)] focus-visible:outline-turni-focus-ring focus-visible:outline-offset-[var(--turni-focus-offset)] disabled:cursor-not-allowed disabled:opacity-[var(--turni-disabled-opacity)] data-[variant=primary]:bg-turni-accent data-[variant=primary]:text-turni-accent-contrast data-[variant=secondary]:border-turni-border data-[variant=secondary]:bg-turni-surface data-[variant=secondary]:text-turni-text',
+      `inline-flex min-h-[var(--turni-control-height)] cursor-pointer items-center justify-center rounded-[var(--turni-radius-md)] border px-[var(--turni-space-4)] font-[inherit] focus-visible:outline-[var(--turni-focus-width)] focus-visible:outline-turni-focus-ring focus-visible:outline-offset-[var(--turni-focus-offset)] disabled:cursor-not-allowed disabled:opacity-[var(--turni-disabled-opacity)] ${variant === 'primary' ? 'border-turni-accent bg-turni-accent text-turni-accent-contrast' : 'border-turni-border bg-turni-surface text-turni-text'}`,
       className
     );
 
@@ -61,6 +66,25 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
   )
 );
 Input.displayName = 'Input';
+
+export type TextareaProps = ComponentPropsWithoutRef<'textarea'> & {
+  invalid?: boolean;
+};
+
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
+  ({ className, invalid = false, ...props }, ref) => (
+    <textarea
+      {...props}
+      ref={ref}
+      className={classes(
+        'min-h-[var(--turni-control-height)] w-full rounded-[var(--turni-radius-sm)] border border-turni-border bg-turni-surface px-[var(--turni-space-3)] py-[var(--turni-space-2)] font-[inherit] text-turni-text focus-visible:outline-[var(--turni-focus-width)] focus-visible:outline-turni-focus-ring focus-visible:outline-offset-[var(--turni-focus-offset)] aria-[invalid=true]:border-turni-danger',
+        className
+      )}
+      aria-invalid={invalid || undefined}
+    />
+  )
+);
+Textarea.displayName = 'Textarea';
 
 export type BadgeProps = ComponentPropsWithoutRef<'span'> & {
   tone?: 'neutral' | 'success' | 'warning' | 'danger';
