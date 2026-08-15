@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { Button, Input } from '@turni/ui';
 import { deleteKnowledgeFile, saveKnowledgeFile } from '../../../../lib/agent-client';
 import styles from '../../cabinet.module.scss';
 
@@ -41,8 +42,9 @@ export function NewKnowledgeFile({
   return (
     <div className={styles['editor']}>
       <label htmlFor="knowledge-name">{labels.name}</label>
-      <input
+      <Input
         id="knowledge-name"
+        name="name"
         type="text"
         value={name}
         placeholder={labels.placeholder}
@@ -52,9 +54,9 @@ export function NewKnowledgeFile({
         }}
       />
       <div className={styles['actions']}>
-        <button type="button" onClick={create} disabled={pending || name.trim() === ''}>
+        <Button type="button" onClick={create} disabled={pending || name.trim() === ''}>
           {labels.create}
-        </button>
+        </Button>
         {failed ? (
           <p className={styles['failure']} role="alert">
             {labels.failed}
@@ -92,9 +94,9 @@ export function DeleteKnowledgeFile({
 
   return (
     <>
-      <button type="button" onClick={remove} disabled={pending}>
+      <Button type="button" onClick={remove} disabled={pending}>
         {label}
-      </button>
+      </Button>
       {failed ? (
         <span className={styles['failure']} role="alert">
           {failureLabel}

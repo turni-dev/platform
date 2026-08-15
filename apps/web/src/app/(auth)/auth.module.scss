@@ -4,10 +4,5 @@
 .card p { margin: 0 0 24px; color: #5d6570; }
 .form { display: flex; flex-direction: column; gap: 8px; }
 .label { font-size: 14px; color: #5d6570; }
-.input { padding: 10px 12px; font-size: 16px; border: 1px solid #d9dde3; border-radius: 8px; }
-.input:focus { outline: 2px solid #17191c; outline-offset: 1px; }
 .error { margin: 4px 0 0; color: #b3261e; font-size: 14px; }
-.submit { margin-top: 12px; padding: 10px 16px; font-size: 16px; border: 0; border-radius: 8px; background: #17191c; color: #fff; cursor: pointer; }
-.submit:disabled { opacity: 0.6; cursor: progress; }
-.secondary { margin-top: 4px; padding: 8px; font-size: 14px; border: 0; background: none; color: #5d6570; cursor: pointer; }
 .switch { display: block; margin-top: 20px; font-size: 14px; color: #5d6570; }

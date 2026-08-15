@@ -5,9 +5,13 @@
   "type": "module",
   "exports": {
     ".": "./src/index.tsx",
-    "./tokens.scss": "./src/tokens.scss"
+    "./tokens.scss": "./src/tokens.scss",
+    "./tailwind.css": "./src/tailwind.css"
   },
   "peerDependencies": {
     "react": "^19.2.0"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.2.3"
   }
 }

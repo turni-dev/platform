@@ -18,6 +18,7 @@ export default tseslint.config(
       parserOptions: {
         project: [
           './apps/backend/tsconfig.app.json',
+          './apps/core-site/tsconfig.json',
           './apps/web/tsconfig.json',
           './packages/contracts/tsconfig.lib.json',
           './packages/llm/tsconfig.lib.json',

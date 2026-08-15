@@ -41,6 +41,7 @@ describe('core fake adapters', () => {
 
     const sent = await fake.send(connection, {
       conversationId: '01900000-0000-7000-8000-000000000002',
+      recipientRef: '777',
       content: { type: 'text', text: 'Подтверждено' }
     });
     const inbound = await fake.parseWebhook({

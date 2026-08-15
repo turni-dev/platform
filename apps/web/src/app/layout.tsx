@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import './globals.scss';
+import '@turni/ui/tailwind.css';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('Dashboard');

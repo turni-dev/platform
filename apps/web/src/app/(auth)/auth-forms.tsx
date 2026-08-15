@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+import { Button, Input } from '@turni/ui';
 import {
   requestOwnerCode,
   verifyOwnerCode,
@@ -41,7 +42,7 @@ export function OwnerEmailForm({ flow }: { flow: OwnerAuthFlow }): React.JSX.Ele
       <label className={styles['label']} htmlFor="email">
         {t('emailLabel')}
       </label>
-      <input
+      <Input
         className={styles['input']}
         id="email"
         name="email"
@@ -56,9 +57,9 @@ export function OwnerEmailForm({ flow }: { flow: OwnerAuthFlow }): React.JSX.Ele
           {error}
         </p>
       )}
-      <button className={styles['submit']} type="submit" disabled={pending}>
+      <Button className={styles['submit']} type="submit" disabled={pending}>
         {t(flow === 'register' ? 'registerSubmit' : 'loginSubmit')}
-      </button>
+      </Button>
     </form>
   );
 }
@@ -107,7 +108,7 @@ export function OwnerCodeForm({
       <label className={styles['label']} htmlFor="code">
         {t('codeLabel')}
       </label>
-      <input
+      <Input
         className={styles['input']}
         id="code"
         name="code"
@@ -124,12 +125,12 @@ export function OwnerCodeForm({
           {error}
         </p>
       )}
-      <button className={styles['submit']} type="submit" disabled={pending}>
+      <Button className={styles['submit']} type="submit" disabled={pending}>
         {t('verifySubmit')}
-      </button>
-      <button className={styles['secondary']} type="button" onClick={resend}>
+      </Button>
+      <Button className={styles['secondary']} type="button" onClick={resend} variant="secondary">
         {t('resend')}
-      </button>
+      </Button>
     </form>
   );
 }

@@ -3,7 +3,7 @@ import { IsoDateTimeSchema, UuidSchema } from '../common.js';
 
 export const MessengerConnectionSchema = z.strictObject({
   id: UuidSchema,
-  type: z.enum(['telegram', 'widget'])
+  type: z.enum(['telegram', 'widget', 'vk'])
 });
 
 export const MessageButtonSchema = z.strictObject({
@@ -38,6 +38,12 @@ export const InboundMessageSchema = z.strictObject({
 
 export const OutboundMessageSchema = z.strictObject({
   conversationId: UuidSchema,
+  /**
+   * Where the reply goes on the provider's side — a VK peer, a Telegram chat.
+   * Our conversation id means nothing to them, so without this an adapter
+   * cannot address a message at all.
+   */
+  recipientRef: z.string().min(1),
   content: MessageContentSchema
 });
 

@@ -35,6 +35,7 @@ describe('MessengerPort contracts', () => {
     expect(
       OutboundMessageSchema.parse({
         conversationId: '01900000-0000-7000-8000-000000000002',
+        recipientRef: '777',
         content: {
           type: 'buttons',
           text: 'Подтвердить?',
@@ -42,6 +43,15 @@ describe('MessengerPort contracts', () => {
         }
       }).content.type
     ).toBe('buttons');
+  });
+
+  it('refuses an outbound message that names no recipient on the provider side', () => {
+    expect(() =>
+      OutboundMessageSchema.parse({
+        conversationId: '01900000-0000-7000-8000-000000000002',
+        content: { type: 'text', text: 'Здравствуйте' }
+      })
+    ).toThrow();
   });
 
   it('keeps raw webhook parsing inside adapters', () => {

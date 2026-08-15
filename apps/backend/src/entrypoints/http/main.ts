@@ -1,4 +1,26 @@
 import 'reflect-metadata';
+import { randomBytes } from 'node:crypto';
+import { ChannelAnalytics } from '../../modules/channels/application/channel-analytics.js';
+import { InboundMessageService } from '../../modules/channels/application/inbound-message-service.js';
+import { VkConnectionService } from '../../modules/channels/application/vk-connection-service.js';
+import { WebhookRoutingKeyService } from '../../modules/channels/application/webhook-routing-key.js';
+import { PostgresChannelConnectionRepository } from '../../modules/channels/infrastructure/database/postgres-channel-connection-repository.js';
+import { PostgresGuestConversationStore } from '../../modules/channels/infrastructure/database/postgres-guest-conversation-store.js';
+import { PostgresWebhookInbox } from '../../modules/channels/infrastructure/database/postgres-webhook-inbox.js';
+import { FaqChatPipeline } from '../../modules/chat/application/faq-chat-pipeline.js';
+import {
+  FrontlineWorkflow,
+  type FrontlineFaqEntry
+} from '../../modules/frontline/application/frontline-workflow.js';
+import { KnowledgeFaqSource } from '../../modules/frontline/application/knowledge-faq-source.js';
+import { FakePolicyClassifier } from '../../modules/policy/application/fake-policy-classifier.js';
+import { PolicyCascade } from '../../modules/policy/application/policy-cascade.js';
+import { PolicyEngine } from '../../modules/policy/domain/policy-engine.js';
+import { SecretCipher } from '../../platform/crypto/secret-cipher.js';
+import { readSecretKeyRing } from '../../platform/crypto/secret-key-ring.js';
+import { createVkMessenger } from '../../platform/integrations/vk/index.js';
+import type { ChannelHttpOptions } from './channel-routes.js';
+import type { VkWebhookHttpOptions } from './vk-webhook-routes.js';
 import { DurableGuestSessionService } from '../../modules/channels/application/durable-guest-session.js';
 import { GuestSessionService } from '../../modules/channels/application/guest-session.js';
 import { UuidV7Generator } from '../../modules/channels/application/uuid-v7-generator.js';
@@ -44,10 +66,13 @@ async function bootstrap(): Promise<void> {
   let app: Awaited<ReturnType<typeof createHttpApp>> | undefined;
 
   try {
+    const channels = composeChannels(env, database.database);
     app = await createHttpApp({
       guestSessionService: guestSessions,
       ownerAuth: composeOwnerAuth(env, database.database),
-      agent: composeAgent(env, database.database)
+      agent: composeAgent(env, database.database),
+      channels: channels.cabinet,
+      vkWebhook: channels.webhook
     });
     const fastify = app.getHttpAdapter().getInstance();
     fastify.addHook('onClose', async () => database.close());
@@ -141,6 +166,111 @@ function composeAgent(
       )
     })
   };
+}
+
+/**
+ * The VK channel, both halves of it: the cabinet routes an owner connects a
+ * community through, and the public callback a guest's message arrives on.
+ * This is also where FaqChatPipeline finally runs in production — until now it
+ * existed only in tests — with FrontLine fed by the knowledge file the owner
+ * edits in the cabinet.
+ */
+function composeChannels(
+  env: ReturnType<typeof readHttpEnv>,
+  database: ReturnType<typeof createPostgresTenantDatabase>['database']
+): Readonly<{ cabinet: ChannelHttpOptions; webhook: VkWebhookHttpOptions }> {
+  const ids = new UuidV7Generator();
+  const connections = new PostgresChannelConnectionRepository(database);
+  const agents = new PostgresAgentRepository(database);
+  const files = new PostgresAgentFileStore(database);
+  const events = new DatabaseDomainEventBus(new PostgresDomainEventStore(database));
+  const analytics = new ChannelAnalytics(events, ids);
+  const routingKeys = new WebhookRoutingKeyService(env.WEBHOOK_ROUTING_SECRET);
+  const cipher = new SecretCipher('credentials', readSecretKeyRing('credentials'));
+  const faq = new KnowledgeFaqSource(files);
+  const policy = new PolicyCascade(
+    new PolicyEngine(),
+    new FakePolicyClassifier(),
+    new FakePolicyClassifier()
+  );
+
+  return {
+    cabinet: {
+      accessTokens: new OwnerAccessTokenService(env.OWNER_AUTH_SECRET),
+      allowedOrigins: [new URL(env.APP_ORIGIN).origin],
+      service: new VkConnectionService({
+        connections,
+        cipher,
+        agents: {
+          findByTenant: async (tenantId) => {
+            const agent = await agents.findByTenant(tenantId);
+
+            return agent === undefined ? undefined : { agentId: agent.agentId };
+          }
+        },
+        messengers: {
+          create: (input) =>
+            createVkMessenger({
+              accessKey: input.accessKey,
+              groupId: input.groupId,
+              ...(input.connectionId === undefined
+                ? {}
+                : { connectionId: input.connectionId })
+            })
+        },
+        routingKeys,
+        webhookOrigin: new URL(env.PUBLIC_WEBHOOK_ORIGIN).origin,
+        ids,
+        secrets: { next: () => randomBytes(24).toString('base64url') },
+        analytics,
+        clock: () => new Date()
+      })
+    },
+    webhook: {
+      routingKeys,
+      connections,
+      analytics,
+      inbound: new InboundMessageService({
+        inbox: new PostgresWebhookInbox(database),
+        store: new PostgresGuestConversationStore(database),
+        ids,
+        analytics,
+        pipeline: {
+          handle: async (input) =>
+            new FaqChatPipeline(
+              { evaluate: (policyInput) => policy.evaluate(policyInput) },
+              new FrontlineWorkflow([...(await faqEntries(input.tenantId))]),
+              events
+            ).handle(input)
+        },
+        messenger: (message) => ({
+          send: async (connection, outbound) => {
+            const record = await connections.findById({
+              tenantId: message.tenantId,
+              connectionId: message.connectionId
+            });
+            if (record === undefined) {
+              throw new Error('A reply was built for a connection that no longer exists');
+            }
+
+            return createVkMessenger({
+              accessKey: cipher.decrypt(record.credentialsEncrypted, message.tenantId),
+              groupId: Number(record.metadata['group_id']),
+              connectionId: message.connectionId
+            }).send(connection, outbound);
+          }
+        })
+      })
+    }
+  };
+
+  async function faqEntries(
+    tenantId: string
+  ): Promise<readonly FrontlineFaqEntry[]> {
+    const agent = await agents.findByTenant(tenantId);
+
+    return agent === undefined ? [] : faq.entries({ tenantId, agentId: agent.agentId });
+  }
 }
 
 void bootstrap().catch((error: unknown) => {

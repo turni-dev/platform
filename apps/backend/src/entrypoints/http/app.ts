@@ -16,6 +16,11 @@ import {
   type WidgetMessageHandler
 } from '../../modules/channels/application/widget-chat-connection.js';
 import { registerAgentRoutes, type AgentHttpOptions } from './agent-routes.js';
+import { registerChannelRoutes, type ChannelHttpOptions } from './channel-routes.js';
+import {
+  registerVkWebhookRoutes,
+  type VkWebhookHttpOptions
+} from './vk-webhook-routes.js';
 import {
   registerOwnerAuthRoutes,
   type OwnerAuthHttpOptions
@@ -41,6 +46,8 @@ Module({})(HttpAppModule);
 export type HttpAppOptions = Readonly<{
   ownerAuth?: OwnerAuthHttpOptions;
   agent?: AgentHttpOptions;
+  channels?: ChannelHttpOptions;
+  vkWebhook?: VkWebhookHttpOptions;
   guestSessionService?: DurableGuestSessionService;
   widgetMessageHandler?: WidgetMessageHandler;
   cabinetStream?: CabinetStream;
@@ -53,7 +60,11 @@ export async function createHttpApp(
   const app = await NestFactory.create<NestFastifyApplication>(
     HttpAppModule,
     new FastifyAdapter({
-      logger: false
+      logger: false,
+      // A signed webhook routing key is longer than the 100-character default,
+      // and a route parameter over the limit is answered 404 rather than
+      // refused — a silent way to lose every provider callback.
+      maxParamLength: 512
     }),
     {
       logger: false
@@ -72,6 +83,14 @@ export async function createHttpApp(
 
   if (options?.agent !== undefined) {
     registerAgentRoutes(fastify, options.agent);
+  }
+
+  if (options?.channels !== undefined) {
+    registerChannelRoutes(fastify, options.channels);
+  }
+
+  if (options?.vkWebhook !== undefined) {
+    registerVkWebhookRoutes(fastify, options.vkWebhook);
   }
 
   fastify.get(HttpRoute.CabinetStream, (request, reply) => {

@@ -43,7 +43,7 @@ export const channelConnections = pgTable(
   (table) => [
     check(
       'channel_connections_type_check',
-      sql`${table.type} in ('telegram', 'widget')`
+      sql`${table.type} in ('telegram', 'widget', 'vk')`
     ),
     check(
       'channel_connections_status_check',
@@ -94,6 +94,9 @@ export const guests = pgTable(
       table.tenantId,
       table.phoneHash
     ),
+    uniqueIndex('guests_tenant_channel_ref_uidx')
+      .on(table.tenantId, sql`(${table.metadata} ->> 'channel_ref')`)
+      .where(sql`${table.metadata} ? 'channel_ref'`),
     index('guests_tenant_last_seen_idx').on(
       table.tenantId,
       table.lastSeenAt
@@ -236,7 +239,7 @@ export const webhookInbox = pgTable(
   (table) => [
     check(
       'webhook_inbox_source_check',
-      sql`${table.source} in ('telegram', 'yookassa')`
+      sql`${table.source} in ('telegram', 'yookassa', 'vk')`
     ),
     check(
       'webhook_inbox_status_check',
