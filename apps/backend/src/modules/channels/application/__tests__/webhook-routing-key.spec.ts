@@ -24,16 +24,16 @@ describe('WebhookRoutingKeyService', () => {
 
   it('refuses a tampered payload', () => {
     const service = new WebhookRoutingKeyService(secret);
-    const signature = service.issue(claims).split('.')[1] ?? '';
+    const signature = service.issue(claims).split('~')[1] ?? '';
 
-    expect(() => service.verify(`tampered.${signature}`)).toThrow();
+    expect(() => service.verify(`tampered~${signature}`)).toThrow();
   });
 
   it('refuses a malformed key', () => {
     const service = new WebhookRoutingKeyService(secret);
 
     expect(() => service.verify('nonsense')).toThrow();
-    expect(() => service.verify('a.b.c')).toThrow();
+    expect(() => service.verify('a~b~c')).toThrow();
   });
 
   it('refuses a secret too short to sign with', () => {
@@ -44,7 +44,7 @@ describe('WebhookRoutingKeyService', () => {
     const service = new WebhookRoutingKeyService(secret);
     const key = service.issue(claims);
     const decoded: unknown = JSON.parse(
-      Buffer.from(key.split('.')[0] ?? '', 'base64url').toString('utf8')
+      Buffer.from(key.split('~')[0] ?? '', 'base64url').toString('utf8')
     );
 
     expect(decoded).toEqual(claims);

@@ -16,6 +16,14 @@ export type WebhookRoutingClaims = z.infer<typeof WebhookRoutingClaimsSchema>;
  * lives in the provider's settings, and an expiring callback would simply stop
  * delivering messages one day.
  */
+/**
+ * Not a dot: the key travels inside a URL path, and a dot in a path segment is
+ * read as a static suffix by the router, so a dotted key never reaches the
+ * handler at all. Base64url uses neither this character nor any other reserved
+ * one.
+ */
+const separator = '~';
+
 export class WebhookRoutingKeyService {
   private readonly secret: Buffer;
 
@@ -31,11 +39,11 @@ export class WebhookRoutingKeyService {
       JSON.stringify(WebhookRoutingClaimsSchema.parse(claims))
     ).toString('base64url');
 
-    return `${payload}.${this.sign(payload)}`;
+    return [payload, this.sign(payload)].join(separator);
   }
 
   public verify(key: string): WebhookRoutingClaims {
-    const [payload, signature, ...rest] = key.split('.');
+    const [payload, signature, ...rest] = key.split(separator);
     if (
       payload === undefined ||
       signature === undefined ||

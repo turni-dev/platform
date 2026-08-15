@@ -60,7 +60,11 @@ export async function createHttpApp(
   const app = await NestFactory.create<NestFastifyApplication>(
     HttpAppModule,
     new FastifyAdapter({
-      logger: false
+      logger: false,
+      // A signed webhook routing key is longer than the 100-character default,
+      // and a route parameter over the limit is answered 404 rather than
+      // refused — a silent way to lose every provider callback.
+      maxParamLength: 512
     }),
     {
       logger: false

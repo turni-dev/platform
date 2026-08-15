@@ -1,4 +1,8 @@
-import type { MessengerConnection, WebhookSetup } from '@turni/contracts';
+import type {
+  CredentialValidation,
+  MessengerConnection,
+  WebhookSetup
+} from '@turni/contracts';
 import { z } from 'zod';
 import type { SecretCipher } from '../../../platform/crypto/secret-cipher.js';
 import type { ChannelAnalytics } from './channel-analytics.js';
@@ -12,7 +16,7 @@ import type { WebhookRoutingKeyService } from './webhook-routing-key.js';
 export interface ChannelMessenger {
   validateCredentials(
     credentials: Readonly<{ secret: string }>
-  ): Promise<Readonly<{ valid: boolean; identity?: string }>>;
+  ): Promise<CredentialValidation>;
   confirmationCode(): Promise<string>;
   setupWebhook(connection: MessengerConnection, setup: WebhookSetup): Promise<void>;
 }
