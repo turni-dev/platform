@@ -29,7 +29,7 @@ A guest is keyed by `meta.channel_ref` shaped `<channel>:<external id>` (`vk:123
 
 No column is added. The community access key goes to `credentials_enc` through `SecretCipher`; the secret we generate for VK goes to `webhook_secret`; `group_id`, `group_name` and the confirmation code go to `meta`.
 
-Shared contracts change once: `MessengerConnectionSchema.type` gains `'vk'`. Migration and contracts both need founder review.
+Shared contracts change twice, and both need founder review together with the migration. `MessengerConnectionSchema.type` gains `'vk'`. `OutboundMessageSchema` gains `recipientRef`, the channel-side address of the recipient: today the schema carries only `conversationId`, which is our identifier, so an adapter has no way to learn where a reply goes. That is a gap in the port rather than a VK detail — Telegram and MAX would hit it identically.
 
 ## Connection wizard
 
@@ -45,7 +45,7 @@ A callback request is answered `ok` with status 200, which is what VK requires. 
 2. `webhook_inbox` takes a row keyed `(source='vk', external_id=event_id)`. An event already `processed` returns `ok` without answering the guest twice.
 3. The guest is found or created by `meta.channel_ref`, then the conversation for that connection, then the guest message.
 4. `FaqChatPipeline` produces a completed reply — policy first, FrontLine only on `auto`.
-5. The reply is sent with a `random_id` derived deterministically from `event_id`, so a VK retry cannot deliver a second copy, then the inbox row becomes `processed`.
+5. The reply is sent with a `random_id` derived deterministically from the reply itself — conversation, recipient and text — so a VK retry produces the same identifier and cannot deliver a second copy. The inbox row then becomes `processed`.
 
 A failure marks the row `failed` and answers 500. VK retries on its own schedule (10 s, 3 min, 10 min, 30 min, 1 h) and the retry is allowed to claim a `received` or `failed` row, so the external retry mechanism replaces a queue for now. A queue becomes necessary when an answer involves an LLM and holds an HTTP worker for seconds; that is a separate card.
 
