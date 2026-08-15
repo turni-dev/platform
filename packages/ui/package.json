@@ -9,5 +9,8 @@
   },
   "peerDependencies": {
     "react": "^19.2.0"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.2.3"
   }
 }
