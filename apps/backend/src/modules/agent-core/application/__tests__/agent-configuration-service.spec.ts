@@ -1,5 +1,7 @@
 import { AgentInstructionsPath } from '@turni/contracts';
 import { describe, expect, it } from 'vitest';
+import { FakeDomainEventBus } from '../../../reporting/application/fake-domain-event-bus.js';
+import { AgentConfigurationAnalytics } from '../agent-configuration-analytics.js';
 import { AgentConfigurationService } from '../agent-configuration-service.js';
 import type {
   AgentFileIndexEntry,
@@ -102,23 +104,29 @@ function build(): {
   readonly service: AgentConfigurationService;
   readonly agents: FakeAgentRepository;
   readonly files: FakeFileStore;
+  readonly events: FakeDomainEventBus;
 } {
   const agents = new FakeAgentRepository();
   const files = new FakeFileStore();
+  const events = new FakeDomainEventBus();
   let sequence = 0;
+
+  const ids = {
+    next: (): string => {
+      sequence += 1;
+      return `01900000-0000-7000-8000-0000000001${String(sequence).padStart(2, '0')}`;
+    }
+  };
 
   return {
     agents,
     files,
+    events,
     service: new AgentConfigurationService({
       agents,
       files,
-      ids: {
-        next: () => {
-          sequence += 1;
-          return `01900000-0000-7000-8000-0000000001${String(sequence).padStart(2, '0')}`;
-        }
-      }
+      ids,
+      analytics: new AgentConfigurationAnalytics(events, ids)
     })
   };
 }
@@ -237,10 +245,10 @@ describe('AgentConfigurationService knowledge', () => {
     });
 
     await expect(
-      context.service.deleteKnowledge({ tenantId, path: 'knowledge/menu.md' })
+      context.service.deleteKnowledge({ tenantId, userId, path: 'knowledge/menu.md' })
     ).resolves.toBe(true);
     await expect(
-      context.service.deleteKnowledge({ tenantId, path: 'knowledge/menu.md' })
+      context.service.deleteKnowledge({ tenantId, userId, path: 'knowledge/menu.md' })
     ).resolves.toBe(false);
   });
 
@@ -249,7 +257,7 @@ describe('AgentConfigurationService knowledge', () => {
     await context.service.ensureAgent({ tenantId, tenantName, userId });
 
     await expect(
-      context.service.deleteKnowledge({ tenantId, path: AgentInstructionsPath })
+      context.service.deleteKnowledge({ tenantId, userId, path: AgentInstructionsPath })
     ).rejects.toThrow();
   });
 });
@@ -261,11 +269,12 @@ describe('AgentConfigurationService.updateAutomations', () => {
 
     const allowed = await context.service.updateAutomations({
       tenantId,
+      userId,
       presets: ['telegram.reply']
     });
     expect(allowed.presets).toEqual(['telegram.reply']);
 
-    const cleared = await context.service.updateAutomations({ tenantId, presets: [] });
+    const cleared = await context.service.updateAutomations({ tenantId, userId, presets: [] });
     expect(cleared.presets).toEqual([]);
   });
 
@@ -273,7 +282,7 @@ describe('AgentConfigurationService.updateAutomations', () => {
     const context = build();
 
     await expect(
-      context.service.updateAutomations({ tenantId, presets: [] })
+      context.service.updateAutomations({ tenantId, userId, presets: [] })
     ).rejects.toThrow();
   });
 });
@@ -281,5 +290,69 @@ describe('AgentConfigurationService.updateAutomations', () => {
 describe('AgentConfigurationService.read', () => {
   it('says nothing for a tenant without an agent', async () => {
     await expect(build().service.read(tenantId)).resolves.toBeUndefined();
+  });
+});
+
+describe('AgentConfigurationService analytics', () => {
+  it('records the configuration funnel without ever carrying content', async () => {
+    const context = build();
+
+    await context.service.ensureAgent({ tenantId, tenantName, userId });
+    await context.service.updateInstructions({
+      tenantId,
+      userId,
+      content: 'Мы кофейня третьей волны.'
+    });
+    await context.service.upsertKnowledge({
+      tenantId,
+      userId,
+      path: 'knowledge/menu.md',
+      content: 'Эспрессо 180 ₽'
+    });
+    await context.service.deleteKnowledge({ tenantId, userId, path: 'knowledge/menu.md' });
+    await context.service.updateAutomations({ tenantId, userId, presets: [] });
+
+    expect(context.events.publishedEvents.map((event) => event.name)).toEqual([
+      'agent.created',
+      'agent.instructions_updated',
+      'agent.knowledge_updated',
+      'agent.knowledge_deleted',
+      'agent.automations_updated'
+    ]);
+    const published = JSON.stringify(context.events.publishedEvents);
+    expect(published).not.toContain('Эспрессо');
+    expect(published).not.toContain('третьей волны');
+  });
+
+  it('records a knowledge save with its path and revision, which are structure not data', async () => {
+    const context = build();
+    await context.service.ensureAgent({ tenantId, tenantName, userId });
+
+    await context.service.upsertKnowledge({
+      tenantId,
+      userId,
+      path: 'knowledge/menu.md',
+      content: 'Эспрессо'
+    });
+
+    expect(context.events.publishedEvents.at(-1)?.props).toMatchObject({
+      path: 'knowledge/menu.md',
+      revision: 1
+    });
+  });
+
+  it('records nothing when a save changed nothing', async () => {
+    const context = build();
+    const created = await context.service.ensureAgent({ tenantId, tenantName, userId });
+
+    await context.service.updateInstructions({
+      tenantId,
+      userId,
+      content: created.instructions.content
+    });
+
+    expect(context.events.publishedEvents.map((event) => event.name)).toEqual([
+      'agent.created'
+    ]);
   });
 });

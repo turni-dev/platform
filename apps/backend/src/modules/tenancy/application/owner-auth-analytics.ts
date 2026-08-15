@@ -1,6 +1,9 @@
-import { DomainEventEnvelopeSchema, type JsonValue } from '@turni/contracts';
+import type { JsonValue } from '@turni/contracts';
+import {
+  AnalyticsRecorder,
+  type AnalyticsIdGeneratorPort
+} from '../../reporting/application/analytics-recorder.js';
 import type { DomainEventBus } from '../../reporting/application/domain-event-bus.port.js';
-import type { OwnerSessionIdGeneratorPort } from './owner-session-store.port.js';
 
 export const OwnerAuthEventName = {
   Registered: 'owner.registered',
@@ -10,24 +13,20 @@ export const OwnerAuthEventName = {
 
 /**
  * Turns owner authentication outcomes into analytics events. Props carry ids
- * only: the owner email is PII and never leaves the auth tables. A failed
- * publish is swallowed, because a missing metric must never cost a sign-in.
+ * only: the owner email is PII and never leaves the auth tables.
  */
 export class OwnerAuthAnalytics {
-  public constructor(
-    private readonly bus: DomainEventBus,
-    private readonly ids: OwnerSessionIdGeneratorPort
-  ) {}
+  private readonly recorder: AnalyticsRecorder;
+
+  public constructor(bus: DomainEventBus, ids: AnalyticsIdGeneratorPort) {
+    this.recorder = new AnalyticsRecorder(bus, ids);
+  }
 
   public async ownerRegistered(
     input: Readonly<{ tenantId: string; userId: string; sessionId: string; at: Date }>
   ): Promise<void> {
-    await this.publish({
-      name: OwnerAuthEventName.Registered,
-      tenantId: input.tenantId,
-      userId: input.userId,
-      at: input.at,
-      props: { sessionId: input.sessionId }
+    await this.record(OwnerAuthEventName.Registered, input, {
+      sessionId: input.sessionId
     });
   }
 
@@ -40,12 +39,9 @@ export class OwnerAuthAnalytics {
       at: Date;
     }>
   ): Promise<void> {
-    await this.publish({
-      name: OwnerAuthEventName.SignedIn,
-      tenantId: input.tenantId,
-      userId: input.userId,
-      at: input.at,
-      props: { sessionId: input.sessionId, registration: input.registration }
+    await this.record(OwnerAuthEventName.SignedIn, input, {
+      sessionId: input.sessionId,
+      registration: input.registration
     });
   }
 
@@ -56,44 +52,26 @@ export class OwnerAuthAnalytics {
   public async ownerSignedOut(
     input: Readonly<{ tenantId: string; sessionId: string; at: Date }>
   ): Promise<void> {
-    await this.publish({
+    await this.recorder.record({
       name: OwnerAuthEventName.SignedOut,
       tenantId: input.tenantId,
-      at: input.at,
-      props: { sessionId: input.sessionId }
+      actor: { type: 'owner' },
+      props: { sessionId: input.sessionId },
+      at: input.at
     });
   }
 
-  private async publish(
-    event: Readonly<{
-      name: string;
-      tenantId: string;
-      userId?: string;
-      at: Date;
-      props: Record<string, JsonValue>;
-    }>
+  private async record(
+    name: string,
+    owner: Readonly<{ tenantId: string; userId: string; at: Date }>,
+    props: Record<string, JsonValue>
   ): Promise<void> {
-    try {
-      await this.bus.publish(
-        DomainEventEnvelopeSchema.parse({
-          id: this.ids.next(),
-          tenantId: event.tenantId,
-          name: event.name,
-          version: 1,
-          actor: {
-            type: 'owner',
-            ...(event.userId === undefined ? {} : { id: event.userId })
-          },
-          correlationId: this.ids.next(),
-          props: event.props,
-          createdAt: event.at.toISOString()
-        })
-      );
-    } catch (error) {
-      console.error('owner auth analytics dropped an event', {
-        name: event.name,
-        error
-      });
-    }
+    await this.recorder.record({
+      name,
+      tenantId: owner.tenantId,
+      actor: { type: 'owner', id: owner.userId },
+      props,
+      at: owner.at
+    });
   }
 }

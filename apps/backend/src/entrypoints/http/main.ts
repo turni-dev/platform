@@ -4,6 +4,10 @@ import { GuestSessionService } from '../../modules/channels/application/guest-se
 import { UuidV7Generator } from '../../modules/channels/application/uuid-v7-generator.js';
 import { PostgresGuestSessionStore } from '../../modules/channels/infrastructure/database/postgres-guest-session-store.js';
 import { WidgetRoutingKeyService } from '../../modules/channels/application/widget-routing-key.js';
+import { AgentConfigurationAnalytics } from '../../modules/agent-core/application/agent-configuration-analytics.js';
+import { AgentConfigurationService } from '../../modules/agent-core/application/agent-configuration-service.js';
+import { PostgresAgentFileStore } from '../../modules/agent-core/infrastructure/database/postgres-agent-file-store.js';
+import { PostgresAgentRepository } from '../../modules/agent-core/infrastructure/database/postgres-agent-repository.js';
 import { DatabaseDomainEventBus } from '../../modules/reporting/infrastructure/database-domain-event-bus.js';
 import { PostgresDomainEventStore } from '../../modules/reporting/infrastructure/database/postgres-domain-event-store.js';
 import { OwnerAccessTokenService } from '../../modules/tenancy/application/owner-access-token.js';
@@ -21,6 +25,7 @@ import { readHttpEnv } from '../../platform/env.js';
 import { createNodemailerTransport } from '../../platform/integrations/smtp/nodemailer-transport.js';
 import { SmtpOwnerAuthNotifier } from '../../platform/integrations/smtp/smtp-owner-auth-notifier.js';
 import { createHttpApp } from './app.js';
+import type { AgentHttpOptions } from './agent-routes.js';
 import type { OwnerAuthHttpOptions } from './owner-auth-routes.js';
 
 async function bootstrap(): Promise<void> {
@@ -41,7 +46,8 @@ async function bootstrap(): Promise<void> {
   try {
     app = await createHttpApp({
       guestSessionService: guestSessions,
-      ownerAuth: composeOwnerAuth(env, database.database)
+      ownerAuth: composeOwnerAuth(env, database.database),
+      agent: composeAgent(env, database.database)
     });
     const fastify = app.getHttpAdapter().getInstance();
     fastify.addHook('onClose', async () => database.close());
@@ -107,6 +113,29 @@ function composeOwnerAuth(
       ids,
       secret: env.OWNER_AUTH_SECRET,
       analytics: new OwnerAuthAnalytics(
+        new DatabaseDomainEventBus(new PostgresDomainEventStore(database)),
+        ids
+      )
+    })
+  };
+}
+
+/** The cabinet's agent stack: markdown in Postgres, events in the same tenant. */
+function composeAgent(
+  env: ReturnType<typeof readHttpEnv>,
+  database: ReturnType<typeof createPostgresTenantDatabase>['database']
+): AgentHttpOptions {
+  const ids = new UuidV7Generator();
+
+  return {
+    owners: new PostgresOwnerRegistrationRepository(database),
+    accessTokens: new OwnerAccessTokenService(env.OWNER_AUTH_SECRET),
+    allowedOrigins: [new URL(env.APP_ORIGIN).origin],
+    service: new AgentConfigurationService({
+      agents: new PostgresAgentRepository(database),
+      files: new PostgresAgentFileStore(database),
+      ids,
+      analytics: new AgentConfigurationAnalytics(
         new DatabaseDomainEventBus(new PostgresDomainEventStore(database)),
         ids
       )

@@ -14,6 +14,7 @@ import {
   startingAgentTemplate,
   startingInstructions
 } from '../domain/agent-configuration.js';
+import type { AgentConfigurationAnalytics } from './agent-configuration-analytics.js';
 import type { AgentFileRecord, AgentFileStorePort } from './agent-file-store.port.js';
 import type {
   AgentIdGeneratorPort,
@@ -36,10 +37,12 @@ const KnowledgeUpsertSchema = InstructionsUpdateSchema.extend({
 });
 const KnowledgeDeleteSchema = z.strictObject({
   tenantId: z.uuidv7(),
+  userId: z.uuidv7(),
   path: KnowledgeFilePathSchema
 });
 const AutomationsUpdateSchema = z.strictObject({
   tenantId: z.uuidv7(),
+  userId: z.uuidv7(),
   presets: z.array(z.string())
 });
 
@@ -54,6 +57,8 @@ export interface AgentConfigurationDependencies {
   readonly agents: AgentRepositoryPort;
   readonly files: AgentFileStorePort;
   readonly ids: AgentIdGeneratorPort;
+  /** Absent in deployments that do not record analytics yet. */
+  readonly analytics?: AgentConfigurationAnalytics;
 }
 
 /**
@@ -67,7 +72,8 @@ export class AgentConfigurationService {
 
   /** Returns the tenant's agent, creating the starting one on first sight. */
   public async ensureAgent(
-    input: Readonly<{ tenantId: string; tenantName: string; userId: string }>
+    input: Readonly<{ tenantId: string; tenantName: string; userId: string }>,
+    now = new Date()
   ): Promise<AgentConfiguration> {
     const request = EnsureSchema.parse(input);
     const existing = await this.read(request.tenantId);
@@ -95,6 +101,12 @@ export class AgentConfigurationService {
       content: startingInstructions(request.tenantName),
       authorUserId: request.userId
     });
+    await this.dependencies.analytics?.agentCreated({
+      tenantId: request.tenantId,
+      userId: request.userId,
+      agentId: agent.agentId,
+      at: now
+    });
 
     return this.configurationOf(agent);
   }
@@ -105,42 +117,87 @@ export class AgentConfigurationService {
     return agent === undefined ? undefined : this.configurationOf(agent);
   }
 
+  /** Reads one knowledge file with its content, or nothing when it is gone. */
+  public async readFile(
+    input: Readonly<{ tenantId: string; path: string }>
+  ): Promise<AgentFile | undefined> {
+    const request = z
+      .strictObject({ tenantId: z.uuidv7(), path: KnowledgeFilePathSchema })
+      .parse(input);
+    const agent = await this.requireAgent(request.tenantId);
+    const file = await this.dependencies.files.read({
+      tenantId: request.tenantId,
+      agentId: agent.agentId,
+      path: request.path
+    });
+
+    return file === undefined ? undefined : fileOf(file);
+  }
+
   public async updateInstructions(
-    input: Readonly<{ tenantId: string; userId: string; content: string }>
+    input: Readonly<{ tenantId: string; userId: string; content: string }>,
+    now = new Date()
   ): Promise<AgentFile> {
     const request = InstructionsUpdateSchema.parse(input);
-
-    return this.save({
+    const saved = await this.save({
       tenantId: request.tenantId,
       userId: request.userId,
       path: AgentInstructionsPath,
       content: request.content
     });
+
+    if (saved.changed) {
+      await this.dependencies.analytics?.instructionsUpdated(
+        this.context(request, saved.agentId, now),
+        saved.file.revision
+      );
+    }
+
+    return saved.file;
   }
 
   public async upsertKnowledge(
-    input: Readonly<{ tenantId: string; userId: string; path: string; content: string }>
+    input: Readonly<{ tenantId: string; userId: string; path: string; content: string }>,
+    now = new Date()
   ): Promise<AgentFile> {
     const request = KnowledgeUpsertSchema.parse(input);
+    const saved = await this.save(request);
 
-    return this.save(request);
+    if (saved.changed) {
+      await this.dependencies.analytics?.knowledgeUpdated(
+        this.context(request, saved.agentId, now),
+        { path: saved.file.path, revision: saved.file.revision }
+      );
+    }
+
+    return saved.file;
   }
 
   public async deleteKnowledge(
-    input: Readonly<{ tenantId: string; path: string }>
+    input: Readonly<{ tenantId: string; userId: string; path: string }>,
+    now = new Date()
   ): Promise<boolean> {
     const request = KnowledgeDeleteSchema.parse(input);
     const agent = await this.requireAgent(request.tenantId);
-
-    return this.dependencies.files.remove({
+    const removed = await this.dependencies.files.remove({
       tenantId: request.tenantId,
       agentId: agent.agentId,
       path: request.path
     });
+
+    if (removed) {
+      await this.dependencies.analytics?.knowledgeDeleted(
+        this.context(request, agent.agentId, now),
+        request.path
+      );
+    }
+
+    return removed;
   }
 
   public async updateAutomations(
-    input: Readonly<{ tenantId: string; presets: readonly string[] }>
+    input: Readonly<{ tenantId: string; userId: string; presets: readonly string[] }>,
+    now = new Date()
   ): Promise<AutomationAllowlist> {
     const request = AutomationsUpdateSchema.parse(input);
     const allowlist = AutomationAllowlistSchema.parse({ presets: request.presets });
@@ -151,13 +208,25 @@ export class AgentConfigurationService {
       agentId: agent.agentId,
       presets: allowlist.presets
     });
+    await this.dependencies.analytics?.automationsUpdated(
+      this.context(request, agent.agentId, now),
+      allowlist.presets
+    );
 
     return allowlist;
   }
 
+  private context(
+    request: Readonly<{ tenantId: string; userId: string }>,
+    agentId: string,
+    at: Date
+  ): Readonly<{ tenantId: string; userId: string; agentId: string; at: Date }> {
+    return { tenantId: request.tenantId, userId: request.userId, agentId, at };
+  }
+
   private async save(
     request: Readonly<{ tenantId: string; userId: string; path: string; content: string }>
-  ): Promise<AgentFile> {
+  ): Promise<{ readonly file: AgentFile; readonly changed: boolean; readonly agentId: string }> {
     const agent = await this.requireAgent(request.tenantId);
     const current = await this.dependencies.files.read({
       tenantId: request.tenantId,
@@ -173,7 +242,7 @@ export class AgentConfigurationService {
 
       // An identical save would fill the owner's history with noise.
       if (unchanged) {
-        return fileOf(current);
+        return { file: fileOf(current), changed: false, agentId: agent.agentId };
       }
     }
 
@@ -190,7 +259,11 @@ export class AgentConfigurationService {
       authorUserId: request.userId
     });
 
-    return { path: request.path, revision, content: request.content };
+    return {
+      file: { path: request.path, revision, content: request.content },
+      changed: true,
+      agentId: agent.agentId
+    };
   }
 
   private async requireAgent(tenantId: string): Promise<AgentRecord> {

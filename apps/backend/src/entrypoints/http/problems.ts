@@ -22,6 +22,16 @@ export function unauthorized(reply: FastifyReply): FastifyReply {
   });
 }
 
+/** Used both for a missing thing and for another tenant's: a stranger learns
+ * nothing about what exists. */
+export function notFound(reply: FastifyReply): FastifyReply {
+  return reply.code(404).send({
+    type: ProblemType.InvalidRequest,
+    title: 'Not found',
+    status: 404
+  });
+}
+
 export function rateLimited(
   reply: FastifyReply,
   retryAfterSeconds: number
