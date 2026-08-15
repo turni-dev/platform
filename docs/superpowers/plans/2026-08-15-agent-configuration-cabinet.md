@@ -52,7 +52,7 @@ far past 400 lines, against the delivery rules in `AGENTS.md`.
 
 ## Slices
 
-### Slice 1 — Owner-authenticated request context (primitive A)
+### Slice 1 — Owner-authenticated request context (primitive A, done 2026-08-15)
 
 - Extract the access-cookie → verified claims path out of the route file into a
   reusable `authenticatedOwner(request)` returning `{ userId, tenantId, role }`
@@ -63,6 +63,10 @@ far past 400 lines, against the delivery rules in `AGENTS.md`.
 - Acceptance: no cookie → 401; tampered or expired token → 401; valid token →
   the handler receives the tenant context; a mutation without a trusted Origin
   → 403 and never reaches the handler.
+- Delivered as `d2a1545`: `OwnerRequestGuard.read/mutate` wrap a handler and
+  pass it the owner and tenant; RFC7807 refusals (including 429 and 503) moved
+  to `problems.ts`; `/auth/me`, `/refresh` and `/logout` now share them. Nine
+  guard tests plus the existing auth e2e cover it.
 
 ### Slice 2 — Agent configuration domain and application
 
