@@ -593,8 +593,8 @@ git commit -m "feat(vk): add the VK community messenger adapter"
 
 **Files:**
 - Modify: `packages/contracts/src/ports/messenger.ts`
-- Create: `apps/backend/src/modules/channels/infrastructure/database/migrations/0016_vk_channel.sql`
-- Create: `apps/backend/src/modules/channels/infrastructure/database/migrations/0017_guest_channel_ref.concurrent.sql`
+- Create: `apps/backend/src/modules/channels/infrastructure/database/migrations/0017_vk_channel.sql`
+- Create: `apps/backend/src/modules/channels/infrastructure/database/migrations/0018_guest_channel_ref.concurrent.sql`
 - Modify: `apps/backend/src/modules/channels/infrastructure/database/schema.ts`
 - Modify: `apps/backend/src/modules/channels/infrastructure/database/__tests__/migration.spec.ts`
 - Modify: `apps/backend/src/platform/fakes/core-fakes.spec.ts` (the fake's outbound fixture gains `recipientRef`)
@@ -609,9 +609,9 @@ This task changes shared contracts and the database. Per CODEOWNERS it needs fou
 Add to `__tests__/migration.spec.ts`:
 
 ```ts
-const vkMigrationUrl = new URL('../migrations/0016_vk_channel.sql', import.meta.url);
+const vkMigrationUrl = new URL('../migrations/0017_vk_channel.sql', import.meta.url);
 const channelRefMigrationUrl = new URL(
-  '../migrations/0017_guest_channel_ref.concurrent.sql',
+  '../migrations/0018_guest_channel_ref.concurrent.sql',
   import.meta.url
 );
 
@@ -641,7 +641,7 @@ describe('vk channel migration', () => {
 Run: `npm run nx -- run backend:test -- migration`
 Expected: FAIL, both files missing.
 
-- [ ] **Step 3: Write `0016_vk_channel.sql`**
+- [ ] **Step 3: Write `0017_vk_channel.sql`**
 
 ```sql
 ALTER TABLE channel_connections
@@ -661,7 +661,7 @@ ALTER TABLE webhook_inbox
   VALIDATE CONSTRAINT webhook_inbox_source_check;
 ```
 
-- [ ] **Step 4: Write `0017_guest_channel_ref.concurrent.sql`**
+- [ ] **Step 4: Write `0018_guest_channel_ref.concurrent.sql`**
 
 ```sql
 CREATE UNIQUE INDEX CONCURRENTLY guests_tenant_channel_ref_uidx

@@ -65,7 +65,7 @@ export function checksumMigration(contents) {
 function assertConcurrentMigrationIsRetrySafe(migration, contents) {
   if (
     !migration.transactional &&
-    !/CREATE\s+INDEX\s+CONCURRENTLY\s+IF\s+NOT\s+EXISTS/i.test(contents)
+    !/CREATE\s+(?:UNIQUE\s+)?INDEX\s+CONCURRENTLY\s+IF\s+NOT\s+EXISTS/i.test(contents)
   ) {
     throw new Error(
       `concurrent migration must be retry-safe with IF NOT EXISTS: ${migration.name}`

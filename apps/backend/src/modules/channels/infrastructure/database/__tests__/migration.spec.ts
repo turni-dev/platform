@@ -6,6 +6,11 @@ const guestSessionsMigrationUrl = new URL(
   '../migrations/0015_guest_sessions.sql',
   import.meta.url
 );
+const vkChannelMigrationUrl = new URL('../migrations/0017_vk_channel.sql', import.meta.url);
+const channelRefMigrationUrl = new URL(
+  '../migrations/0018_guest_channel_ref.concurrent.sql',
+  import.meta.url
+);
 
 describe('channels migration', () => {
   it('creates the complete channels table slice', async () => {
@@ -42,5 +47,27 @@ describe('channels migration', () => {
     expect(migration).toContain('ALTER TABLE guest_sessions FORCE ROW LEVEL SECURITY');
     expect(migration).toContain('CREATE POLICY guest_sessions_tenant_isolation');
     expect(migration).not.toContain('token text');
+  });
+});
+
+describe('vk channel migration', () => {
+  it('widens both checks without holding a long lock', async () => {
+    const migration = await readFile(vkChannelMigrationUrl, 'utf8');
+
+    expect(migration).toContain('DROP CONSTRAINT channel_connections_type_check');
+    expect(migration).toContain("type IN ('telegram', 'widget', 'vk')");
+    expect(migration).toContain('DROP CONSTRAINT webhook_inbox_source_check');
+    expect(migration).toContain("source IN ('telegram', 'yookassa', 'vk')");
+    expect(migration).toContain('NOT VALID');
+    expect(migration).toContain('VALIDATE CONSTRAINT');
+  });
+
+  it('indexes the guest channel reference concurrently and channel-agnostically', async () => {
+    const migration = await readFile(channelRefMigrationUrl, 'utf8');
+
+    expect(migration).toContain('CREATE UNIQUE INDEX CONCURRENTLY');
+    expect(migration).toContain('guests_tenant_channel_ref_uidx');
+    expect(migration).toContain("(meta ->> 'channel_ref')");
+    expect(migration).not.toContain('vk_user_id');
   });
 });
