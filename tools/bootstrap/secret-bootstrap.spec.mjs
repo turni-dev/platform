@@ -24,7 +24,8 @@ describe('secret bootstrap', () => {
     assert.deepEqual(Object.keys(document), [
       'KEY_PHONE_V1',
       'KEY_CREDENTIALS_V1',
-      'PEPPER_V1'
+      'PEPPER_V1',
+      'WEBHOOK_ROUTING_SECRET'
     ]);
     assert.equal(new Set(Object.values(document)).size, 3);
     for (const value of Object.values(document)) {

@@ -13,8 +13,15 @@ decrypted files must stay outside the repository.
 5. Review and commit only `ops/sops/secrets.enc.json`.
 
 The bootstrap creates independent 256-bit values for `KEY_PHONE_V1`,
-`KEY_CREDENTIALS_V1`, and `PEPPER_V1`. It refuses to overwrite an existing
-encrypted file.
+`KEY_CREDENTIALS_V1`, `PEPPER_V1`, and `WEBHOOK_ROUTING_SECRET`. The public
+callback origin is a non-secret deployment variable named
+`PUBLIC_WEBHOOK_ORIGIN`; set it to the real HTTPS ingress before deployment.
+The bootstrap refuses to overwrite an existing encrypted file.
+
+For an existing deployment, decrypt only in the secret manager, add
+`WEBHOOK_ROUTING_SECRET`, then re-encrypt with the same age recipient. Set
+`PUBLIC_WEBHOOK_ORIGIN` in the deployment environment. Never commit plaintext
+values or put the routing secret in the VK callback URL.
 
 ## Offline Backup
 
