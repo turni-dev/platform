@@ -68,7 +68,7 @@ far past 400 lines, against the delivery rules in `AGENTS.md`.
   to `problems.ts`; `/auth/me`, `/refresh` and `/logout` now share them. Nine
   guard tests plus the existing auth e2e cover it.
 
-### Slice 2 — Agent configuration domain and application
+### Slice 2 — Agent configuration domain and application (done 2026-08-15)
 
 - Contracts: `AgentConfigurationSchema`, `AgentInstructionsUpdateSchema`,
   `KnowledgeFileSchema`, `AutomationAllowlistSchema` (founder review).
@@ -83,7 +83,7 @@ far past 400 lines, against the delivery rules in `AGENTS.md`.
   `knowledge/` is refused; concurrent saves cannot produce two revisions with
   the same number.
 
-### Slice 3 — HTTP surface
+### Slice 3 — HTTP surface (done 2026-08-15)
 
 - `GET /api/v1/agent`, `PATCH /api/v1/agent/instructions`,
   `GET|PUT|DELETE /api/v1/agent/knowledge/*`, `PUT /api/v1/agent/automations`,
@@ -94,7 +94,7 @@ far past 400 lines, against the delivery rules in `AGENTS.md`.
 - Acceptance: another tenant's agent is invisible, not merely forbidden; every
   refusal is RFC7807; no response or event carries file content.
 
-### Slice 4 — Cabinet shell and screens (primitive C)
+### Slice 4 — Cabinet shell and screens (primitive C, done 2026-08-15)
 
 - Layout with navigation, one server-side session check, one form pattern
   (Zod + generic errors + next-intl), Russian copy in `messages/ru.json`.
@@ -103,12 +103,27 @@ far past 400 lines, against the delivery rules in `AGENTS.md`.
 - Acceptance: an unauthenticated visit to any cabinet page lands on `/login`; a
   failed save says so and keeps the text; the Russian catalog test stays green.
 
-### Slice 5 — Browser run against Postgres
+### Slice 5 — Run against Postgres (done 2026-08-15)
 
 - Register a fresh owner, bootstrap the agent, edit instructions and a
   knowledge file, reload, confirm revisions in `memory_revisions` and events in
   `events`. Fakes hid four defects on the previous card; a store is only proven
   against Postgres.
+- Done against the live stack: `GET /agent` 404 before bootstrap, `POST` 201
+  then 200, instructions at revision 2 with an identical save spending no
+  revision, `knowledge/menu.md` at revision 2 then soft-deleted with both
+  revisions kept, `policies/allergens.md` refused with 400, the allowlist
+  stored as `{"presets": ["telegram.reply"]}`. The `ON CONFLICT ... WHERE
+  deleted_at IS NULL` upsert matches the partial unique index on both the
+  insert and the update path. Ten events landed in `events`, and no row carries
+  file content.
+- The cabinet pages were rendered with a real session cookie: `/dashboard`,
+  `/agent`, `/agent/knowledge` and `/agent/automations` all answer 200 with the
+  navigation, the revision number and the stored knowledge index, and an
+  anonymous `/agent` redirects to `/login`. Clicking the save buttons in a real
+  browser is still untested — the browser extension was not connected during
+  this run — so the client components rest on their unit tests and on the API
+  calls they make, which were exercised directly.
 
 ## Verification per slice
 
