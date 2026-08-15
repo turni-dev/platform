@@ -6,5 +6,6 @@ export * from './ports/content.js';
 export * from './ports/messenger.js';
 export * from './ports/widget-chat.js';
 export * from './ports/operations.js';
+export * from './ports/agent-configuration.js';
 export * from './ports/owner-auth.js';
 export * from './ports/payment.js';
