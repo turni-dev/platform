@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 /**
  * Per-purpose data keys, as required by the security note (A04): channel
  * credentials and guest phone numbers are different purposes and therefore
@@ -53,16 +55,24 @@ export function readSecretKeyRing(
   };
 }
 
+const KeyMaterialSchema = z
+  .string()
+  .refine(
+    (value) => value.length % 4 === 0 && base64Alphabet.test(value),
+    'must be base64'
+  )
+  .transform((value) => Buffer.from(value, 'base64'))
+  .refine(
+    (decoded) => decoded.length === secretKeyLength,
+    `must decode to ${secretKeyLength} bytes`
+  );
+
 /** Refusals name the variable and never carry its value. */
 function decodeKey(name: string, value: string): Buffer {
-  if (value.length % 4 !== 0 || !base64Alphabet.test(value)) {
-    throw new Error(`${name} must be base64`);
+  const parsed = KeyMaterialSchema.safeParse(value);
+  if (!parsed.success) {
+    throw new Error(`${name} ${parsed.error.issues[0]?.message ?? 'is invalid'}`);
   }
 
-  const decoded = Buffer.from(value, 'base64');
-  if (decoded.length !== secretKeyLength) {
-    throw new Error(`${name} must decode to ${secretKeyLength} bytes`);
-  }
-
-  return decoded;
+  return parsed.data;
 }
