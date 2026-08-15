@@ -16,6 +16,7 @@ import {
   type WidgetMessageHandler
 } from '../../modules/channels/application/widget-chat-connection.js';
 import { registerAgentRoutes, type AgentHttpOptions } from './agent-routes.js';
+import { registerChannelRoutes, type ChannelHttpOptions } from './channel-routes.js';
 import {
   registerOwnerAuthRoutes,
   type OwnerAuthHttpOptions
@@ -41,6 +42,7 @@ Module({})(HttpAppModule);
 export type HttpAppOptions = Readonly<{
   ownerAuth?: OwnerAuthHttpOptions;
   agent?: AgentHttpOptions;
+  channels?: ChannelHttpOptions;
   guestSessionService?: DurableGuestSessionService;
   widgetMessageHandler?: WidgetMessageHandler;
   cabinetStream?: CabinetStream;
@@ -72,6 +74,10 @@ export async function createHttpApp(
 
   if (options?.agent !== undefined) {
     registerAgentRoutes(fastify, options.agent);
+  }
+
+  if (options?.channels !== undefined) {
+    registerChannelRoutes(fastify, options.channels);
   }
 
   fastify.get(HttpRoute.CabinetStream, (request, reply) => {
