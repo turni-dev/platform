@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { Button, Textarea } from '@turni/ui';
 import { saveInstructions, saveKnowledgeFile } from '../../../lib/agent-client';
 import styles from '../cabinet.module.scss';
 
@@ -52,7 +53,7 @@ export function MarkdownEditor({
 
   return (
     <div className={styles['editor']}>
-      <textarea
+      <Textarea
         value={content}
         onChange={(event) => {
           setContent(event.target.value);
@@ -60,9 +61,9 @@ export function MarkdownEditor({
         }}
       />
       <div className={styles['actions']}>
-        <button type="button" onClick={save} disabled={state === 'saving'}>
+        <Button type="button" onClick={save} disabled={state === 'saving'}>
           {state === 'saving' ? labels.saving : labels.save}
-        </button>
+        </Button>
         {state === 'saved' ? <p className={styles['status']}>{labels.saved}</p> : undefined}
         {state === 'failed' ? (
           <p className={styles['failure']} role="alert">

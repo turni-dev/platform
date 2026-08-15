@@ -1,7 +1,5 @@
 import { forwardRef, type ComponentPropsWithoutRef } from 'react';
 import { Slot } from '@radix-ui/react-slot';
-import './tokens.scss';
-import './tailwind.css';
 
 function classes(base: string, custom: string | undefined): string {
   return custom ? `${base} ${custom}` : base;
