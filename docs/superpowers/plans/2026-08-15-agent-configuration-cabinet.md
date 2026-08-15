@@ -45,7 +45,11 @@ far past 400 lines, against the delivery rules in `AGENTS.md`.
 
 - No migrations: `agents`, `memory_files` and `memory_revisions` already exist
   with RLS, `author in ('owner','agent','system')` and a unique `(file, rev)`.
-- New DTOs in `packages/contracts` need founder review before the slice lands.
+- New DTOs in `packages/contracts` need founder review. Reviewed and approved
+  by the founder on 2026-08-15, after the slice landed, together with the three
+  judgement calls inside them: the 20 000 character ceiling per file, knowledge
+  paths limited to one level of lowercase latin names, and one shared schema for
+  reading and updating the automation allowlist while the catalogue is empty.
 - Strict TS, Zod at every boundary, no vendor type across a port.
 - Never log file contents: knowledge holds business data and can hold PII.
 - New tests live in sibling `__tests__/` directories.
