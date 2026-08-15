@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import './globals.css';
+import '@turni/ui/tailwind.css';
+import './globals.scss';
 
 export const metadata: Metadata = {
   title: 'Turni',
