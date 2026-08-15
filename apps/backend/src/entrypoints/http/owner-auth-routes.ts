@@ -1,9 +1,7 @@
 import {
   OwnerAuthRequestSchema,
   OwnerAuthVerifyRequestSchema,
-  OwnerIdentitySchema,
-  ProblemType,
-  type OwnerIdentity
+  OwnerIdentitySchema
 } from '@turni/contracts';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import {
@@ -11,10 +9,7 @@ import {
   OwnerAuthErrorCode,
   type OwnerAuthService
 } from '../../modules/tenancy/application/owner-auth-service.js';
-import type {
-  OwnerAccessTokenService,
-  VerifiedOwnerAccess
-} from '../../modules/tenancy/application/owner-access-token.js';
+import type { OwnerAccessTokenService } from '../../modules/tenancy/application/owner-access-token.js';
 import type { OwnerRegistrationRepositoryPort } from '../../modules/tenancy/application/owner-registration-repository.port.js';
 import type { OwnerSessionService } from '../../modules/tenancy/application/owner-session.js';
 import {
@@ -22,9 +17,17 @@ import {
   AuthCookieName,
   clearedAuthCookies,
   issuedAuthCookies,
-  isTrustedOrigin,
   readCookie
 } from './auth-cookies.js';
+import { OwnerRequestGuard } from './owner-request-guard.js';
+import {
+  forbidden,
+  internalFailure,
+  invalidRequest,
+  rateLimited,
+  serviceUnavailable,
+  unauthorized
+} from './problems.js';
 
 export interface OwnerAuthHttpOptions {
   readonly service: OwnerAuthService;
@@ -55,6 +58,10 @@ export function registerOwnerAuthRoutes(
   options: OwnerAuthHttpOptions
 ): void {
   const cookies = authCookieOptions({ secure: options.secureCookies });
+  const guard = new OwnerRequestGuard({
+    accessTokens: options.accessTokens,
+    allowedOrigins: options.allowedOrigins
+  });
 
   const requestCode = async (
     request: FastifyRequest,
@@ -113,7 +120,7 @@ export function registerOwnerAuthRoutes(
   }
 
   fastify.post(OwnerAuthRoute.Refresh, async (request, reply) => {
-    if (!trusted(request, options.allowedOrigins)) {
+    if (!guard.trusted(request)) {
       return forbidden(reply);
     }
 
@@ -132,7 +139,7 @@ export function registerOwnerAuthRoutes(
   });
 
   fastify.post(OwnerAuthRoute.Logout, async (request, reply) => {
-    if (!trusted(request, options.allowedOrigins)) {
+    if (!guard.trusted(request)) {
       return forbidden(reply);
     }
 
@@ -145,54 +152,19 @@ export function registerOwnerAuthRoutes(
     return sendCookies(reply, clearedAuthCookies(cookies)).code(204).send();
   });
 
-  fastify.get(OwnerAuthRoute.Me, async (request, reply) => {
-    const identity = await resolveIdentity(request, options);
+  fastify.get(
+    OwnerAuthRoute.Me,
+    guard.read(async (_request, reply, owner) => {
+      const profile = await options.owners.findOwnerProfile({
+        tenantId: owner.tenantId,
+        userId: owner.userId
+      });
 
-    return identity === undefined ? unauthorized(reply) : reply.code(200).send(identity);
-  });
-}
-
-async function resolveIdentity(
-  request: FastifyRequest,
-  options: OwnerAuthHttpOptions
-): Promise<OwnerIdentity | undefined> {
-  const presented = readCookie(request.headers.cookie, AuthCookieName.Access);
-  if (presented === undefined) {
-    return undefined;
-  }
-
-  const claims = verifiedClaims(options.accessTokens, presented);
-  if (claims === undefined) {
-    return undefined;
-  }
-
-  const profile = await options.owners.findOwnerProfile({
-    tenantId: claims.tenantId,
-    userId: claims.userId
-  });
-
-  return profile === undefined
-    ? undefined
-    : OwnerIdentitySchema.parse({ ...profile, role: claims.role });
-}
-
-function verifiedClaims(
-  accessTokens: OwnerAccessTokenService,
-  token: string
-): VerifiedOwnerAccess | undefined {
-  try {
-    return accessTokens.verify(token);
-  } catch {
-    return undefined;
-  }
-}
-
-function trusted(request: FastifyRequest, allowedOrigins: readonly string[]): boolean {
-  return isTrustedOrigin({
-    origin: request.headers.origin,
-    referer: request.headers.referer,
-    allowedOrigins
-  });
+      return profile === undefined
+        ? unauthorized(reply)
+        : reply.code(200).send(OwnerIdentitySchema.parse({ ...profile, role: owner.role }));
+    })
+  );
 }
 
 function sendCookies(reply: FastifyReply, cookies: readonly string[]): FastifyReply {
@@ -201,65 +173,16 @@ function sendCookies(reply: FastifyReply, cookies: readonly string[]): FastifyRe
 
 function authFailure(reply: FastifyReply, error: unknown): FastifyReply {
   if (!(error instanceof OwnerAuthError)) {
-    return internalFailure(reply, error);
+    return internalFailure(reply, 'owner auth failed', error);
   }
 
   if (error.code === OwnerAuthErrorCode.RateLimited) {
-    return reply
-      .header('retry-after', String(error.retryAfterSeconds ?? 60))
-      .code(429)
-      .send({
-        type: ProblemType.InvalidRequest,
-        title: 'Too many requests',
-        status: 429
-      });
+    return rateLimited(reply, error.retryAfterSeconds ?? 60);
   }
 
   if (error.code === OwnerAuthErrorCode.DeliveryFailed) {
-    return reply.code(503).send({
-      type: ProblemType.InvalidRequest,
-      title: 'Service unavailable',
-      status: 503
-    });
+    return serviceUnavailable(reply);
   }
 
   return unauthorized(reply);
-}
-
-/**
- * An error the auth flow does not model is ours, not the caller's. The caller
- * sees nothing but a generic failure; the cause goes to the operator's log.
- */
-function internalFailure(reply: FastifyReply, error: unknown): FastifyReply {
-  console.error('owner auth failed', error);
-
-  return reply.code(500).send({
-    type: ProblemType.InvalidRequest,
-    title: 'Internal error',
-    status: 500
-  });
-}
-
-function invalidRequest(reply: FastifyReply): FastifyReply {
-  return reply.code(400).send({
-    type: ProblemType.InvalidRequest,
-    title: 'Invalid request',
-    status: 400
-  });
-}
-
-function unauthorized(reply: FastifyReply): FastifyReply {
-  return reply.code(401).send({
-    type: ProblemType.Unauthorized,
-    title: 'Unauthorized',
-    status: 401
-  });
-}
-
-function forbidden(reply: FastifyReply): FastifyReply {
-  return reply.code(403).send({
-    type: ProblemType.Unauthorized,
-    title: 'Forbidden',
-    status: 403
-  });
 }
