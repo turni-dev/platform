@@ -18,6 +18,10 @@ import {
 import { registerAgentRoutes, type AgentHttpOptions } from './agent-routes.js';
 import { registerChannelRoutes, type ChannelHttpOptions } from './channel-routes.js';
 import {
+  registerVkWebhookRoutes,
+  type VkWebhookHttpOptions
+} from './vk-webhook-routes.js';
+import {
   registerOwnerAuthRoutes,
   type OwnerAuthHttpOptions
 } from './owner-auth-routes.js';
@@ -43,6 +47,7 @@ export type HttpAppOptions = Readonly<{
   ownerAuth?: OwnerAuthHttpOptions;
   agent?: AgentHttpOptions;
   channels?: ChannelHttpOptions;
+  vkWebhook?: VkWebhookHttpOptions;
   guestSessionService?: DurableGuestSessionService;
   widgetMessageHandler?: WidgetMessageHandler;
   cabinetStream?: CabinetStream;
@@ -78,6 +83,10 @@ export async function createHttpApp(
 
   if (options?.channels !== undefined) {
     registerChannelRoutes(fastify, options.channels);
+  }
+
+  if (options?.vkWebhook !== undefined) {
+    registerVkWebhookRoutes(fastify, options.vkWebhook);
   }
 
   fastify.get(HttpRoute.CabinetStream, (request, reply) => {
