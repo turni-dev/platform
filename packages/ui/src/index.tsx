@@ -15,7 +15,7 @@ export type ButtonProps = ComponentPropsWithoutRef<'button'> & {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ asChild = false, className, type, variant = 'primary', ...props }, ref) => {
     const classNames = classes(
-      'inline-flex min-h-[var(--turni-control-height)] cursor-pointer items-center justify-center rounded-[var(--turni-radius-md)] border border-turni-accent px-[var(--turni-space-4)] font-[inherit] tracking-normal focus-visible:outline-[var(--turni-focus-width)] focus-visible:outline-turni-focus-ring focus-visible:outline-offset-[var(--turni-focus-offset)] disabled:cursor-not-allowed disabled:opacity-[var(--turni-disabled-opacity)] data-[variant=primary]:bg-turni-accent data-[variant=primary]:text-turni-accent-contrast data-[variant=secondary]:border-turni-border data-[variant=secondary]:bg-turni-surface data-[variant=secondary]:text-turni-text',
+      'inline-flex min-h-[var(--turni-control-height)] cursor-pointer items-center justify-center rounded-[var(--turni-radius-md)] border border-turni-accent px-[var(--turni-space-4)] font-[inherit] focus-visible:outline-[var(--turni-focus-width)] focus-visible:outline-turni-focus-ring focus-visible:outline-offset-[var(--turni-focus-offset)] disabled:cursor-not-allowed disabled:opacity-[var(--turni-disabled-opacity)] data-[variant=primary]:bg-turni-accent data-[variant=primary]:text-turni-accent-contrast data-[variant=secondary]:border-turni-border data-[variant=secondary]:bg-turni-surface data-[variant=secondary]:text-turni-text',
       className
     );
 
@@ -53,7 +53,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       {...props}
       ref={ref}
       className={classes(
-        'min-h-[var(--turni-control-height)] w-full rounded-[var(--turni-radius-sm)] border border-turni-border bg-turni-surface px-[var(--turni-space-3)] font-[inherit] tracking-normal text-turni-text focus-visible:outline-[var(--turni-focus-width)] focus-visible:outline-turni-focus-ring focus-visible:outline-offset-[var(--turni-focus-offset)] aria-[invalid=true]:border-turni-danger',
+        'min-h-[var(--turni-control-height)] w-full rounded-[var(--turni-radius-sm)] border border-turni-border bg-turni-surface px-[var(--turni-space-3)] font-[inherit] text-turni-text focus-visible:outline-[var(--turni-focus-width)] focus-visible:outline-turni-focus-ring focus-visible:outline-offset-[var(--turni-focus-offset)] aria-[invalid=true]:border-turni-danger',
         className
       )}
       aria-invalid={invalid || undefined}
@@ -72,7 +72,7 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
       {...props}
       ref={ref}
       className={classes(
-        'inline-flex rounded-[var(--turni-radius-sm)] bg-turni-surface-subtle px-[var(--turni-space-2)] py-[var(--turni-space-1)] font-[inherit] text-[var(--turni-font-size-sm)] tracking-normal text-turni-text data-[tone=success]:text-turni-success data-[tone=warning]:text-turni-warning data-[tone=danger]:text-turni-danger',
+        'inline-flex rounded-[var(--turni-radius-sm)] bg-turni-surface-subtle px-[var(--turni-space-2)] py-[var(--turni-space-1)] font-[inherit] text-(length:--turni-font-size-sm) text-turni-text data-[tone=success]:text-turni-success data-[tone=warning]:text-turni-warning data-[tone=danger]:text-turni-danger',
         className
       )}
       data-tone={tone}

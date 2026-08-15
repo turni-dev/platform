@@ -1,4 +1,7 @@
 import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import tailwindcss from '@tailwindcss/postcss';
+import postcss from 'postcss';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { Badge, Button, Input } from '../index.js';
@@ -80,5 +83,21 @@ describe('UI foundation', () => {
     expect(stylesheet).toContain('--color-turni-accent: var(--turni-accent);');
     expect(stylesheet).not.toContain('preflight.css');
     expect(stylesheet).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+  });
+
+  it('disambiguates the badge font-size variable for Tailwind', async () => {
+    const source = await readFile(new URL('../index.tsx', import.meta.url), 'utf8');
+    const stylesheet = await readFile(
+      new URL('../tailwind.css', import.meta.url),
+      'utf8'
+    );
+    const result = await postcss([tailwindcss()]).process(stylesheet, {
+      from: fileURLToPath(new URL('../tailwind.css', import.meta.url))
+    });
+
+    expect(source).toContain('text-(length:--turni-font-size-sm)');
+    expect(source).not.toContain('tracking-normal');
+    expect(result.css).toContain('font-size: var(--turni-font-size-sm);');
+    expect(result.css).not.toContain('color: var(--turni-font-size-sm);');
   });
 });
