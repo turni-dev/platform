@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { signOutOwner } from '../../lib/owner-auth-client';
+import { signOutOwner } from '../../../lib/owner-auth-client';
 
 export function SignOutButton({
   label,

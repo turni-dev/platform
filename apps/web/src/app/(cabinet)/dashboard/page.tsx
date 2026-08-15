@@ -1,10 +1,10 @@
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { readBackendOrigin } from '../../lib/backend-origin';
-import { fetchOwnerIdentity } from '../../lib/owner-auth-client';
+import { readBackendOrigin } from '../../../lib/backend-origin';
+import { fetchOwnerIdentity } from '../../../lib/owner-auth-client';
 import { SignOutButton } from './sign-out-button';
-import styles from '../page.module.scss';
+import styles from '../../page.module.scss';
 
 export default async function DashboardPage(): Promise<React.JSX.Element> {
   const identity = await fetchOwnerIdentity({
