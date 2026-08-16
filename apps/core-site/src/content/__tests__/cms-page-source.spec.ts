@@ -73,6 +73,63 @@ describe('createCmsPageSource', () => {
     expect(init?.headers['Authorization']).toBe('Bearer token');
   });
 
+  it('asks for the parts nested deeper than one level', () => {
+    const fetch = respondWith(cmsPage);
+    const source = createCmsPageSource({ baseUrl: 'http://cms:1337', fetch });
+
+    void source.getPage('home');
+
+    const url = vi.mocked(fetch).mock.calls[0]?.[0] ?? '';
+    // Strapi раскрывает по `*` только один уровень: без этих путей группы
+    // формы и кнопка пустого состояния приезжают как голые идентификаторы.
+    expect(decodeURIComponent(url)).toContain(
+      'populate[blocks][on][blocks.lead-form][populate][groups][populate][channels][populate]=*'
+    );
+    expect(decodeURIComponent(url)).toContain(
+      'populate[blocks][on][blocks.case-cards][populate][emptyState][populate][cta][populate]=*'
+    );
+    expect(decodeURIComponent(url)).toContain(
+      'populate[blocks][on][blocks.hero][populate]=*'
+    );
+  });
+
+  it('treats an unset field as absent, not as null', async () => {
+    const withNulls = {
+      data: [
+        {
+          slug: 'home',
+          title: 'Заголовок',
+          description: null,
+          blocks: [
+            {
+              __component: 'blocks.hero',
+              heading: 'Из CMS',
+              subheading: 'Тоже из CMS',
+              primaryCta: { label: 'Обсудить', href: '#lead' },
+              secondaryCta: null,
+              media: null
+            },
+            {
+              __component: 'blocks.feature-grid',
+              heading: 'Что умеет',
+              columns: null,
+              items: [{ title: 'Отвечает', body: null }]
+            }
+          ]
+        }
+      ]
+    };
+    const source = createCmsPageSource({
+      baseUrl: 'http://cms:1337',
+      fetch: respondWith(withNulls)
+    });
+
+    const page = await source.getPage('home');
+
+    expect(page?.blocks).toHaveLength(2);
+    expect(page?.blocks[0]).not.toHaveProperty('media');
+  });
+
   it('falls back to the seed when the CMS is unreachable', async () => {
     const source = createCmsPageSource({
       baseUrl: 'http://cms:1337',

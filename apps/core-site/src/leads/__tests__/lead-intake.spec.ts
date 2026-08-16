@@ -149,6 +149,39 @@ describe('handleLeadRequest', () => {
     expect(second.written).toHaveLength(0);
   });
 
+  it('accepts a lead the unique key already refused, without a second record', async () => {
+    const written: Written[] = [];
+    const racing = vi.fn<LeadFetch>((url, init) => {
+      if (init.method === 'GET') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          text: () => Promise.resolve(JSON.stringify({ data: [] }))
+        });
+      }
+      written.push({ url, body: null });
+
+      return Promise.resolve({
+        ok: false,
+        status: 400,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({
+              error: {
+                name: 'ValidationError',
+                message: 'This attribute must be unique'
+              }
+            })
+          )
+      });
+    });
+
+    const response = await handleLeadRequest(leadRequest(), options(racing));
+
+    expect(response.status).toBe(303);
+    expect(written).toHaveLength(1);
+  });
+
   it('reports a failure without leaking what the visitor wrote', async () => {
     const warnings: string[] = [];
     const failing = vi.fn<LeadFetch>((_url, init) =>

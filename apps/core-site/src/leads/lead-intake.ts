@@ -108,6 +108,12 @@ export async function handleLeadRequest(
       })
     });
     if (!response.ok) {
+      // Уникальный индекс по ключу — вторая линия защиты от повтора: она
+      // срабатывает и тогда, когда две отправки идут одновременно.
+      if (await isDuplicate(response)) {
+        return accepted(wantsJson);
+      }
+
       options.onWarning?.(`Lead was refused by the CMS with status ${String(response.status)}`);
 
       return problem(502, 'Не отправилось, попробуйте ещё раз', wantsJson);
@@ -119,6 +125,16 @@ export async function handleLeadRequest(
   }
 
   return accepted(wantsJson);
+}
+
+async function isDuplicate(
+  response: Readonly<{ status: number; text: () => Promise<string> }>
+): Promise<boolean> {
+  if (response.status !== 400) {
+    return false;
+  }
+
+  return (await response.text()).includes('must be unique');
 }
 
 async function alreadyStored(
