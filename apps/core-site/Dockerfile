@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1.7
 #
-# core-site (marketing landing) — Next.js standalone build.
+# core-site — публичный сайт — Next.js standalone build.
 # Build context is the monorepo root: this app has no local package.json and
 # relies on the root workspace deps (next, react). Build from repo root:
 #   docker build -f apps/core-site/Dockerfile -t turni-core-site .
-# (compose.marketing.yml does this via the `core-site` service.)
+# (compose.site.yml does this via the `core-site` service.)
 
 ARG NODE_VERSION=24-alpine
 

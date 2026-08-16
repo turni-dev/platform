@@ -1,13 +1,13 @@
-name: turni-marketing
+name: turni-site
 
-# Marketing / site track — deliberately kept OUT of the product stack (compose.yml).
+# Site track — deliberately kept OUT of the product stack (compose.yml).
 # Owns everything public-facing and its datastore, fully isolated from the
 # RLS-hardened product Postgres:
 #   - cms-postgres : dedicated Strapi database
 #   - cms          : Strapi CMS (content backend)
-#   - core-site    : Next.js marketing landing (formerly apps/landing)
+#   - core-site    : Next.js публичный сайт
 #
-# Usage: docker compose -f compose.marketing.yml up -d --build
+# Usage: docker compose -f compose.site.yml up -d --build
 
 services:
   cms-postgres:

@@ -1,23 +1,19 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import HomePage from '../page.js';
 
-const appDirectory = resolve(__dirname, '..');
+describe('home page', () => {
+  it('is assembled from the seeded blocks, navigation through footer', () => {
+    const markup = renderToStaticMarkup(<HomePage />);
 
-describe('core site shared UI integration', () => {
-  it('renders the shared Button around the cabinet login link', () => {
-    const pageSource = readFileSync(resolve(appDirectory, 'page.tsx'), 'utf8');
-
-    expect(pageSource).toContain("import { Button } from '@turni/ui';");
-    expect(pageSource).toMatch(
-      /<Button\s+asChild>\s*<a href="https:\/\/app\.turni\.ru\/login">Открыть кабинет<\/a>\s*<\/Button>/s
-    );
+    expect(markup).toContain('data-block="blocks.nav"');
+    expect(markup).toContain('data-block="blocks.hero"');
+    expect(markup).toContain('data-block="blocks.footer"');
   });
 
-  it('loads shared styles from the root layout', () => {
-    const layoutSource = readFileSync(resolve(appDirectory, 'layout.tsx'), 'utf8');
+  it('offers exactly one lead form on the page', () => {
+    const markup = renderToStaticMarkup(<HomePage />);
 
-    expect(layoutSource).toContain("import './globals.scss';");
-    expect(layoutSource).toContain("import '@turni/ui/tailwind.css';");
+    expect(markup.match(/data-block="blocks\.lead-form"/g)).toHaveLength(1);
   });
 });

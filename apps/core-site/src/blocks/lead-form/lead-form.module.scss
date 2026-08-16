@@ -1,0 +1,98 @@
+.section {
+  padding: var(--site-section-padding) var(--site-gutter);
+}
+
+.inner {
+  width: min(100%, var(--site-content-width));
+  margin: 0 auto;
+}
+
+.heading {
+  margin: 0;
+  font-size: clamp(1.375rem, 1.1rem + 1.2vw, 2rem);
+}
+
+.note {
+  margin: var(--site-space-2) 0 0;
+  color: var(--turni-text-muted);
+}
+
+.form {
+  display: grid;
+  gap: var(--site-space-4);
+  max-width: var(--site-text-width);
+  margin-top: var(--site-space-5);
+}
+
+.field {
+  display: grid;
+  gap: var(--site-space-2);
+}
+
+.label {
+  font-weight: 600;
+}
+
+.group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  padding: 0;
+  margin-bottom: var(--site-space-2);
+  font-weight: 600;
+}
+
+// На мобильном чипсы едут горизонтально, как в спеке, и не ломают колонку.
+.chips {
+  display: flex;
+  gap: var(--site-space-2);
+  overflow-x: auto;
+  padding-bottom: var(--site-space-1);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--site-space-2);
+  min-height: var(--site-touch-target);
+  padding: 0 var(--turni-space-3);
+  white-space: nowrap;
+  border: 1px solid var(--turni-border);
+  border-radius: var(--turni-radius-md);
+  background: var(--turni-surface);
+  cursor: pointer;
+
+  &:focus-within {
+    outline: var(--turni-focus-width) solid var(--turni-focus-ring);
+    outline-offset: var(--turni-focus-offset);
+  }
+}
+
+.consent {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--site-space-2);
+  align-items: start;
+  color: var(--turni-text-muted);
+}
+
+.trap {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  .chips {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}

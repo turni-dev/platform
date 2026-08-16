@@ -5,7 +5,7 @@
 # Debian slim base: Strapi's image pipeline (sharp/libvips) is far smoother
 # there than on alpine. Node 22 is the newest LTS Strapi 5 officially supports.
 #   docker build -f apps/cms/Dockerfile -t turni-cms apps/cms
-# (compose.marketing.yml does this via the `cms` service.)
+# (compose.site.yml does this via the `cms` service.)
 
 ARG NODE_VERSION=22-bookworm-slim
 

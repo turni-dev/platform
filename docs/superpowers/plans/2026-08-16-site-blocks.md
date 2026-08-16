@@ -1,14 +1,14 @@
-# Marketing Blocks Implementation Plan
+# Site Blocks Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Владелец собирает страницы лендинга из блоков в админке Strapi, а `apps/core-site` рендерит их и принимает заявки, не касаясь продуктового стека.
 
-**Architecture:** Девять маркетинговых блоков в `apps/core-site/src/marketing/blocks`, каждый — Zod-схема + серверный компонент + SCSS-модуль поверх CSS-переменных `@turni/ui`. Рендерер отображает `__component` динамической зоны Strapi на компонент. Источник контента читает Strapi напрямую и падает на семя в репозитории при любой проблеме. Заявки идут через route handler своего origin, который пишет в Strapi серверным токеном.
+**Architecture:** Девять блоков в `apps/core-site/src/blocks`, каждый — Zod-схема + серверный компонент + SCSS-модуль поверх CSS-переменных `@turni/ui`. Рендерер отображает `__component` динамической зоны Strapi на компонент. Источник контента читает Strapi напрямую и падает на семя в репозитории при любой проблеме. Заявки идут через route handler своего origin, который пишет в Strapi серверным токеном.
 
 **Tech Stack:** Next.js 16 (App Router, Server Components), TypeScript strict, Zod, SCSS-модули, Strapi 5.50, Vitest + `renderToStaticMarkup`.
 
-**Spec:** `docs/superpowers/specs/2026-08-16-marketing-blocks-design.md`
+**Spec:** `docs/superpowers/specs/2026-08-16-site-blocks-design.md`
 
 ## Global Constraints
 
@@ -26,17 +26,17 @@
 ### Task 1: Слой блоков и рендер главной из семени
 
 **Files:**
-- Create: `apps/core-site/src/marketing/page-schema.ts`
-- Create: `apps/core-site/src/marketing/blocks/<name>/{schema.ts,<name>.tsx,<name>.module.scss}` — nav, hero, feature-grid, steps, security-list, case-cards, faq, lead-form, footer
-- Create: `apps/core-site/src/marketing/block-renderer.tsx`
-- Create: `apps/core-site/src/marketing/styles/marketing.scss`
-- Create: `apps/core-site/src/marketing/content/seed/home.json`
-- Create: `apps/core-site/src/marketing/content/seed-page.ts`
+- Create: `apps/core-site/src/page-schema.ts`
+- Create: `apps/core-site/src/blocks/<name>/{schema.ts,<name>.tsx,<name>.module.scss}` — nav, hero, feature-grid, steps, security-list, case-cards, faq, lead-form, footer
+- Create: `apps/core-site/src/block-renderer.tsx`
+- Create: `apps/core-site/src/styles/blocks.scss`
+- Create: `apps/core-site/src/content/seed/home.json`
+- Create: `apps/core-site/src/content/seed-page.ts`
 - Modify: `apps/core-site/src/app/page.tsx`, `apps/core-site/src/app/globals.scss`, `apps/core-site/src/app/__tests__/page.spec.tsx`
-- Test: `apps/core-site/src/marketing/__tests__/{blocks.spec.tsx,block-renderer.spec.tsx,seed.spec.ts}`
+- Test: `apps/core-site/src/__tests__/{blocks.spec.tsx,block-renderer.spec.tsx,seed.spec.ts}`
 
 **Interfaces:**
-- Produces: `MarketingPageSchema` (`{slug,title,description?,blocks:MarketingBlock[]}`), `MarketingBlock` — union по `__component`; `renderBlocks(blocks): ReactNode[]`; `seedPage(slug): MarketingPage | undefined`.
+- Produces: `SitePageSchema` (`{slug,title,description?,blocks:SiteBlock[]}`), `SiteBlock` — union по `__component`; `renderBlocks(blocks): ReactNode[]`; `seedPage(slug): SitePage | undefined`.
 - Consumes: `Button`, `Input`, `Textarea` из `@turni/ui`.
 
 - [ ] **Step 1: Написать падающий тест схемы и рендерера**
@@ -44,13 +44,13 @@
 ```tsx
 it('renders every block of a page in order', () => {
   const markup = renderToStaticMarkup(<>{renderBlocks(seedPage('home')!.blocks)}</>);
-  expect(markup.indexOf('data-block="marketing.hero"'))
-    .toBeLessThan(markup.indexOf('data-block="marketing.footer"'));
+  expect(markup.indexOf('data-block="blocks.hero"'))
+    .toBeLessThan(markup.indexOf('data-block="blocks.footer"'));
 });
 
 it('skips a block the frontend does not know yet', () => {
   const markup = renderToStaticMarkup(
-    <>{renderBlocks([{ __component: 'marketing.unknown' } as never])}</>
+    <>{renderBlocks([{ __component: 'blocks.unknown' } as never])}</>
   );
   expect(markup).toBe('');
 });
@@ -59,16 +59,16 @@ it('skips a block the frontend does not know yet', () => {
 - [ ] **Step 2: Прогнать тест и убедиться, что он падает**
 
 Run: `npm run nx -- run core-site:test`
-Expected: FAIL — модулей `marketing/*` ещё нет.
+Expected: FAIL — модулей `site/*` ещё нет.
 
 - [ ] **Step 3: Схемы блоков и схема страницы**
 
 Каждая `schema.ts` экспортирует Zod-схему с литеральным `__component` и тип пропсов.
-`page-schema.ts` собирает `z.discriminatedUnion('__component', [...])` и `MarketingPageSchema`.
+`page-schema.ts` собирает `z.discriminatedUnion('__component', [...])` и `SitePageSchema`.
 
 - [ ] **Step 4: Девять компонентов и SCSS-модули**
 
-Каждый компонент — серверный, ставит `data-block="marketing.<name>"` на корневую секцию,
+Каждый компонент — серверный, ставит `data-block="blocks.<name>"` на корневую секцию,
 берёт контент только из пропсов. FAQ — нативные `details/summary`. LeadForm — обычная
 HTML-форма (`method="post" action="/api/leads"`) с honeypot-полем и чекбоксом согласия.
 
@@ -79,7 +79,7 @@ HTML-форма (`method="post" action="/api/leads"`) с honeypot-полем и 
 
 - [ ] **Step 6: Главная страница из семени**
 
-`page.tsx` рендерит `seedPage('home')`; `globals.scss` подключает `marketing.scss`.
+`page.tsx` рендерит `seedPage('home')`; `globals.scss` подключает `blocks.scss`.
 
 - [ ] **Step 7: Прогнать проверки**
 
@@ -89,7 +89,7 @@ Expected: PASS.
 - [ ] **Step 8: Коммит**
 
 ```bash
-git add apps/core-site && git commit -m "feat(core-site): add the marketing block layer"
+git add apps/core-site && git commit -m "feat(core-site): add the site block layer"
 ```
 
 ---
@@ -97,15 +97,15 @@ git add apps/core-site && git commit -m "feat(core-site): add the marketing bloc
 ### Task 2: Контент-модель Strapi и чтение из CMS
 
 **Files:**
-- Create: `apps/cms/src/components/marketing/*.json` — по компоненту на блок
+- Create: `apps/cms/src/components/site/*.json` — по компоненту на блок
 - Create: `apps/cms/src/api/page/content-types/page/schema.json`, `.../controllers/page.ts`, `.../routes/page.ts`, `.../services/page.ts`
-- Create: `apps/core-site/src/marketing/content/cms-page-source.ts`
+- Create: `apps/core-site/src/content/cms-page-source.ts`
 - Modify: `apps/core-site/src/app/page.tsx`
-- Test: `apps/core-site/src/marketing/__tests__/{cms-page-source.spec.ts,schema-parity.spec.ts}`
+- Test: `apps/core-site/src/__tests__/{cms-page-source.spec.ts,schema-parity.spec.ts}`
 
 **Interfaces:**
-- Produces: `createCmsPageSource({ baseUrl, apiToken?, fetch })` → `{ getPage(slug): Promise<MarketingPage | undefined> }`.
-- Consumes: `MarketingPageSchema`, `seedPage` из Task 1.
+- Produces: `createCmsPageSource({ baseUrl, apiToken?, fetch })` → `{ getPage(slug): Promise<SitePage | undefined> }`.
+- Consumes: `SitePageSchema`, `seedPage` из Task 1.
 
 - [ ] **Step 1: Падающие тесты источника и паритета**
 
@@ -135,7 +135,7 @@ Expected: FAIL — `cms-page-source` не существует.
 - [ ] **Step 4: Источник контента**
 
 `fetch(`${baseUrl}/api/pages?filters[slug][$eq]=…&populate[blocks][populate]=*`)` →
-`MarketingPageSchema.safeParse` → при любой проблеме предупреждение без тела ответа и семя.
+`SitePageSchema.safeParse` → при любой проблеме предупреждение без тела ответа и семя.
 
 - [ ] **Step 5: Подключить страницу к источнику**
 
@@ -146,7 +146,7 @@ Expected: FAIL — `cms-page-source` не существует.
 Run: `npm run nx -- run-many -t test,typecheck,lint,build -p core-site`
 
 ```bash
-git commit -m "feat(marketing): build pages from the Strapi dynamic zone"
+git commit -m "feat(site): build pages from the Strapi dynamic zone"
 ```
 
 ---
@@ -156,9 +156,9 @@ git commit -m "feat(marketing): build pages from the Strapi dynamic zone"
 **Files:**
 - Create: `apps/cms/src/api/lead/content-types/lead/schema.json` и стандартные controller/route/service
 - Create: `apps/core-site/src/app/api/leads/route.ts`
-- Create: `apps/core-site/src/marketing/leads/lead-request.ts`
-- Modify: `apps/core-site/src/marketing/blocks/lead-form/lead-form.tsx` (состояния отправки)
-- Test: `apps/core-site/src/marketing/__tests__/lead-intake.spec.ts`
+- Create: `apps/core-site/src/leads/lead-request.ts`
+- Modify: `apps/core-site/src/blocks/lead-form/lead-form.tsx` (состояния отправки)
+- Test: `apps/core-site/src/__tests__/lead-intake.spec.ts`
 
 **Interfaces:**
 - Produces: `handleLeadRequest(request, { fetch, baseUrl, apiToken })` → `Response`.
@@ -205,5 +205,5 @@ Zod-разбор `FormData`, honeypot, обязательное согласие
 Run: `npm run nx -- run-many -t test,typecheck,lint,build -p core-site`
 
 ```bash
-git commit -m "feat(marketing): accept leads through the site route handler"
+git commit -m "feat(site): accept leads through the site route handler"
 ```

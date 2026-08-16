@@ -1,0 +1,57 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--turni-surface);
+  border-bottom: 1px solid var(--turni-border);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  gap: var(--site-gap);
+  width: min(100%, var(--site-content-width));
+  margin: 0 auto;
+  padding: var(--site-space-3) var(--site-gutter);
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--turni-text);
+  text-decoration: none;
+  margin-right: auto;
+}
+
+.nav {
+  display: none;
+}
+
+.links {
+  display: flex;
+  gap: var(--site-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--site-touch-target);
+  color: var(--turni-text-muted);
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--turni-text);
+  }
+}
+
+// Ниже планшета навигация уступает место одному действию: по спеке в первом
+// экране остаётся ровно один primary CTA.
+@media (min-width: 768px) {
+  .nav {
+    display: block;
+  }
+}
