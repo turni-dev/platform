@@ -1,12 +1,12 @@
 import { PageSchema, type Page } from '../blocks/page-schema';
-import home from './seed/home.json' with { type: 'json' };
+import privateAgent from './seed/private-agent.json' with { type: 'json' };
 
 /**
  * Страницы, которые сайт умеет показать без CMS. Семя держит лендинг живым,
  * когда Strapi недоступен, и снимает с локальной разработки требование
  * поднимать CMS ради одной вёрстки.
  */
-const seeds: Readonly<Record<string, unknown>> = { home };
+const seeds: Readonly<Record<string, unknown>> = { 'products/private-agent': privateAgent };
 
 export const seedSlugs: readonly string[] = Object.keys(seeds);
 

@@ -10,7 +10,8 @@ describe('seed content', () => {
   });
 
   it('covers the landing sections from the first screen to the form', () => {
-    const blocks = seedPage('home')?.blocks.map((block) => block.__component) ?? [];
+    const blocks =
+      seedPage('products/private-agent')?.blocks.map((block) => block.__component) ?? [];
 
     expect(blocks[0]).toBe('blocks.hero');
     expect(blocks).toContain('blocks.steps');

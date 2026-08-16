@@ -23,6 +23,11 @@
       "repeatable": false,
       "component": "parts.choice-group",
       "required": true
+    },
+    "foreignHosting": {
+      "type": "component",
+      "repeatable": false,
+      "component": "parts.choice-group"
     }
   }
 }

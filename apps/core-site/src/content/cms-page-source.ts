@@ -128,7 +128,8 @@ const blockPopulate: Readonly<Record<string, readonly string[]>> = {
     'consent',
     'groups.channels',
     'groups.hasServer',
-    'groups.timeline'
+    'groups.timeline',
+    'groups.foreignHosting'
   ]
 };
 

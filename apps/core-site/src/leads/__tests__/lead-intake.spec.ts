@@ -45,6 +45,7 @@ function leadRequest(overrides: Readonly<Record<string, string | undefined>> = {
     channels: 'Сайт',
     hasServer: 'Не знаю',
     timeline: 'Горит',
+    foreignHosting: 'Не знаю',
     consent: 'yes',
     idempotencyKey: 'key-1',
     ...overrides
@@ -80,6 +81,28 @@ describe('handleLeadRequest', () => {
     expect(written[0]?.body).toMatchObject({
       data: { name: 'Мария', contact: 'mariya@example.com', channels: 'Сайт' }
     });
+  });
+
+  it('carries the foreign hosting answer to the CMS, separate from consent', async () => {
+    const { fetch, written } = deps();
+
+    await handleLeadRequest(leadRequest({ foreignHosting: 'Нет' }), options(fetch));
+
+    expect(written[0]?.body).toMatchObject({ data: { foreignHosting: 'Нет' } });
+  });
+
+  it('accepts a lead that skips the foreign hosting question, since it is optional', async () => {
+    const { fetch, written } = deps();
+
+    const response = await handleLeadRequest(
+      leadRequest({ foreignHosting: undefined }),
+      options(fetch)
+    );
+
+    expect(response.status).toBe(303);
+    expect(written).toHaveLength(1);
+    const data = (written[0]?.body as { data: Record<string, unknown> }).data;
+    expect(data['foreignHosting']).toBeUndefined();
   });
 
   it('records when the consent was given, not just that it was', async () => {
