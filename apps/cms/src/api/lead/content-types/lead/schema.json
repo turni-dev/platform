@@ -1,0 +1,48 @@
+{
+  "kind": "collectionType",
+  "collectionName": "leads",
+  "info": {
+    "singularName": "lead",
+    "pluralName": "leads",
+    "displayName": "Заявка",
+    "description": "Заявка с сайта. Публичного создания нет — пишет только сервер сайта."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "contact": {
+      "type": "string",
+      "required": true,
+      "private": true
+    },
+    "company": {
+      "type": "string"
+    },
+    "task": {
+      "type": "text"
+    },
+    "channels": {
+      "type": "json"
+    },
+    "hasServer": {
+      "type": "string"
+    },
+    "timeline": {
+      "type": "string"
+    },
+    "consentAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "private": true
+    }
+  }
+}

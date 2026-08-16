@@ -222,6 +222,16 @@ describe('LeadForm', () => {
     expect(markup).toContain('action="/api/leads"');
   });
 
+  it('carries a fresh idempotency key so a resubmit does not duplicate the lead', () => {
+    const first = renderToStaticMarkup(<LeadForm {...leadForm} />);
+    const second = renderToStaticMarkup(<LeadForm {...leadForm} />);
+    const key = (markup: string): string | undefined =>
+      /name="idempotencyKey" value="([^"]+)"/.exec(markup)?.[1];
+
+    expect(key(first)).toBeDefined();
+    expect(key(first)).not.toBe(key(second));
+  });
+
   it('requires the contact and the personal data consent', () => {
     const markup = renderToStaticMarkup(
       <LeadForm {...leadForm} />

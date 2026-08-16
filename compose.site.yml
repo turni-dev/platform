@@ -71,6 +71,9 @@ services:
       PORT: 3002
       # Server-side content fetches target the cms service on the compose network.
       CMS_BASE_URL: http://cms:1337
+      # Write token for the lead form. Server-side only — it must never reach the
+      # browser. Provision it through sops/age in any shared environment.
+      CMS_WRITE_TOKEN: ${CMS_WRITE_TOKEN:-}
     ports:
       - "${CORE_SITE_PORT:-3002}:3002"
 

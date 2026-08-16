@@ -1,4 +1,6 @@
-import { Button, Input, Textarea } from '@turni/ui';
+import { Input, Textarea } from '@turni/ui';
+import { randomUUID } from 'node:crypto';
+import { LeadFormShell } from './lead-form-shell.js';
 import type { LeadFormBlock } from './schema.js';
 import styles from './lead-form.module.scss';
 
@@ -19,7 +21,10 @@ export function LeadForm({
       <div className={styles['inner']}>
         <h2 className={styles['heading']}>{heading}</h2>
         {note === undefined ? null : <p className={styles['note']}>{note}</p>}
-        <form className={styles['form']} method="post" action="/api/leads">
+        <LeadFormShell submitLabel={submitLabel}>
+          {/* Ключ попытки рождается вместе с формой: повторная отправка той же
+              страницы не создаёт вторую заявку даже без javascript. */}
+          <input type="hidden" name="idempotencyKey" value={randomUUID()} />
           <div className={styles['field']}>
             <label className={styles['label']} htmlFor="lead-name">
               {labels.name}
@@ -96,9 +101,7 @@ export function LeadForm({
             <label htmlFor="lead-company-site">Не заполняйте это поле</label>
             <input id="lead-company-site" name="companySite" tabIndex={-1} autoComplete="off" />
           </div>
-
-          <Button type="submit">{submitLabel}</Button>
-        </form>
+        </LeadFormShell>
       </div>
     </section>
   );
