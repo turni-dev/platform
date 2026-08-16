@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { renderBlocks } from '../../blocks/block-renderer';
-import { sitePages, siteSettings } from '../../content/site-pages';
+import { sitePages, siteSettings, siteBookingSlots } from '../../content/site-pages';
 import type { Page } from '../../blocks/page-schema';
 
 type RouteParams = Readonly<{ params: Promise<{ slug?: string[] }> }>;
@@ -62,7 +62,7 @@ export default async function SitePage({ params }: RouteParams) {
   const slug = (await params).slug;
   redirectRootToOffer(slug);
 
-  const page = await loadPage(slug);
+  const [page, slots] = await Promise.all([loadPage(slug), siteBookingSlots.get()]);
 
-  return <>{renderBlocks(page.blocks)}</>;
+  return <>{renderBlocks(page.blocks, slots.length === 0 ? {} : { slots })}</>;
 }

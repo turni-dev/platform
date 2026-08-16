@@ -236,3 +236,97 @@ describe('handleLeadRequest', () => {
     expect(written).toHaveLength(0);
   });
 });
+
+/** Оснастка для сценариев с бронированием: reserve и создание заявки — два
+ * разных эндпоинта, поэтому мок различает их по адресу. */
+function depsWithReservation(reserveStatus: number): {
+  fetch: LeadFetch;
+  written: Written[];
+  reserved: string[];
+} {
+  const written: Written[] = [];
+  const reserved: string[] = [];
+  const fetch = vi.fn<LeadFetch>((url, init) => {
+    if (init.method === 'GET') {
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(JSON.stringify({ data: [] }))
+      });
+    }
+
+    if (url.includes('/reserve')) {
+      reserved.push(url);
+
+      return Promise.resolve({
+        ok: reserveStatus < 300,
+        status: reserveStatus,
+        text: () => Promise.resolve('')
+      });
+    }
+
+    written.push({ url, body: JSON.parse(init.body ?? '{}') as unknown });
+
+    return Promise.resolve({
+      ok: true,
+      status: 201,
+      text: () => Promise.resolve(JSON.stringify({ data: { id: 1, documentId: 'lead-1' } }))
+    });
+  });
+
+  return { fetch, written, reserved };
+}
+
+describe('handleLeadRequest with a chosen slot', () => {
+  it('reserves the slot and stores the lead with the slot and its label', async () => {
+    const { fetch, written, reserved } = depsWithReservation(200);
+
+    const response = await handleLeadRequest(
+      leadRequest({ slotId: '5|16 августа, 14:00 МСК' }),
+      options(fetch)
+    );
+
+    expect(response.status).toBe(303);
+    expect(reserved).toEqual(['http://cms:1337/api/booking-slots/5/reserve']);
+    expect(written).toHaveLength(1);
+    expect(written[0]?.body).toMatchObject({
+      data: { bookedSlot: '5', slotLabel: '16 августа, 14:00 МСК' }
+    });
+  });
+
+  it('refuses without creating a lead when the slot is already taken', async () => {
+    const { fetch, written, reserved } = depsWithReservation(409);
+
+    const response = await handleLeadRequest(
+      leadRequest({ slotId: '5|16 августа, 14:00 МСК' }),
+      options(fetch)
+    );
+
+    expect(response.status).toBe(409);
+    expect(reserved).toHaveLength(1);
+    expect(written).toHaveLength(0);
+  });
+
+  it('refuses without creating a lead when reservation fails', async () => {
+    const { fetch, written } = depsWithReservation(500);
+
+    const response = await handleLeadRequest(
+      leadRequest({ slotId: '5|16 августа, 14:00 МСК' }),
+      options(fetch)
+    );
+
+    expect(response.status).toBe(502);
+    expect(written).toHaveLength(0);
+  });
+
+  it('still works exactly as before when no slot is chosen', async () => {
+    const { fetch, written, reserved } = depsWithReservation(200);
+
+    const response = await handleLeadRequest(leadRequest(), options(fetch));
+
+    expect(response.status).toBe(303);
+    expect(reserved).toHaveLength(0);
+    expect(written).toHaveLength(1);
+    expect(written[0]?.body).not.toHaveProperty('data.bookedSlot');
+  });
+});

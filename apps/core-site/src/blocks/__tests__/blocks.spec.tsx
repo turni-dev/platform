@@ -254,5 +254,24 @@ describe('LeadForm', () => {
     expect(markup).toContain('tabindex="-1"');
     expect(markup).toContain('aria-hidden="true"');
   });
+
+  it('renders no time picker when no slots are offered', () => {
+    const markup = renderToStaticMarkup(<LeadForm {...leadForm} />);
+
+    expect(markup).not.toContain('name="slotId"');
+  });
+
+  it('offers a slot as one radio carrying both its id and its label', () => {
+    const markup = renderToStaticMarkup(
+      <LeadForm
+        {...leadForm}
+        slots={[{ id: '5', startsAt: '2026-08-16T11:00:00.000Z', durationMinutes: 30, label: '16 августа, 14:00 МСК' }]}
+      />
+    );
+
+    expect(markup).toContain('name="slotId"');
+    expect(markup).toContain('value="5|16 августа, 14:00 МСК"');
+    expect(markup).toContain('16 августа, 14:00 МСК');
+  });
 });
 

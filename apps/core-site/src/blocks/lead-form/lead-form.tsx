@@ -2,7 +2,14 @@ import { Input, Textarea } from '@turni/ui';
 import { randomUUID } from 'node:crypto';
 import { LeadFormShell } from './lead-form-shell';
 import type { LeadFormBlock } from './schema';
+import type { BookingSlotOption } from '../../site/booking-slots-source';
 import styles from './lead-form.module.scss';
+
+export interface LeadFormProps extends LeadFormBlock {
+  /** Список слотов приходит отдельно от контента блока и может быть пустым —
+   * выбор времени тогда просто не рендерится. */
+  readonly slots?: readonly BookingSlotOption[];
+}
 
 /**
  * Обычная HTML-форма: заявка уходит и без javascript. Состояния отправки
@@ -14,8 +21,9 @@ export function LeadForm({
   submitLabel,
   labels,
   groups,
-  consent
-}: LeadFormBlock) {
+  consent,
+  slots
+}: LeadFormProps) {
   return (
     <section className={styles['section']} data-block="blocks.lead-form" id="lead">
       <div className={styles['inner']}>
@@ -97,6 +105,22 @@ export function LeadForm({
                   <label className={styles['chip']} key={option}>
                     <input type="radio" name="foreignHosting" value={option} />
                     <span>{option}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
+
+          {slots === undefined || slots.length === 0 ? null : (
+            <fieldset className={styles['group']}>
+              <legend className={styles['legend']}>Когда удобно созвониться (необязательно)</legend>
+              <div className={styles['chips']}>
+                {slots.map((slot) => (
+                  // Без javascript одно поле должно нести и id, и подпись:
+                  // сервер разберёт значение по первому «|» в lead-intake.
+                  <label className={styles['chip']} key={slot.id}>
+                    <input type="radio" name="slotId" value={`${slot.id}|${slot.label}`} />
+                    <span>{slot.label}</span>
                   </label>
                 ))}
               </div>

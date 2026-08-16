@@ -7,8 +7,15 @@ import { LeadForm } from './lead-form/lead-form';
 import { SecurityList } from './security-list/security-list';
 import { Steps } from './steps/steps';
 import type { PageBlock } from './page-schema';
+import type { BookingSlotOption } from '../site/booking-slots-source';
 
-function renderBlock(block: PageBlock, key: string): ReactNode {
+export interface RenderBlocksOptions {
+  /** Слоты консультации: приходят отдельно от CMS-контента блока, потому что
+   * их доступность меняется чаще, чем перерисовывается страница. */
+  readonly slots?: readonly BookingSlotOption[];
+}
+
+function renderBlock(block: PageBlock, key: string, options: RenderBlocksOptions): ReactNode {
   switch (block.__component) {
     case 'blocks.hero':
       return <Hero key={key} {...block} />;
@@ -23,7 +30,9 @@ function renderBlock(block: PageBlock, key: string): ReactNode {
     case 'blocks.faq':
       return <FaqAccordion key={key} {...block} />;
     case 'blocks.lead-form':
-      return <LeadForm key={key} {...block} />;
+      return (
+        <LeadForm key={key} {...block} {...(options.slots === undefined ? {} : { slots: options.slots })} />
+      );
     default:
       // Редактор может завести блок раньше, чем задеплоен фронт: одна незнакомая
       // секция не должна ронять страницу целиком.
@@ -31,6 +40,9 @@ function renderBlock(block: PageBlock, key: string): ReactNode {
   }
 }
 
-export function renderBlocks(blocks: readonly PageBlock[]): ReactNode[] {
-  return blocks.map((block, index) => renderBlock(block, `${block.__component}-${index}`));
+export function renderBlocks(
+  blocks: readonly PageBlock[],
+  options: RenderBlocksOptions = {}
+): ReactNode[] {
+  return blocks.map((block, index) => renderBlock(block, `${block.__component}-${index}`, options));
 }
