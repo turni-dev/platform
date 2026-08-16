@@ -1,9 +1,19 @@
 import { z } from 'zod';
-import { LinkSchema } from '../shared.js';
+import { LinkSchema } from '../shared';
+
+/**
+ * Варианты приходят списком строк (семя) либо повторяемым компонентом CMS,
+ * где у каждого варианта своё поле. Компоненту в обоих случаях достаются
+ * строки — редактору не приходится править json-поле в админке.
+ */
+const OptionSchema = z.union([
+  z.string().min(1),
+  z.object({ value: z.string().min(1) }).transform((option) => option.value)
+]);
 
 const ChoiceGroupSchema = z.object({
   legend: z.string().min(1),
-  options: z.array(z.string().min(1)).min(1)
+  options: z.array(OptionSchema).min(1)
 });
 
 export const LeadFormBlockSchema = z.object({

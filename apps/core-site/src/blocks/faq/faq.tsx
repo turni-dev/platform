@@ -1,4 +1,4 @@
-import type { FaqBlock } from './schema.js';
+import type { FaqBlock } from './schema';
 import styles from './faq.module.scss';
 
 /**

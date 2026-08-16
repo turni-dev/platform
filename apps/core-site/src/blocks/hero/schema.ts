@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { LinkSchema } from '../shared.js';
+import { LinkSchema } from '../shared';
 
 export const HeroMediaSchema = z.object({
   src: z.string().min(1),

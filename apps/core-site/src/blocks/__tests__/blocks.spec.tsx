@@ -1,43 +1,13 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { CaseCards } from '../case-cards/case-cards.js';
-import { FaqAccordion } from '../faq/faq.js';
-import { FeatureGrid } from '../feature-grid/feature-grid.js';
-import { Footer } from '../footer/footer.js';
-import { Hero } from '../hero/hero.js';
-import { LeadForm } from '../lead-form/lead-form.js';
-import type { LeadFormBlock } from '../lead-form/schema.js';
-import { Nav } from '../nav/nav.js';
-import { SecurityList } from '../security-list/security-list.js';
-import { Steps } from '../steps/steps.js';
-
-describe('Nav', () => {
-  it('names the navigation landmark and keeps every link', () => {
-    const markup = renderToStaticMarkup(
-      <Nav
-        __component="blocks.nav"
-        brand="Turni"
-        links={[
-          { label: 'Услуга', href: '#service' },
-          { label: 'Как работает', href: '#steps' }
-        ]}
-        cta={{ label: 'Оставить заявку', href: '/brief' }}
-      />
-    );
-
-    expect(markup).toContain('aria-label="Основная навигация"');
-    expect(markup).toContain('href="#service"');
-    expect(markup).toContain('href="/brief"');
-  });
-
-  it('renders without a call to action', () => {
-    const markup = renderToStaticMarkup(
-      <Nav __component="blocks.nav" brand="Turni" links={[]} />
-    );
-
-    expect(markup).toContain('Turni');
-  });
-});
+import { CaseCards } from '../case-cards/case-cards';
+import { FaqAccordion } from '../faq/faq';
+import { FeatureGrid } from '../feature-grid/feature-grid';
+import { Hero } from '../hero/hero';
+import { LeadForm } from '../lead-form/lead-form';
+import type { LeadFormBlock } from '../lead-form/schema';
+import { SecurityList } from '../security-list/security-list';
+import { Steps } from '../steps/steps';
 
 describe('Hero', () => {
   it('carries the page heading and both calls to action', () => {
@@ -261,19 +231,3 @@ describe('LeadForm', () => {
   });
 });
 
-describe('Footer', () => {
-  it('keeps contacts and legal links apart', () => {
-    const markup = renderToStaticMarkup(
-      <Footer
-        __component="blocks.footer"
-        contacts={[{ label: 'hi@turni.ru', href: 'mailto:hi@turni.ru' }]}
-        legalLinks={[{ label: 'Политика', href: '/legal/privacy' }]}
-        note="Скоро — самостоятельный сервис"
-      />
-    );
-
-    expect(markup).toContain('aria-label="Контакты"');
-    expect(markup).toContain('aria-label="Правовая информация"');
-    expect(markup).toContain('Скоро — самостоятельный сервис');
-  });
-});

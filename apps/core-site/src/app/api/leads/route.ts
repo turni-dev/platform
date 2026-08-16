@@ -1,4 +1,4 @@
-import { handleLeadRequest } from '../../../leads/lead-intake.js';
+import { handleLeadRequest } from '../../../leads/lead-intake';
 
 export const dynamic = 'force-dynamic';
 

@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_parts_seos",
+  "info": {
+    "displayName": "SEO",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "ogImage": {
+      "type": "string"
+    },
+    "noindex": {
+      "type": "boolean"
+    }
+  }
+}

@@ -1,13 +1,12 @@
 import { z } from 'zod';
-import { CaseCardsBlockSchema } from './case-cards/schema.js';
-import { FaqBlockSchema } from './faq/schema.js';
-import { FeatureGridBlockSchema } from './feature-grid/schema.js';
-import { FooterBlockSchema } from './footer/schema.js';
-import { HeroBlockSchema } from './hero/schema.js';
-import { LeadFormBlockSchema } from './lead-form/schema.js';
-import { NavBlockSchema } from './nav/schema.js';
-import { SecurityListBlockSchema } from './security-list/schema.js';
-import { StepsBlockSchema } from './steps/schema.js';
+import { SeoSchema } from '../site/site-settings-schema';
+import { CaseCardsBlockSchema } from './case-cards/schema';
+import { FaqBlockSchema } from './faq/schema';
+import { FeatureGridBlockSchema } from './feature-grid/schema';
+import { HeroBlockSchema } from './hero/schema';
+import { LeadFormBlockSchema } from './lead-form/schema';
+import { SecurityListBlockSchema } from './security-list/schema';
+import { StepsBlockSchema } from './steps/schema';
 
 /**
  * `__component` — дискриминант динамической зоны Strapi. Один блок кода
@@ -15,21 +14,21 @@ import { StepsBlockSchema } from './steps/schema.js';
  * `apps/cms/src/components` обязаны совпадать буквально.
  */
 export const BlockSchema = z.discriminatedUnion('__component', [
-  NavBlockSchema,
   HeroBlockSchema,
   FeatureGridBlockSchema,
   StepsBlockSchema,
   SecurityListBlockSchema,
   CaseCardsBlockSchema,
   FaqBlockSchema,
-  LeadFormBlockSchema,
-  FooterBlockSchema
+  LeadFormBlockSchema
 ]);
 
 export const PageSchema = z.object({
+  /** Путь любой глубины: `home`, `legal/privacy`, `blog/kak-my-rabotaem`. */
   slug: z.string().min(1),
   title: z.string().min(1),
   description: z.string().min(1).optional(),
+  seo: SeoSchema.optional(),
   blocks: z.array(BlockSchema)
 });
 

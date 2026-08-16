@@ -1,4 +1,4 @@
-import type { FeatureGridBlock } from './schema.js';
+import type { FeatureGridBlock } from './schema';
 import styles from './feature-grid.module.scss';
 
 export function FeatureGrid({ heading, columns = 3, items }: FeatureGridBlock) {

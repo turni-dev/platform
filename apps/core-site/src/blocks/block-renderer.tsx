@@ -1,19 +1,15 @@
 import type { ReactNode } from 'react';
-import { CaseCards } from './case-cards/case-cards.js';
-import { FaqAccordion } from './faq/faq.js';
-import { FeatureGrid } from './feature-grid/feature-grid.js';
-import { Footer } from './footer/footer.js';
-import { Hero } from './hero/hero.js';
-import { LeadForm } from './lead-form/lead-form.js';
-import { Nav } from './nav/nav.js';
-import { SecurityList } from './security-list/security-list.js';
-import { Steps } from './steps/steps.js';
-import type { PageBlock } from './page-schema.js';
+import { CaseCards } from './case-cards/case-cards';
+import { FaqAccordion } from './faq/faq';
+import { FeatureGrid } from './feature-grid/feature-grid';
+import { Hero } from './hero/hero';
+import { LeadForm } from './lead-form/lead-form';
+import { SecurityList } from './security-list/security-list';
+import { Steps } from './steps/steps';
+import type { PageBlock } from './page-schema';
 
 function renderBlock(block: PageBlock, key: string): ReactNode {
   switch (block.__component) {
-    case 'blocks.nav':
-      return <Nav key={key} {...block} />;
     case 'blocks.hero':
       return <Hero key={key} {...block} />;
     case 'blocks.feature-grid':
@@ -28,8 +24,6 @@ function renderBlock(block: PageBlock, key: string): ReactNode {
       return <FaqAccordion key={key} {...block} />;
     case 'blocks.lead-form':
       return <LeadForm key={key} {...block} />;
-    case 'blocks.footer':
-      return <Footer key={key} {...block} />;
     default:
       // Редактор может завести блок раньше, чем задеплоен фронт: одна незнакомая
       // секция не должна ронять страницу целиком.

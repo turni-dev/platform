@@ -12,8 +12,9 @@
   },
   "attributes": {
     "slug": {
-      "type": "uid",
-      "required": true
+      "type": "string",
+      "required": true,
+      "unique": true
     },
     "title": {
       "type": "string",
@@ -25,16 +26,19 @@
     "blocks": {
       "type": "dynamiczone",
       "components": [
-        "blocks.nav",
         "blocks.hero",
         "blocks.feature-grid",
         "blocks.steps",
         "blocks.security-list",
         "blocks.case-cards",
         "blocks.faq",
-        "blocks.lead-form",
-        "blocks.footer"
+        "blocks.lead-form"
       ]
+    },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "parts.seo"
     }
   }
 }

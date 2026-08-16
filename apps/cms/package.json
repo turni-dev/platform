@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@strapi/admin": "5.50.1",
+    "@strapi/provider-email-nodemailer": "5.50.1",
     "@strapi/strapi": "5.50.1",
     "pg": "8.20.0",
     "react": "^18.0.0",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { seedPage, seedSlugs } from '../seed-page.js';
-import { PageSchema } from '../../blocks/page-schema.js';
+import { seedPage, seedSlugs } from '../seed-page';
+import { PageSchema } from '../../blocks/page-schema';
 
 describe('seed content', () => {
   it('parses every seeded page with the page schema', () => {
@@ -9,12 +9,10 @@ describe('seed content', () => {
     }
   });
 
-  it('covers the landing sections from navigation to footer', () => {
+  it('covers the landing sections from the first screen to the form', () => {
     const blocks = seedPage('home')?.blocks.map((block) => block.__component) ?? [];
 
-    expect(blocks[0]).toBe('blocks.nav');
-    expect(blocks.at(-1)).toBe('blocks.footer');
-    expect(blocks).toContain('blocks.hero');
+    expect(blocks[0]).toBe('blocks.hero');
     expect(blocks).toContain('blocks.steps');
     expect(blocks).toContain('blocks.security-list');
     expect(blocks).toContain('blocks.faq');

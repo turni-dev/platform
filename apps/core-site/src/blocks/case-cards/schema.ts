@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { LinkSchema } from '../shared.js';
+import { LinkSchema } from '../shared';
 
 export const CaseCardsBlockSchema = z.object({
   __component: z.literal('blocks.case-cards'),

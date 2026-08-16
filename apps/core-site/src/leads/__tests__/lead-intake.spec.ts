@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { handleLeadRequest, type LeadFetch } from '../lead-intake.js';
+import { handleLeadRequest, type LeadFetch } from '../lead-intake';
 
 interface Written {
   readonly url: string;
@@ -78,7 +78,7 @@ describe('handleLeadRequest', () => {
     expect(response.status).toBe(303);
     expect(written).toHaveLength(1);
     expect(written[0]?.body).toMatchObject({
-      data: { name: 'Мария', contact: 'mariya@example.com', channels: ['Сайт'] }
+      data: { name: 'Мария', contact: 'mariya@example.com', channels: 'Сайт' }
     });
   });
 

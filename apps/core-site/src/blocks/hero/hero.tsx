@@ -1,5 +1,5 @@
 import { Button } from '@turni/ui';
-import type { HeroBlock } from './schema.js';
+import type { HeroBlock } from './schema';
 import styles from './hero.module.scss';
 
 export function Hero({ heading, subheading, primaryCta, secondaryCta, media }: HeroBlock) {

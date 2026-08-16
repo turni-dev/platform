@@ -51,6 +51,9 @@ services:
       DATABASE_SSL: "false"
       # Secrets — dev-only defaults so the local stack boots out of the box.
       # Override every one of these in any shared/remote environment.
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      EMAIL_FROM: ${SITE_EMAIL_FROM:-site@turni.ru}
       APP_KEYS: ${CMS_APP_KEYS:-devKeyA,devKeyB}
       API_TOKEN_SALT: ${CMS_API_TOKEN_SALT:-devApiTokenSalt}
       ADMIN_JWT_SECRET: ${CMS_ADMIN_JWT_SECRET:-devAdminJwtSecret}
@@ -61,6 +64,14 @@ services:
       ENCRYPTION_KEY: ${CMS_ENCRYPTION_KEY:-ZGV2LW9ubHktZW5jcnlwdGlvbi1rZXktMzJieXRlcyE=}
     ports:
       - "${CMS_PORT:-1337}:1337"
+
+  # Почта в деве никуда не уходит: письма о заявках видно в веб-интерфейсе.
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: turni-site-mailpit
+    restart: unless-stopped
+    ports:
+      - "${SITE_MAILPIT_UI_PORT:-8026}:8025"
 
   core-site:
     build:

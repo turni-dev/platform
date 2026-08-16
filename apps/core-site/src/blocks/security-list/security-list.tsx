@@ -1,4 +1,4 @@
-import type { SecurityIcon, SecurityListBlock } from './schema.js';
+import type { SecurityIcon, SecurityListBlock } from './schema';
 import styles from './security-list.module.scss';
 
 const iconPaths: Record<SecurityIcon, string> = {

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createCmsPageSource, type SiteFetch } from '../cms-page-source.js';
-import { seedPage } from '../seed-page.js';
+import { createCmsPageSource, type SiteFetch } from '../cms-page-source';
+import { seedPage } from '../seed-page';
 
 const cmsPage = {
   data: [

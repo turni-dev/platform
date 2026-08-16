@@ -1,13 +1,18 @@
-import type { FooterBlock } from './schema.js';
+import type { SiteSettings } from './site-settings-schema';
 import styles from './footer.module.scss';
 
-export function Footer({ contacts, legalLinks, note }: FooterBlock) {
+type FooterProps = Pick<
+  SiteSettings,
+  'footerContacts' | 'footerLegalLinks'
+> & { readonly footerNote?: string };
+
+export function Footer({ footerContacts, footerLegalLinks, footerNote }: FooterProps) {
   return (
-    <footer className={styles['footer']} data-block="blocks.footer">
+    <footer className={styles['footer']} data-site="footer">
       <div className={styles['inner']}>
         <nav aria-label="Контакты" className={styles['column']}>
           <ul className={styles['list']}>
-            {contacts.map((contact) => (
+            {footerContacts.map((contact) => (
               <li key={contact.label}>
                 {contact.href === undefined ? (
                   contact.label
@@ -22,7 +27,7 @@ export function Footer({ contacts, legalLinks, note }: FooterBlock) {
         </nav>
         <nav aria-label="Правовая информация" className={styles['column']}>
           <ul className={styles['list']}>
-            {legalLinks.map((link) => (
+            {footerLegalLinks.map((link) => (
               <li key={link.href}>
                 <a className={styles['link']} href={link.href}>
                   {link.label}
@@ -31,7 +36,7 @@ export function Footer({ contacts, legalLinks, note }: FooterBlock) {
             ))}
           </ul>
         </nav>
-        {note === undefined ? null : <p className={styles['note']}>{note}</p>}
+        {footerNote === undefined ? null : <p className={styles['note']}>{footerNote}</p>}
       </div>
     </footer>
   );

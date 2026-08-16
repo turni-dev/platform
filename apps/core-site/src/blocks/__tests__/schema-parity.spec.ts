@@ -2,15 +2,13 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { CaseCardsBlockSchema } from '../case-cards/schema.js';
-import { FaqBlockSchema } from '../faq/schema.js';
-import { FeatureGridBlockSchema } from '../feature-grid/schema.js';
-import { FooterBlockSchema } from '../footer/schema.js';
-import { HeroBlockSchema } from '../hero/schema.js';
-import { LeadFormBlockSchema } from '../lead-form/schema.js';
-import { NavBlockSchema } from '../nav/schema.js';
-import { SecurityListBlockSchema } from '../security-list/schema.js';
-import { StepsBlockSchema } from '../steps/schema.js';
+import { CaseCardsBlockSchema } from '../case-cards/schema';
+import { FaqBlockSchema } from '../faq/schema';
+import { FeatureGridBlockSchema } from '../feature-grid/schema';
+import { HeroBlockSchema } from '../hero/schema';
+import { LeadFormBlockSchema } from '../lead-form/schema';
+import { SecurityListBlockSchema } from '../security-list/schema';
+import { StepsBlockSchema } from '../steps/schema';
 
 const componentsDirectory = resolve(
   __dirname,
@@ -23,15 +21,13 @@ const StrapiComponentSchema = z.object({
 });
 
 const blocks: ReadonlyArray<readonly [string, z.ZodObject]> = [
-  ['nav', NavBlockSchema],
   ['hero', HeroBlockSchema],
   ['feature-grid', FeatureGridBlockSchema],
   ['steps', StepsBlockSchema],
   ['security-list', SecurityListBlockSchema],
   ['case-cards', CaseCardsBlockSchema],
   ['faq', FaqBlockSchema],
-  ['lead-form', LeadFormBlockSchema],
-  ['footer', FooterBlockSchema]
+  ['lead-form', LeadFormBlockSchema]
 ];
 
 function strapiFields(name: string): string[] {

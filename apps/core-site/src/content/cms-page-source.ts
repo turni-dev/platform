@@ -1,5 +1,5 @@
-import { PageSchema, type Page } from '../blocks/page-schema.js';
-import { seedPage } from './seed-page.js';
+import { PageSchema, type Page } from '../blocks/page-schema';
+import { seedPage } from './seed-page';
 
 export type SiteFetch = (
   url: string,
@@ -89,7 +89,7 @@ export function createCmsPageSource(options: CmsPageSourceOptions): PageSource {
  * Незаполненное поле Strapi отдаёт как `null`, а блок описан через отсутствие
  * поля — без этой чистки страница с любым пустым полем не проходит схему.
  */
-function withoutNulls(value: unknown): unknown {
+export function withoutNulls(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map(withoutNulls);
   }
@@ -114,13 +114,11 @@ function withoutNulls(value: unknown): unknown {
  * уезжает на семя.
  */
 const blockPopulate: Readonly<Record<string, readonly string[]>> = {
-  'blocks.nav': ['*'],
   'blocks.hero': ['*'],
   'blocks.feature-grid': ['*'],
   'blocks.steps': ['*'],
   'blocks.security-list': ['*'],
   'blocks.faq': ['*'],
-  'blocks.footer': ['*'],
   'blocks.case-cards': ['cases', 'emptyState.cta'],
   'blocks.lead-form': [
     'labels',

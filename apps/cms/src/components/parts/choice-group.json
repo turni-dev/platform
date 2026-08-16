@@ -11,7 +11,9 @@
       "required": true
     },
     "options": {
-      "type": "json",
+      "type": "component",
+      "repeatable": true,
+      "component": "parts.option",
       "required": true
     }
   }

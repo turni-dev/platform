@@ -1,4 +1,4 @@
-import { PageSchema, type Page } from '../blocks/page-schema.js';
+import { PageSchema, type Page } from '../blocks/page-schema';
 import home from './seed/home.json' with { type: 'json' };
 
 /**

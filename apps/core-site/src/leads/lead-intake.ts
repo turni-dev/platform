@@ -99,7 +99,9 @@ export async function handleLeadRequest(
           contact: lead.data.contact,
           company: lead.data.company,
           task: lead.data.task,
-          channels: lead.data.channels,
+          // В CMS это обычное текстовое поле: редактор читает заявку глазами,
+          // а json-редактор в админке для этого не нужен.
+          channels: lead.data.channels.join(', '),
           hasServer: lead.data.hasServer,
           timeline: lead.data.timeline,
           idempotencyKey: lead.data.idempotencyKey,

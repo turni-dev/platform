@@ -1,4 +1,4 @@
-import type { StepsBlock } from './schema.js';
+import type { StepsBlock } from './schema';
 import styles from './steps.module.scss';
 
 export function Steps({ heading, steps, note }: StepsBlock) {

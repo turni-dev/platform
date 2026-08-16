@@ -1,7 +1,7 @@
 import { Input, Textarea } from '@turni/ui';
 import { randomUUID } from 'node:crypto';
-import { LeadFormShell } from './lead-form-shell.js';
-import type { LeadFormBlock } from './schema.js';
+import { LeadFormShell } from './lead-form-shell';
+import type { LeadFormBlock } from './schema';
 import styles from './lead-form.module.scss';
 
 /**

@@ -1,5 +1,5 @@
 import { Button } from '@turni/ui';
-import type { CaseCardsBlock } from './schema.js';
+import type { CaseCardsBlock } from './schema';
 import styles from './case-cards.module.scss';
 
 export function CaseCards({ heading, emptyState, cases }: CaseCardsBlock) {

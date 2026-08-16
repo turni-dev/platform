@@ -26,6 +26,23 @@ const deniedExecutableTypes = [
 // публичной ролью и пользовательскими JWT не нужен, а plugin-cloud относится
 // к Strapi Cloud, которым мы не пользуемся.
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin => ({
+  // Письмо о новой заявке уходит отсюда. В деве адресат — mailpit из
+  // compose.site.yml, поэтому ничего наружу не улетает.
+  email: {
+    config: {
+      provider: 'nodemailer',
+      providerOptions: {
+        host: env('SMTP_HOST', 'mailpit'),
+        port: env.int('SMTP_PORT', 1025),
+        secure: env.bool('SMTP_SECURE', false),
+        ignoreTLS: env.bool('SMTP_IGNORE_TLS', true),
+      },
+      settings: {
+        defaultFrom: env('EMAIL_FROM', 'site@turni.ru'),
+        defaultReplyTo: env('EMAIL_FROM', 'site@turni.ru'),
+      },
+    },
+  },
   upload: {
     config: {
       security: {
