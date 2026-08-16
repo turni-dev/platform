@@ -1,0 +1,24 @@
+{
+  "collectionName": "components_blocks_case_cardss",
+  "info": {
+    "displayName": "Кейсы",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "heading": {
+      "type": "string",
+      "required": true
+    },
+    "emptyState": {
+      "type": "component",
+      "repeatable": false,
+      "component": "parts.empty-state"
+    },
+    "cases": {
+      "type": "component",
+      "repeatable": true,
+      "component": "parts.case"
+    }
+  }
+}

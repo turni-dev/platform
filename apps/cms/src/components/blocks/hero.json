@@ -1,0 +1,34 @@
+{
+  "collectionName": "components_blocks_heros",
+  "info": {
+    "displayName": "Первый экран",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "heading": {
+      "type": "text",
+      "required": true
+    },
+    "subheading": {
+      "type": "text",
+      "required": true
+    },
+    "primaryCta": {
+      "type": "component",
+      "repeatable": false,
+      "component": "parts.link",
+      "required": true
+    },
+    "secondaryCta": {
+      "type": "component",
+      "repeatable": false,
+      "component": "parts.link"
+    },
+    "media": {
+      "type": "component",
+      "repeatable": false,
+      "component": "parts.media"
+    }
+  }
+}

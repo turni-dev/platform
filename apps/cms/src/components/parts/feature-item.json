@@ -1,0 +1,17 @@
+{
+  "collectionName": "components_parts_feature_items",
+  "info": {
+    "displayName": "Пункт сетки",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "body": {
+      "type": "text"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "collectionName": "components_blocks_navs",
+  "info": {
+    "displayName": "Навигация",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "brand": {
+      "type": "string",
+      "required": true
+    },
+    "links": {
+      "type": "component",
+      "repeatable": true,
+      "component": "parts.link"
+    },
+    "cta": {
+      "type": "component",
+      "repeatable": false,
+      "component": "parts.link"
+    }
+  }
+}

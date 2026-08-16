@@ -1,0 +1,17 @@
+{
+  "collectionName": "components_parts_contacts",
+  "info": {
+    "displayName": "Контакт",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "label": {
+      "type": "string",
+      "required": true
+    },
+    "href": {
+      "type": "string"
+    }
+  }
+}

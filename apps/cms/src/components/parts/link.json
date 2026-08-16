@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_parts_links",
+  "info": {
+    "displayName": "Ссылка",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "label": {
+      "type": "string",
+      "required": true
+    },
+    "href": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

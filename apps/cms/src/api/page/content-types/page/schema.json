@@ -1,0 +1,40 @@
+{
+  "kind": "collectionType",
+  "collectionName": "pages",
+  "info": {
+    "singularName": "page",
+    "pluralName": "pages",
+    "displayName": "Страница",
+    "description": "Страница сайта, собранная из блоков"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "slug": {
+      "type": "uid",
+      "required": true
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "blocks": {
+      "type": "dynamiczone",
+      "components": [
+        "blocks.nav",
+        "blocks.hero",
+        "blocks.feature-grid",
+        "blocks.steps",
+        "blocks.security-list",
+        "blocks.case-cards",
+        "blocks.faq",
+        "blocks.lead-form",
+        "blocks.footer"
+      ]
+    }
+  }
+}

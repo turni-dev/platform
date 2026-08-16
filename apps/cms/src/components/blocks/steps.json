@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_blocks_stepss",
+  "info": {
+    "displayName": "Шаги",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "heading": {
+      "type": "string",
+      "required": true
+    },
+    "steps": {
+      "type": "component",
+      "repeatable": true,
+      "component": "parts.step"
+    },
+    "note": {
+      "type": "text"
+    }
+  }
+}

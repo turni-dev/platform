@@ -1,0 +1,28 @@
+{
+  "collectionName": "components_parts_lead_groupss",
+  "info": {
+    "displayName": "Группы формы",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "channels": {
+      "type": "component",
+      "repeatable": false,
+      "component": "parts.choice-group",
+      "required": true
+    },
+    "hasServer": {
+      "type": "component",
+      "repeatable": false,
+      "component": "parts.choice-group",
+      "required": true
+    },
+    "timeline": {
+      "type": "component",
+      "repeatable": false,
+      "component": "parts.choice-group",
+      "required": true
+    }
+  }
+}

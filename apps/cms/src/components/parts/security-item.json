@@ -1,0 +1,26 @@
+{
+  "collectionName": "components_parts_security_items",
+  "info": {
+    "displayName": "Пункт безопасности",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "body": {
+      "type": "text"
+    },
+    "icon": {
+      "type": "enumeration",
+      "enum": [
+        "shield",
+        "server",
+        "eye",
+        "audit"
+      ]
+    }
+  }
+}
