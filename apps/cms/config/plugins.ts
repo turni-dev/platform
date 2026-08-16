@@ -22,15 +22,10 @@ const deniedExecutableTypes = [
   'application/x-mach-binary',
 ];
 
+// Сайт ходит в CMS только по API-токенам, поэтому users-permissions с его
+// публичной ролью и пользовательскими JWT не нужен, а plugin-cloud относится
+// к Strapi Cloud, которым мы не пользуемся.
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin => ({
-  'users-permissions': {
-    config: {
-      jwtManagement: 'refresh',
-      sessions: {
-        httpOnly: true,
-      },
-    },
-  },
   upload: {
     config: {
       security: {

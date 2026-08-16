@@ -56,7 +56,9 @@ services:
       ADMIN_JWT_SECRET: ${CMS_ADMIN_JWT_SECRET:-devAdminJwtSecret}
       TRANSFER_TOKEN_SALT: ${CMS_TRANSFER_TOKEN_SALT:-devTransferTokenSalt}
       JWT_SECRET: ${CMS_JWT_SECRET:-devJwtSecret}
-      ENCRYPTION_KEY: ${CMS_ENCRYPTION_KEY:-devEncryptionKey}
+      # AES-256: ключ обязан быть ровно 32 байта, иначе Strapi не сможет
+      # зашифровать API-токен и админка ответит невнятной ошибкой.
+      ENCRYPTION_KEY: ${CMS_ENCRYPTION_KEY:-ZGV2LW9ubHktZW5jcnlwdGlvbi1rZXktMzJieXRlcyE=}
     ports:
       - "${CMS_PORT:-1337}:1337"
 

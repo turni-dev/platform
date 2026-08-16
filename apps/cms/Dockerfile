@@ -12,10 +12,14 @@ ARG NODE_VERSION=22-bookworm-slim
 FROM node:${NODE_VERSION} AS build
 ENV NODE_ENV=development
 WORKDIR /opt/app
-COPY package.json ./
-RUN npm install --no-audit --no-fund
+# Со своим lock-файлом: без него npm подтягивал @strapi/admin новее ядра,
+# и админка ломалась на несовпадении версий.
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 COPY . ./
-RUN npm run build
+# Панель собирается в том же режиме, в котором её будет отдавать сервер:
+# dev-сборка под production-рантаймом ломает авторизацию в админке.
+RUN NODE_ENV=production npm run build
 
 FROM node:${NODE_VERSION} AS runtime
 ENV NODE_ENV=production
