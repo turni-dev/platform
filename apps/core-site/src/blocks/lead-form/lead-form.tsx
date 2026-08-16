@@ -89,6 +89,20 @@ export function LeadForm({
             </div>
           </fieldset>
 
+          {groups.foreignHosting === undefined ? null : (
+            <fieldset className={styles['group']}>
+              <legend className={styles['legend']}>{groups.foreignHosting.legend}</legend>
+              <div className={styles['chips']}>
+                {groups.foreignHosting.options.map((option) => (
+                  <label className={styles['chip']} key={option}>
+                    <input type="radio" name="foreignHosting" value={option} />
+                    <span>{option}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
+
           <label className={styles['consent']}>
             <input type="checkbox" name="consent" value="yes" required />
             <span>

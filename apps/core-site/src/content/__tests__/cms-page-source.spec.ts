@@ -7,7 +7,7 @@ const cmsPage = {
     {
       id: 7,
       documentId: 'abc',
-      slug: 'home',
+      slug: 'products/private-agent',
       title: 'Заголовок из CMS',
       blocks: [
         {
@@ -44,7 +44,7 @@ describe('createCmsPageSource', () => {
       fetch: respondWith(cmsPage)
     });
 
-    const page = await source.getPage('home');
+    const page = await source.getPage('products/private-agent');
 
     expect(page?.title).toBe('Заголовок из CMS');
     expect(page?.blocks[0]).toMatchObject({ __component: 'blocks.hero', heading: 'Из CMS' });
@@ -56,7 +56,7 @@ describe('createCmsPageSource', () => {
       fetch: respondWith(cmsPage)
     });
 
-    const page = await source.getPage('home');
+    const page = await source.getPage('products/private-agent');
 
     expect(page?.blocks[0]).not.toHaveProperty('id');
   });
@@ -65,11 +65,11 @@ describe('createCmsPageSource', () => {
     const fetch = respondWith(cmsPage);
     const source = createCmsPageSource({ baseUrl: 'http://cms:1337', apiToken: 'token', fetch });
 
-    await source.getPage('home');
+    await source.getPage('products/private-agent');
 
     const [url, init] = vi.mocked(fetch).mock.calls[0] ?? [];
     expect(url).toContain('/api/pages');
-    expect(url).toContain('filters%5Bslug%5D%5B%24eq%5D=home');
+    expect(url).toContain('filters%5Bslug%5D%5B%24eq%5D=products%2Fprivate-agent');
     expect(init?.headers['Authorization']).toBe('Bearer token');
   });
 
@@ -77,7 +77,7 @@ describe('createCmsPageSource', () => {
     const fetch = respondWith(cmsPage);
     const source = createCmsPageSource({ baseUrl: 'http://cms:1337', fetch });
 
-    void source.getPage('home');
+    void source.getPage('products/private-agent');
 
     const url = vi.mocked(fetch).mock.calls[0]?.[0] ?? '';
     // Strapi раскрывает по `*` только один уровень: без этих путей группы
@@ -97,7 +97,7 @@ describe('createCmsPageSource', () => {
     const withNulls = {
       data: [
         {
-          slug: 'home',
+          slug: 'products/private-agent',
           title: 'Заголовок',
           description: null,
           blocks: [
@@ -124,7 +124,7 @@ describe('createCmsPageSource', () => {
       fetch: respondWith(withNulls)
     });
 
-    const page = await source.getPage('home');
+    const page = await source.getPage('products/private-agent');
 
     expect(page?.blocks).toHaveLength(2);
     expect(page?.blocks[0]).not.toHaveProperty('media');
@@ -137,8 +137,8 @@ describe('createCmsPageSource', () => {
       fetch: vi.fn(() => Promise.reject(new Error('ECONNREFUSED')))
     });
 
-    await expect(source.getPage('home')).resolves.toEqual(seedPage('home'));
-    expect(warnings.at(-1)).toContain('home');
+    await expect(source.getPage('products/private-agent')).resolves.toEqual(seedPage('products/private-agent'));
+    expect(warnings.at(-1)).toContain('products/private-agent');
   });
 
   it('falls back to the seed when the CMS answers with an error', async () => {
@@ -147,16 +147,16 @@ describe('createCmsPageSource', () => {
       fetch: respondWith({ error: 'boom' }, false)
     });
 
-    await expect(source.getPage('home')).resolves.toEqual(seedPage('home'));
+    await expect(source.getPage('products/private-agent')).resolves.toEqual(seedPage('products/private-agent'));
   });
 
   it('falls back to the seed when the answer is not a page', async () => {
     const source = createCmsPageSource({
       baseUrl: 'http://cms:1337',
-      fetch: respondWith({ data: [{ slug: 'home', blocks: 'нет' }] })
+      fetch: respondWith({ data: [{ slug: 'products/private-agent', blocks: 'нет' }] })
     });
 
-    await expect(source.getPage('home')).resolves.toEqual(seedPage('home'));
+    await expect(source.getPage('products/private-agent')).resolves.toEqual(seedPage('products/private-agent'));
   });
 
   it('falls back to the seed when the page is not published yet', async () => {
@@ -165,14 +165,14 @@ describe('createCmsPageSource', () => {
       fetch: respondWith({ data: [] })
     });
 
-    await expect(source.getPage('home')).resolves.toEqual(seedPage('home'));
+    await expect(source.getPage('products/private-agent')).resolves.toEqual(seedPage('products/private-agent'));
   });
 
   it('never calls the CMS when no address is configured', async () => {
     const fetch = respondWith(cmsPage);
     const source = createCmsPageSource({ fetch });
 
-    await expect(source.getPage('home')).resolves.toEqual(seedPage('home'));
+    await expect(source.getPage('products/private-agent')).resolves.toEqual(seedPage('products/private-agent'));
     expect(fetch).not.toHaveBeenCalled();
   });
 
@@ -189,10 +189,10 @@ describe('createCmsPageSource', () => {
     const source = createCmsPageSource({
       baseUrl: 'http://cms:1337',
       onWarning,
-      fetch: respondWith({ data: [{ slug: 'home', title: 'x', blocks: [{ secret: 'токен' }] }] })
+      fetch: respondWith({ data: [{ slug: 'products/private-agent', title: 'x', blocks: [{ secret: 'токен' }] }] })
     });
 
-    await source.getPage('home');
+    await source.getPage('products/private-agent');
 
     expect(warnings.at(-1)).not.toContain('токен');
   });

@@ -24,7 +24,7 @@ export const BlockSchema = z.discriminatedUnion('__component', [
 ]);
 
 export const PageSchema = z.object({
-  /** Путь любой глубины: `home`, `legal/privacy`, `blog/kak-my-rabotaem`. */
+  /** Путь любой глубины: `products/private-agent`, `legal/privacy`. */
   slug: z.string().min(1),
   title: z.string().min(1),
   description: z.string().min(1).optional(),

@@ -32,6 +32,8 @@ const LeadSchema = z.object({
   channels: z.array(trimmed),
   hasServer: trimmed.optional(),
   timeline: trimmed.optional(),
+  /** Необязательный вопрос — отдельный от согласия на обработку ПДн. */
+  foreignHosting: trimmed.optional(),
   /** Согласие обязательно: без него заявку принимать нельзя (152-ФЗ). */
   consent: z.literal('yes'),
   idempotencyKey: trimmed
@@ -62,6 +64,7 @@ export async function handleLeadRequest(
     channels: form.getAll('channels').filter((value) => typeof value === 'string'),
     hasServer: field(form, 'hasServer'),
     timeline: field(form, 'timeline'),
+    foreignHosting: field(form, 'foreignHosting'),
     consent: field(form, 'consent') ?? '',
     idempotencyKey: field(form, 'idempotencyKey') ?? ''
   });
@@ -104,6 +107,7 @@ export async function handleLeadRequest(
           channels: lead.data.channels.join(', '),
           hasServer: lead.data.hasServer,
           timeline: lead.data.timeline,
+          foreignHosting: lead.data.foreignHosting,
           idempotencyKey: lead.data.idempotencyKey,
           consentAt: new Date().toISOString()
         }

@@ -31,7 +31,11 @@ export const LeadFormBlockSchema = z.object({
   groups: z.object({
     channels: ChoiceGroupSchema,
     hasServer: ChoiceGroupSchema,
-    timeline: ChoiceGroupSchema
+    timeline: ChoiceGroupSchema,
+    /** Необязательный вопрос: часть клиентов не может размещать данные за
+     * пределами РФ, и это нужно знать до брифа — но склеивать это с согласием
+     * на обработку персональных данных юридически некорректно. */
+    foreignHosting: ChoiceGroupSchema.optional()
   }),
   /** Согласие на обработку персональных данных обязательно по 152-ФЗ. */
   consent: LinkSchema

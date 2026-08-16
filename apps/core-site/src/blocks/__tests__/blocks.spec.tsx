@@ -183,6 +183,31 @@ const leadForm: LeadFormBlock = {
 };
 
 describe('LeadForm', () => {
+  it('omits the foreign hosting question when the block has none', () => {
+    const markup = renderToStaticMarkup(<LeadForm {...leadForm} />);
+
+    expect(markup).not.toContain('name="foreignHosting"');
+  });
+
+  it('offers the foreign hosting question as an optional group when the block has one', () => {
+    const withForeignHosting: LeadFormBlock = {
+      ...leadForm,
+      groups: {
+        ...leadForm.groups,
+        foreignHosting: {
+          legend: 'Готовы ли к размещению на зарубежных серверах?',
+          options: ['Да', 'Нет', 'Не знаю']
+        }
+      }
+    };
+    const markup = renderToStaticMarkup(<LeadForm {...withForeignHosting} />);
+
+    expect(markup).toContain('name="foreignHosting"');
+    expect(markup).toContain('Готовы ли к размещению на зарубежных серверах?');
+    // Вопрос необязательный: ни один вариант не отмечен required.
+    expect(markup).not.toMatch(/<input(?=[^>]*name="foreignHosting")(?=[^>]*required)[^>]*>/);
+  });
+
   it('submits to the site route handler even without javascript', () => {
     const markup = renderToStaticMarkup(
       <LeadForm {...leadForm} />
