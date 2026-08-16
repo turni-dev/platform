@@ -1,0 +1,33 @@
+// Раскладка сайта: единственный слой, где живут размеры страницы. Цвета,
+// радиусы и фокус берутся из токенов кита, здесь их не переопределяем.
+:root {
+  --site-content-width: 1120px;
+  --site-text-width: 72ch;
+  --site-gutter: 1rem;
+  --site-gap: 1.5rem;
+  --site-section-padding: 3rem;
+  --site-touch-target: 44px;
+  --site-space-1: 0.25rem;
+  --site-space-2: 0.5rem;
+  --site-space-3: 0.75rem;
+  --site-space-4: 1rem;
+  --site-space-5: 2rem;
+}
+
+// Меньше 16px iOS зумит страницу при фокусе в поле.
+body {
+  font-size: 1rem;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --site-gutter: 2rem;
+    --site-section-padding: 4rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --site-section-padding: 5rem;
+  }
+}

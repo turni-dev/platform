@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_blocks_security_lists",
+  "info": {
+    "displayName": "Список безопасности",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "heading": {
+      "type": "string",
+      "required": true
+    },
+    "items": {
+      "type": "component",
+      "repeatable": true,
+      "component": "parts.security-item"
+    }
+  }
+}

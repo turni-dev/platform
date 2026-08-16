@@ -1,0 +1,46 @@
+.section {
+  padding: var(--site-section-padding) var(--site-gutter);
+}
+
+.inner {
+  width: min(100%, var(--site-content-width));
+  margin: 0 auto;
+}
+
+.heading {
+  margin: 0 0 var(--site-space-5);
+  max-width: var(--site-text-width);
+  font-size: clamp(1.375rem, 1.1rem + 1.2vw, 2rem);
+}
+
+// По спеке это список с иконками, а не сетка: на мобильном он читается сверху вниз.
+.list {
+  display: grid;
+  gap: var(--site-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: var(--site-text-width);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--site-space-3);
+  align-items: start;
+}
+
+.icon {
+  color: var(--turni-accent);
+  flex: none;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.0625rem;
+}
+
+.body {
+  margin: var(--site-space-2) 0 0;
+  color: var(--turni-text-muted);
+}

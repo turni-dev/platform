@@ -1,0 +1,59 @@
+{
+  "kind": "collectionType",
+  "collectionName": "leads",
+  "info": {
+    "singularName": "lead",
+    "pluralName": "leads",
+    "displayName": "Заявка",
+    "description": "Заявка с сайта. Публичного создания нет — пишет только сервер сайта."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "contact": {
+      "type": "string",
+      "required": true,
+      "private": true
+    },
+    "company": {
+      "type": "string"
+    },
+    "task": {
+      "type": "text"
+    },
+    "channels": {
+      "type": "text"
+    },
+    "hasServer": {
+      "type": "string"
+    },
+    "timeline": {
+      "type": "string"
+    },
+    "foreignHosting": {
+      "type": "string"
+    },
+    "consentAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "bookedSlot": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::booking-slot.booking-slot"
+    },
+    "slotLabel": {
+      "type": "string",
+      "description": "Читаемое время слота на момент отправки заявки, например «16 августа, 14:00 МСК». Хранится текстом, а не через связь, чтобы письмо не зависело от лишнего запроса."
+    }
+  }
+}

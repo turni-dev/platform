@@ -1,0 +1,14 @@
+{
+  "collectionName": "components_parts_options",
+  "info": {
+    "displayName": "Вариант",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "value": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

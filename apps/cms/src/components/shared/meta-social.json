@@ -1,0 +1,33 @@
+{
+  "collectionName": "components_shared_meta_socials",
+  "info": {
+    "displayName": "Соцсеть",
+    "icon": "share"
+  },
+  "options": {},
+  "attributes": {
+    "socialNetwork": {
+      "type": "enumeration",
+      "enum": [
+        "Facebook",
+        "Twitter"
+      ],
+      "required": true
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "string",
+      "required": true
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ]
+    }
+  }
+}

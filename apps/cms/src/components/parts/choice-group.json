@@ -1,0 +1,20 @@
+{
+  "collectionName": "components_parts_choice_groups",
+  "info": {
+    "displayName": "Группа вариантов",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "legend": {
+      "type": "string",
+      "required": true
+    },
+    "options": {
+      "type": "component",
+      "repeatable": true,
+      "component": "parts.option",
+      "required": true
+    }
+  }
+}

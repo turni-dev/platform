@@ -5,17 +5,21 @@
 # Debian slim base: Strapi's image pipeline (sharp/libvips) is far smoother
 # there than on alpine. Node 22 is the newest LTS Strapi 5 officially supports.
 #   docker build -f apps/cms/Dockerfile -t turni-cms apps/cms
-# (compose.marketing.yml does this via the `cms` service.)
+# (compose.site.yml does this via the `cms` service.)
 
 ARG NODE_VERSION=22-bookworm-slim
 
 FROM node:${NODE_VERSION} AS build
 ENV NODE_ENV=development
 WORKDIR /opt/app
-COPY package.json ./
-RUN npm install --no-audit --no-fund
+# Со своим lock-файлом: без него npm подтягивал @strapi/admin новее ядра,
+# и админка ломалась на несовпадении версий.
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 COPY . ./
-RUN npm run build
+# Панель собирается в том же режиме, в котором её будет отдавать сервер:
+# dev-сборка под production-рантаймом ломает авторизацию в админке.
+RUN NODE_ENV=production npm run build
 
 FROM node:${NODE_VERSION} AS runtime
 ENV NODE_ENV=production

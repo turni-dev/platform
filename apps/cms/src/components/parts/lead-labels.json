@@ -1,0 +1,26 @@
+{
+  "collectionName": "components_parts_lead_labelss",
+  "info": {
+    "displayName": "Подписи полей",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "contact": {
+      "type": "string",
+      "required": true
+    },
+    "company": {
+      "type": "string",
+      "required": true
+    },
+    "task": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

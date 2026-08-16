@@ -1,0 +1,23 @@
+{
+  "collectionName": "components_blocks_feature_grids",
+  "info": {
+    "displayName": "Сетка пунктов",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "heading": {
+      "type": "string"
+    },
+    "columns": {
+      "type": "integer",
+      "min": 2,
+      "max": 3
+    },
+    "items": {
+      "type": "component",
+      "repeatable": true,
+      "component": "parts.feature-item"
+    }
+  }
+}

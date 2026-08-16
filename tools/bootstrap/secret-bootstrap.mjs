@@ -20,7 +20,8 @@ export function buildSecretDocument(generate = randomBytes) {
   return {
     KEY_PHONE_V1: generate(32).toString('base64'),
     KEY_CREDENTIALS_V1: generate(32).toString('base64'),
-    PEPPER_V1: generate(32).toString('base64')
+    PEPPER_V1: generate(32).toString('base64'),
+    WEBHOOK_ROUTING_SECRET: generate(32).toString('base64')
   };
 }
 

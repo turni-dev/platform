@@ -1,0 +1,37 @@
+{
+  "kind": "collectionType",
+  "collectionName": "booking_slots",
+  "info": {
+    "singularName": "booking-slot",
+    "pluralName": "booking-slots",
+    "displayName": "Слот консультации",
+    "description": "Время звонка со специалистом, которое владелец заводит в админке. Заявки бронируют слот атомарно на сервере."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "startsAt": {
+      "type": "datetime",
+      "required": true,
+      "description": "Момент начала звонка в UTC."
+    },
+    "durationMinutes": {
+      "type": "integer",
+      "required": true,
+      "default": 30
+    },
+    "capacity": {
+      "type": "integer",
+      "required": true,
+      "default": 1,
+      "description": "Сколько заявок можно принять на этот слот одновременно."
+    },
+    "bookedCount": {
+      "type": "integer",
+      "required": true,
+      "default": 0,
+      "description": "Сколько уже забронировано. Меняется только атомарно через /reserve и /release, никогда напрямую с публичной стороны."
+    }
+  }
+}

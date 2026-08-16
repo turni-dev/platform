@@ -1,0 +1,29 @@
+{
+  "collectionName": "components_parts_cases",
+  "info": {
+    "displayName": "Кейс",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "task": {
+      "type": "text",
+      "required": true
+    },
+    "built": {
+      "type": "text",
+      "required": true
+    },
+    "result": {
+      "type": "text",
+      "required": true
+    },
+    "href": {
+      "type": "string"
+    }
+  }
+}

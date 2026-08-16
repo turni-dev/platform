@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_parts_faq_items",
+  "info": {
+    "displayName": "Вопрос",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "question": {
+      "type": "string",
+      "required": true
+    },
+    "answer": {
+      "type": "text",
+      "required": true
+    }
+  }
+}

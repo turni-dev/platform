@@ -22,13 +22,42 @@ const deniedExecutableTypes = [
   'application/x-mach-binary',
 ];
 
+// Сайт ходит в CMS только по API-токенам, поэтому users-permissions с его
+// публичной ролью и пользовательскими JWT не нужен, а plugin-cloud относится
+// к Strapi Cloud, которым мы не пользуемся.
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin => ({
-  'users-permissions': {
+  // Письмо о новой заявке уходит отсюда. В деве адресат — mailpit из
+  // compose.site.yml, поэтому ничего наружу не улетает.
+  email: {
     config: {
-      jwtManagement: 'refresh',
-      sessions: {
-        httpOnly: true,
+      provider: 'nodemailer',
+      providerOptions: {
+        host: env('SMTP_HOST', 'mailpit'),
+        port: env.int('SMTP_PORT', 1025),
+        secure: env.bool('SMTP_SECURE', false),
+        ignoreTLS: env.bool('SMTP_IGNORE_TLS', true),
+        // Логина нет только у локального mailpit; настоящий SMTP его требует.
+        ...(env('SMTP_USER', '')
+          ? { auth: { user: env('SMTP_USER'), pass: env('SMTP_PASSWORD') } }
+          : {}),
       },
+      settings: {
+        defaultFrom: env('EMAIL_FROM', 'hello@turni.ru'),
+        defaultReplyTo: env('EMAIL_FROM', 'hello@turni.ru'),
+      },
+    },
+  },
+  seo: { enabled: true },
+  navigation: {
+    enabled: true,
+    config: {
+      // Меню строится вручную из ссылок и страниц; глубина ограничена двумя
+      // уровнями — столько выдерживает шапка, не превращаясь в мегаменю.
+      additionalFields: [],
+      contentTypes: ['api::page.page'],
+      contentTypesNameFields: { 'api::page.page': ['title'] },
+      allowedLevels: 2,
+      gql: { navigationItemRelated: [] },
     },
   },
   upload: {

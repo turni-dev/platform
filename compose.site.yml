@@ -1,13 +1,13 @@
-name: turni-marketing
+name: turni-site
 
-# Marketing / site track — deliberately kept OUT of the product stack (compose.yml).
+# Site track — deliberately kept OUT of the product stack (compose.yml).
 # Owns everything public-facing and its datastore, fully isolated from the
 # RLS-hardened product Postgres:
 #   - cms-postgres : dedicated Strapi database
 #   - cms          : Strapi CMS (content backend)
-#   - core-site    : Next.js marketing landing (formerly apps/landing)
+#   - core-site    : Next.js публичный сайт
 #
-# Usage: docker compose -f compose.marketing.yml up -d --build
+# Usage: docker compose -f compose.site.yml up -d --build
 
 services:
   cms-postgres:
@@ -51,14 +51,31 @@ services:
       DATABASE_SSL: "false"
       # Secrets — dev-only defaults so the local stack boots out of the box.
       # Override every one of these in any shared/remote environment.
+      # В деве это mailpit без авторизации; для реального SMTP хост, логин и
+      # пароль приходят из окружения (пароль — только через sops, не в git).
+      SMTP_HOST: ${SITE_SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SITE_SMTP_PORT:-1025}
+      SMTP_USER: ${SITE_SMTP_USER:-}
+      SMTP_PASSWORD: ${SITE_SMTP_PASSWORD:-}
+      EMAIL_FROM: ${SITE_EMAIL_FROM:-hello@turni.ru}
       APP_KEYS: ${CMS_APP_KEYS:-devKeyA,devKeyB}
       API_TOKEN_SALT: ${CMS_API_TOKEN_SALT:-devApiTokenSalt}
       ADMIN_JWT_SECRET: ${CMS_ADMIN_JWT_SECRET:-devAdminJwtSecret}
       TRANSFER_TOKEN_SALT: ${CMS_TRANSFER_TOKEN_SALT:-devTransferTokenSalt}
       JWT_SECRET: ${CMS_JWT_SECRET:-devJwtSecret}
-      ENCRYPTION_KEY: ${CMS_ENCRYPTION_KEY:-devEncryptionKey}
+      # AES-256: ключ обязан быть ровно 32 байта, иначе Strapi не сможет
+      # зашифровать API-токен и админка ответит невнятной ошибкой.
+      ENCRYPTION_KEY: ${CMS_ENCRYPTION_KEY:-ZGV2LW9ubHktZW5jcnlwdGlvbi1rZXktMzJieXRlcyE=}
     ports:
       - "${CMS_PORT:-1337}:1337"
+
+  # Почта в деве никуда не уходит: письма о заявках видно в веб-интерфейсе.
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: turni-site-mailpit
+    restart: unless-stopped
+    ports:
+      - "${SITE_MAILPIT_UI_PORT:-8026}:8025"
 
   core-site:
     build:
@@ -71,6 +88,9 @@ services:
       PORT: 3002
       # Server-side content fetches target the cms service on the compose network.
       CMS_BASE_URL: http://cms:1337
+      # Write token for the lead form. Server-side only — it must never reach the
+      # browser. Provision it through sops/age in any shared environment.
+      CMS_WRITE_TOKEN: ${CMS_WRITE_TOKEN:-}
     ports:
       - "${CORE_SITE_PORT:-3002}:3002"
 

@@ -12,6 +12,7 @@
       "command": "next dev --hostname 0.0.0.0 --port 3002",
       "options": { "cwd": "apps/core-site" }
     },
+    "test": { "command": "vitest run --config vitest.config.ts apps/core-site/src" },
     "lint": { "command": "eslint apps/core-site/src/**/*.{ts,tsx}" },
     "typecheck": { "command": "tsc -p apps/core-site/tsconfig.json --noEmit" }
   },

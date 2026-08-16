@@ -1,0 +1,51 @@
+{
+  "kind": "singleType",
+  "collectionName": "site_settings",
+  "info": {
+    "singularName": "site-setting",
+    "pluralName": "site-settings",
+    "displayName": "Настройки сайта",
+    "description": "Шапка, подвал, навигация и SEO по умолчанию — одинаковы на всех страницах"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "brand": {
+      "type": "string",
+      "required": true
+    },
+    "navCta": {
+      "type": "component",
+      "repeatable": false,
+      "component": "parts.link"
+    },
+    "footerContacts": {
+      "type": "component",
+      "repeatable": true,
+      "component": "parts.contact"
+    },
+    "footerLegalLinks": {
+      "type": "component",
+      "repeatable": true,
+      "component": "parts.link"
+    },
+    "footerNote": {
+      "type": "text"
+    },
+    "defaultSeo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
+    },
+    "leadRecipient": {
+      "type": "email",
+      "private": true
+    }
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  }
+}

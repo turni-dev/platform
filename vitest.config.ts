@@ -1,6 +1,10 @@
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  // Next.js apps must keep `jsx: "preserve"` in their tsconfig, and the
+  // transform refuses to compile JSX under it. Pinning the runtime here lets
+  // their components be rendered in tests instead of read as source text.
+  oxc: { jsx: { runtime: 'automatic' } },
   test: {
     coverage: {
       provider: 'v8',
