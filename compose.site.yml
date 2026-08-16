@@ -51,9 +51,13 @@ services:
       DATABASE_SSL: "false"
       # Secrets — dev-only defaults so the local stack boots out of the box.
       # Override every one of these in any shared/remote environment.
-      SMTP_HOST: mailpit
-      SMTP_PORT: "1025"
-      EMAIL_FROM: ${SITE_EMAIL_FROM:-site@turni.ru}
+      # В деве это mailpit без авторизации; для реального SMTP хост, логин и
+      # пароль приходят из окружения (пароль — только через sops, не в git).
+      SMTP_HOST: ${SITE_SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SITE_SMTP_PORT:-1025}
+      SMTP_USER: ${SITE_SMTP_USER:-}
+      SMTP_PASSWORD: ${SITE_SMTP_PASSWORD:-}
+      EMAIL_FROM: ${SITE_EMAIL_FROM:-hello@turni.ru}
       APP_KEYS: ${CMS_APP_KEYS:-devKeyA,devKeyB}
       API_TOKEN_SALT: ${CMS_API_TOKEN_SALT:-devApiTokenSalt}
       ADMIN_JWT_SECRET: ${CMS_ADMIN_JWT_SECRET:-devAdminJwtSecret}

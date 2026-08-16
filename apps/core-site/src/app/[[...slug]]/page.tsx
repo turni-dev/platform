@@ -28,15 +28,17 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
     siteSettings.get()
   ]);
   // Страница уточняет то, что задано для сайта целиком, а не повторяет его.
-  const title = page.seo?.title ?? page.title ?? settings.defaultSeo?.title;
+  const title = page.seo?.metaTitle ?? page.title ?? settings.defaultSeo?.metaTitle;
   const description =
-    page.seo?.description ?? page.description ?? settings.defaultSeo?.description;
-  const image = page.seo?.ogImage ?? settings.defaultSeo?.ogImage;
+    page.seo?.metaDescription ?? page.description ?? settings.defaultSeo?.metaDescription;
+  const image = page.seo?.metaImage ?? settings.defaultSeo?.metaImage;
+  const canonical = page.seo?.canonicalURL;
 
   return {
     ...(title === undefined ? {} : { title }),
     ...(description === undefined ? {} : { description }),
-    ...(page.seo?.noindex === true ? { robots: { index: false, follow: false } } : {}),
+    ...(canonical === undefined ? {} : { alternates: { canonical } }),
+    ...(page.seo?.metaRobots === undefined ? {} : { robots: page.seo.metaRobots }),
     openGraph: {
       ...(title === undefined ? {} : { title }),
       ...(description === undefined ? {} : { description }),

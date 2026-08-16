@@ -1,6 +1,7 @@
 import { createCmsPageSource, type PageSource } from './cms-page-source';
+import { createNavigationSource } from '../site/navigation-source';
 import { createSiteSettingsSource } from '../site/site-settings-source';
-import type { SiteSettings } from '../site/site-settings-schema';
+import type { NavItem, SiteSettings } from '../site/site-settings-schema';
 
 const connection = {
   baseUrl: process.env['CMS_BASE_URL'],
@@ -20,3 +21,7 @@ export const sitePages: PageSource = createCmsPageSource(connection);
 
 export const siteSettings: { get(): Promise<SiteSettings> } =
   createSiteSettingsSource(connection);
+
+/** Меню живёт в плагине навигации, а не в настройках сайта. */
+export const siteNavigation: { get(): Promise<readonly NavItem[]> } =
+  createNavigationSource(connection);

@@ -27,11 +27,11 @@ export function createSiteSettingsSource(
       }
 
       const query = new URLSearchParams({
-        'populate[nav][populate]': '*',
         'populate[navCta][populate]': '*',
         'populate[footerContacts][populate]': '*',
         'populate[footerLegalLinks][populate]': '*',
-        'populate[defaultSeo][populate]': '*'
+        'populate[defaultSeo][populate][metaImage][populate]': '*',
+        'populate[defaultSeo][populate][metaSocial][populate]': '*'
       });
 
       try {

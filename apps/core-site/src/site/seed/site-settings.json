@@ -1,20 +1,28 @@
 {
   "brand": "Turni",
-  "nav": [
-    { "label": "Услуга", "href": "/#steps" },
-    { "label": "Как работает", "href": "/#steps" },
-    { "label": "Безопасность", "href": "/#security" },
-    { "label": "Кейсы", "href": "/#cases" }
+  "navCta": {
+    "label": "Оставить заявку",
+    "href": "/#lead"
+  },
+  "footerContacts": [
+    {
+      "label": "hello@turni.ru",
+      "href": "mailto:hello@turni.ru"
+    }
   ],
-  "navCta": { "label": "Оставить заявку", "href": "/#lead" },
-  "footerContacts": [{ "label": "hello@turni.ru", "href": "mailto:hello@turni.ru" }],
   "footerLegalLinks": [
-    { "label": "Политика обработки данных", "href": "/legal/privacy" },
-    { "label": "Оферта", "href": "/legal/offer" }
+    {
+      "label": "Политика обработки данных",
+      "href": "/legal/privacy"
+    },
+    {
+      "label": "Оферта",
+      "href": "/legal/offer"
+    }
   ],
   "footerNote": "Скоро — самостоятельный сервис.",
   "defaultSeo": {
-    "title": "Turni — ИИ-сотрудник под ключ",
-    "description": "Собираем ИИ-сотрудника под ваши процессы и разворачиваем на ваших серверах."
+    "metaTitle": "Turni — ИИ-сотрудник под ключ",
+    "metaDescription": "Собираем ИИ-сотрудника под ваши процессы и разворачиваем на ваших серверах: отвечает клиентам и не теряет заявки."
   }
 }

@@ -15,11 +15,6 @@
       "type": "string",
       "required": true
     },
-    "nav": {
-      "type": "component",
-      "repeatable": true,
-      "component": "parts.nav-item"
-    },
     "navCta": {
       "type": "component",
       "repeatable": false,
@@ -41,11 +36,16 @@
     "defaultSeo": {
       "type": "component",
       "repeatable": false,
-      "component": "parts.seo"
+      "component": "shared.seo"
     },
     "leadRecipient": {
       "type": "email",
       "private": true
+    }
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
     }
   }
 }

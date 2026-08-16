@@ -1,8 +1,14 @@
 import { Button } from '@turni/ui';
-import type { NavItem, SiteSettings } from './site-settings-schema';
+import type { BlockLink } from '../blocks/shared';
+import type { NavItem } from './site-settings-schema';
 import styles from './nav.module.scss';
 
-type NavProps = Pick<SiteSettings, 'brand' | 'nav'> & { readonly navCta?: SiteSettings['navCta'] };
+type NavProps = Readonly<{
+  brand: string;
+  /** Меню приходит из плагина навигации, а не из настроек сайта. */
+  nav: readonly NavItem[];
+  navCta?: BlockLink;
+}>;
 
 function NavLink({ item }: { readonly item: NavItem }) {
   if (item.children === undefined || item.children.length === 0) {

@@ -36,11 +36,28 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
         port: env.int('SMTP_PORT', 1025),
         secure: env.bool('SMTP_SECURE', false),
         ignoreTLS: env.bool('SMTP_IGNORE_TLS', true),
+        // Логина нет только у локального mailpit; настоящий SMTP его требует.
+        ...(env('SMTP_USER', '')
+          ? { auth: { user: env('SMTP_USER'), pass: env('SMTP_PASSWORD') } }
+          : {}),
       },
       settings: {
-        defaultFrom: env('EMAIL_FROM', 'site@turni.ru'),
-        defaultReplyTo: env('EMAIL_FROM', 'site@turni.ru'),
+        defaultFrom: env('EMAIL_FROM', 'hello@turni.ru'),
+        defaultReplyTo: env('EMAIL_FROM', 'hello@turni.ru'),
       },
+    },
+  },
+  seo: { enabled: true },
+  navigation: {
+    enabled: true,
+    config: {
+      // Меню строится вручную из ссылок и страниц; глубина ограничена двумя
+      // уровнями — столько выдерживает шапка, не превращаясь в мегаменю.
+      additionalFields: [],
+      contentTypes: ['api::page.page'],
+      contentTypesNameFields: { 'api::page.page': ['title'] },
+      allowedLevels: 2,
+      gql: { navigationItemRelated: [] },
     },
   },
   upload: {

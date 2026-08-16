@@ -61,12 +61,16 @@ describe('createSiteSettingsSource', () => {
       fetch: respondWith({
         data: {
           brand: 'Turni из CMS',
-          nav: [{ label: 'Услуга', href: '/#steps', children: null }],
           navCta: null,
           footerContacts: [{ label: 'hi@turni.ru', href: null }],
           footerLegalLinks: [],
           footerNote: null,
-          defaultSeo: { title: 'Заголовок', description: null, ogImage: null, noindex: null }
+          defaultSeo: {
+            metaTitle: 'Заголовок',
+            metaDescription: null,
+            metaImage: null,
+            canonicalURL: null
+          }
         }
       })
     });
@@ -74,7 +78,7 @@ describe('createSiteSettingsSource', () => {
     const settings = await source.get();
 
     expect(settings.brand).toBe('Turni из CMS');
-    expect(settings.defaultSeo?.title).toBe('Заголовок');
+    expect(settings.defaultSeo?.metaTitle).toBe('Заголовок');
     expect(settings.footerContacts[0]).not.toHaveProperty('href');
   });
 

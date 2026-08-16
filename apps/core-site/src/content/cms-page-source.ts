@@ -44,7 +44,10 @@ export function createCmsPageSource(options: CmsPageSourceOptions): PageSource {
         return fallback();
       }
 
-      const query = new URLSearchParams({ 'filters[slug][$eq]': slug });
+      const query = new URLSearchParams({
+        'filters[slug][$eq]': slug,
+        'populate[seo][populate][metaImage][populate]': '*'
+      });
       for (const [key, value] of populateEntries()) {
         query.set(key, value);
       }

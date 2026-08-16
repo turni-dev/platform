@@ -38,7 +38,12 @@
     "seo": {
       "type": "component",
       "repeatable": false,
-      "component": "parts.seo"
+      "component": "shared.seo"
+    }
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
     }
   }
 }
