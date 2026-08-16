@@ -42,6 +42,15 @@
       "type": "string",
       "required": true,
       "unique": true
+    },
+    "bookedSlot": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::booking-slot.booking-slot"
+    },
+    "slotLabel": {
+      "type": "string",
+      "description": "Читаемое время слота на момент отправки заявки, например «16 августа, 14:00 МСК». Хранится текстом, а не через связь, чтобы письмо не зависело от лишнего запроса."
     }
   }
 }

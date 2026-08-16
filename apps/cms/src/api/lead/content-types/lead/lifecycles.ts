@@ -29,7 +29,8 @@ export default {
       ['Задача', lead['task']],
       ['Каналы', lead['channels']],
       ['Свой сервер', lead['hasServer']],
-      ['Срок', lead['timeline']]
+      ['Срок', lead['timeline']],
+      ['Время звонка', lead['slotLabel']]
     ]
       .filter(([, value]) => value !== null && value !== undefined && value !== '')
       .map(([label, value]) => `${String(label)}: ${String(value)}`);

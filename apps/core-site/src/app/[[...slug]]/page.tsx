@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { renderBlocks } from '../../blocks/block-renderer';
-import { sitePages, siteSettings } from '../../content/site-pages';
+import { sitePages, siteSettings, siteBookingSlots } from '../../content/site-pages';
 import type { Page } from '../../blocks/page-schema';
 
 type RouteParams = Readonly<{ params: Promise<{ slug?: string[] }> }>;
@@ -48,7 +48,10 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
 }
 
 export default async function SitePage({ params }: RouteParams) {
-  const page = await loadPage((await params).slug);
+  const [page, slots] = await Promise.all([
+    loadPage((await params).slug),
+    siteBookingSlots.get()
+  ]);
 
-  return <>{renderBlocks(page.blocks)}</>;
+  return <>{renderBlocks(page.blocks, slots.length === 0 ? {} : { slots })}</>;
 }
