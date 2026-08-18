@@ -26,6 +26,7 @@
     "@nestjs/common": "^11.1.6",
     "@nestjs/core": "^11.1.6",
     "@nestjs/platform-fastify": "^11.1.6",
+    "antd": "^6.6.1",
     "drizzle-orm": "^0.45.2",
     "fastify": "5.8.5",
     "next": "^16.2.10",
