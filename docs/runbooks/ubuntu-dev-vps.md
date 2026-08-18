@@ -118,7 +118,8 @@ sudo apt update && sudo apt install -y caddy
 ```bash
 sudo install -m 640 -o root -g caddy /dev/null /etc/caddy/turni.env
 sudoedit /etc/caddy/turni.env
-sudo systemctl edit caddy
+sudo install -d -m 755 /etc/systemd/system/caddy.service.d
+printf '[Service]\nEnvironmentFile=/etc/caddy/turni.env\n' | sudo tee /etc/systemd/system/caddy.service.d/override.conf >/dev/null
 ```
 
 В `/etc/caddy/turni.env` укажите только подстановки для CMS:
@@ -127,13 +128,6 @@ sudo systemctl edit caddy
 CMS_ADMIN_IP=<ваш-статический-публичный-IP>
 CMS_ADMIN_USER=turni-admin
 CMS_ADMIN_PASSWORD_HASH=<результат-sudo-caddy-hash-password>
-```
-
-В открывшемся systemd override добавьте:
-
-```ini
-[Service]
-EnvironmentFile=/etc/caddy/turni.env
 ```
 
 Маршруты шаблона: `turni.ru` → core-site, `www.turni.ru` → редирект на основной домен, `cms.turni.ru` → Strapi только с разрешённого IP + Basic Auth, `app.turni.ru` → кабинет и `api.turni.ru` → backend. CMS защищена отдельно; не меняйте её на публичный маршрут.
