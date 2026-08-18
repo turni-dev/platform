@@ -1,4 +1,5 @@
 import type { Core } from '@strapi/strapi';
+import { buildLeadEventPayload } from '../../../event/build-event-payload';
 
 declare const strapi: Core.Strapi;
 
@@ -10,6 +11,8 @@ declare const strapi: Core.Strapi;
  */
 export default {
   async afterCreate(event: { result: Record<string, unknown> }): Promise<void> {
+    await recordLeadEvent(event.result);
+
     const settings = (await strapi
       .documents('api::site-setting.site-setting')
       .findFirst({ fields: ['leadRecipient'] })) as { leadRecipient?: string } | null;
@@ -48,3 +51,34 @@ export default {
     }
   }
 };
+
+/**
+ * Пишет одно метаданное-событие в общую таблицу `events` для каждой реально
+ * созданной заявки. `afterCreate` срабатывает ровно один раз на настоящую
+ * запись — повтор той же попытки (идемпотентный ключ) до `create` не
+ * доходит, так что дублей здесь не бывает.
+ *
+ * Решение сделать это здесь, а не в route handler'е сайта: у сайта нет
+ * доступа ни к какой продуктовой базе — только к этому же HTTP API CMS,
+ * которым он и создал заявку. Через event.result здесь под рукой уже есть
+ * id только что созданной записи и время создания — без второго сетевого
+ * запроса и без риска, что лид сохранится, а событие потеряется при обрыве
+ * между двумя отдельными HTTP-вызовами. Продуктовый бэкенд (apps/backend)
+ * в этом не участвует и не должен: это таблица CMS, а не он.
+ */
+async function recordLeadEvent(lead: Record<string, unknown>): Promise<void> {
+  const id = lead['id'];
+  if (typeof id !== 'number') {
+    strapi.log.error('Lead analytics event skipped: created lead has no numeric id');
+
+    return;
+  }
+
+  try {
+    await strapi.documents('api::event.event').create(buildLeadEventPayload({ ...lead, id }));
+  } catch {
+    // Заявка уже сохранена и письмо владельцу уже поставлено в очередь —
+    // потерянное аналитическое событие не должно ронять приём заявки.
+    strapi.log.error('Lead analytics event could not be recorded');
+  }
+}

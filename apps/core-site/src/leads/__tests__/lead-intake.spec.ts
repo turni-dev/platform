@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { handleLeadRequest, type LeadFetch } from '../lead-intake';
+import { InMemoryRateLimiter } from '../../anti-abuse/rate-limit';
+import { SESSION_COOKIE_NAME } from '../../anti-abuse/identity';
 
 interface Written {
   readonly url: string;
@@ -61,10 +63,20 @@ function leadRequest(overrides: Readonly<Record<string, string | undefined>> = {
   return new Request('http://localhost/api/leads', { method: 'POST', body });
 }
 
+// Generous by default so unrelated tests never trip it; low-limit tests build
+// their own limiters explicitly.
+function permissiveRateLimit(): { ip: InMemoryRateLimiter; session: InMemoryRateLimiter } {
+  return {
+    ip: new InMemoryRateLimiter({ windowMs: 60_000, max: 1_000 }),
+    session: new InMemoryRateLimiter({ windowMs: 60_000, max: 1_000 })
+  };
+}
+
 const options = (fetch: LeadFetch, warnings: string[] = []) => ({
   baseUrl: 'http://cms:1337',
   apiToken: 'write-token',
   fetch,
+  rateLimit: permissiveRateLimit(),
   onWarning: (message: string): void => {
     warnings.push(message);
   }
@@ -328,5 +340,159 @@ describe('handleLeadRequest with a chosen slot', () => {
     expect(reserved).toHaveLength(0);
     expect(written).toHaveLength(1);
     expect(written[0]?.body).not.toHaveProperty('data.bookedSlot');
+  });
+});
+
+describe('handleLeadRequest rate limiting', () => {
+  it('rejects a submission once the per-ip limit is exhausted', async () => {
+    const { fetch, written } = deps();
+    const rateLimit = {
+      ip: new InMemoryRateLimiter({ windowMs: 60_000, max: 1 }),
+      session: new InMemoryRateLimiter({ windowMs: 60_000, max: 1_000 })
+    };
+    const request = () =>
+      new Request('http://localhost/api/leads', {
+        method: 'POST',
+        headers: { 'x-forwarded-for': '203.0.113.7' },
+        body: (() => {
+          const body = new URLSearchParams();
+          body.set('contact', 'me@example.com');
+          body.set('consent', 'yes');
+          body.set('idempotencyKey', 'key-a');
+
+          return body;
+        })()
+      });
+
+    const first = await handleLeadRequest(request(), { ...options(fetch), rateLimit });
+    const second = await handleLeadRequest(request(), { ...options(fetch), rateLimit });
+
+    expect(first.status).toBe(303);
+    expect(second.status).toBe(429);
+    expect(written).toHaveLength(1);
+  });
+
+  it('rejects a submission once the per-session limit is exhausted, even from a different ip', async () => {
+    const { fetch, written } = deps();
+    const rateLimit = {
+      ip: new InMemoryRateLimiter({ windowMs: 60_000, max: 1_000 }),
+      session: new InMemoryRateLimiter({ windowMs: 60_000, max: 1 })
+    };
+    const withCookie = (ip: string) =>
+      new Request('http://localhost/api/leads', {
+        method: 'POST',
+        headers: { 'x-forwarded-for': ip, cookie: `${SESSION_COOKIE_NAME}=same-session` },
+        body: (() => {
+          const body = new URLSearchParams();
+          body.set('contact', 'me@example.com');
+          body.set('consent', 'yes');
+          body.set('idempotencyKey', 'key-b');
+
+          return body;
+        })()
+      });
+
+    const first = await handleLeadRequest(withCookie('203.0.113.1'), { ...options(fetch), rateLimit });
+    const second = await handleLeadRequest(withCookie('203.0.113.2'), {
+      ...options(fetch),
+      rateLimit
+    });
+
+    expect(first.status).toBe(303);
+    expect(second.status).toBe(429);
+    expect(written).toHaveLength(1);
+  });
+
+  it('does not rate limit when no limiters are configured (explicit opt-out for tests)', async () => {
+    const { fetch } = deps();
+
+    const response = await handleLeadRequest(leadRequest(), {
+      baseUrl: 'http://cms:1337',
+      apiToken: 'write-token',
+      fetch
+    });
+
+    expect(response.status).toBe(303);
+  });
+});
+
+describe('handleLeadRequest session cookie', () => {
+  it('mints a session cookie when the visitor has none yet', async () => {
+    const { fetch } = deps();
+
+    const response = await handleLeadRequest(leadRequest(), options(fetch));
+
+    expect(response.headers.get('set-cookie')).toContain(`${SESSION_COOKIE_NAME}=`);
+  });
+
+  it('does not re-mint a cookie when the visitor already carries one', async () => {
+    const { fetch } = deps();
+    const request = new Request('http://localhost/api/leads', {
+      method: 'POST',
+      headers: { cookie: `${SESSION_COOKIE_NAME}=existing` },
+      body: (() => {
+        const body = new URLSearchParams();
+        body.set('contact', 'me@example.com');
+        body.set('consent', 'yes');
+        body.set('idempotencyKey', 'key-c');
+
+        return body;
+      })()
+    });
+
+    const response = await handleLeadRequest(request, options(fetch));
+
+    expect(response.headers.get('set-cookie')).toBeNull();
+  });
+});
+
+describe('handleLeadRequest analytics metadata', () => {
+  it('attaches page/source derived only from headers to the stored lead', async () => {
+    const { fetch, written } = deps();
+    const request = new Request('http://localhost/api/leads', {
+      method: 'POST',
+      headers: { referer: 'https://yandex.ru/search/?text=turni' },
+      body: (() => {
+        const body = new URLSearchParams();
+        body.set('name', 'Мария');
+        body.set('contact', 'mariya@example.com');
+        body.set('task', 'Секретная задача');
+        body.set('consent', 'yes');
+        body.set('idempotencyKey', 'key-d');
+
+        return body;
+      })()
+    });
+
+    await handleLeadRequest(request, options(fetch));
+
+    const data = (written[0]?.body as { data: Record<string, unknown> }).data;
+    expect(data['page']).toBe('/search/');
+    expect(data['source']).toBe('yandex.ru');
+  });
+
+  it('never derives page/source from the name, contact or task fields', async () => {
+    const { fetch, written } = deps();
+    const request = new Request('http://localhost/api/leads', {
+      method: 'POST',
+      body: (() => {
+        const body = new URLSearchParams();
+        body.set('name', 'Секретное имя');
+        body.set('contact', 'secret@example.com');
+        body.set('task', 'Секретная задача не должна попасть в метаданные');
+        body.set('consent', 'yes');
+        body.set('idempotencyKey', 'key-e');
+
+        return body;
+      })()
+    });
+
+    await handleLeadRequest(request, options(fetch));
+
+    const data = (written[0]?.body as { data: Record<string, unknown> }).data;
+    expect(String(data['page'])).not.toContain('Секретное');
+    expect(String(data['source'])).not.toContain('secret');
+    expect(data['page']).toBe('unknown');
+    expect(data['source']).toBe('direct');
   });
 });
