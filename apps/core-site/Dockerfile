@@ -38,6 +38,10 @@ WORKDIR /app
 COPY --from=build --chown=node:node /app/apps/core-site/.next/standalone ./
 COPY --from=build --chown=node:node /app/apps/core-site/.next/static ./apps/core-site/.next/static
 
+# The standalone server emitted by Next uses CommonJS, whereas the repository
+# root declares ESM through package.json.
+RUN mv /app/apps/core-site/server.js /app/apps/core-site/server.cjs
+
 USER node
 EXPOSE 3002
-CMD ["node", "apps/core-site/server.js"]
+CMD ["node", "apps/core-site/server.cjs"]
