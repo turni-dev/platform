@@ -19,7 +19,7 @@ RUN --mount=type=cache,target=/root/.npm \
     npm ci --ignore-scripts --no-audit --progress=false
 
 FROM dependencies AS build
-COPY nx.json tsconfig.base.json ./
+COPY nx.json tsconfig.base.json postcss.config.mjs ./
 COPY apps/core-site ./apps/core-site
 COPY packages/ui ./packages/ui
 ENV NEXT_TELEMETRY_DISABLED=1
