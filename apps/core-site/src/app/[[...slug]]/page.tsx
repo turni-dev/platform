@@ -2,8 +2,11 @@ import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { renderBlocks, type RenderBlocksOptions } from '../../blocks/block-renderer';
 import {
+  parseCategory,
+  parseQuery,
   parseRequestedIntegration,
-  REQUESTED_INTEGRATION_PARAM
+  REQUESTED_INTEGRATION_PARAM,
+  type CatalogQuery
 } from '../../integrations/integration-catalog';
 import { sitePages, siteSettings, siteBookingSlots, siteIntegrations } from '../../content/site-pages';
 import type { Page } from '../../blocks/page-schema';
@@ -88,12 +91,21 @@ export default async function SitePage({ params, searchParams }: PageProps) {
   // не должна зависеть от того, что кто-то дописал в адрес.
   const requestedIntegration = parseRequestedIntegration(query[REQUESTED_INTEGRATION_PARAM]);
 
+  // Витрина каталога — блок, а не отдельный маршрут: состояние фильтра она
+  // читает из адреса текущей страницы, а ссылки строит от её же пути.
+  const catalogQuery: CatalogQuery = {
+    category: parseCategory(query['category']),
+    query: parseQuery(query['q'])
+  };
+
   // Пустой список и отсутствие списка для блока — одно и то же, поэтому пустой
   // не передаём вовсе.
   const options: RenderBlocksOptions = {
     slots: slots.length > 0 ? slots : undefined,
     integrations: integrations.length > 0 ? integrations : undefined,
-    requestedIntegration
+    requestedIntegration,
+    pathname: `/${pathOf(slug)}`,
+    catalogQuery
   };
 
   return <>{renderBlocks(page.blocks, options)}</>;

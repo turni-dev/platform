@@ -11,7 +11,7 @@ import {
   STATUS_LABELS,
   type Integration
 } from '../../../integrations/integration-schema';
-import styles from '../../../integrations/catalog.module.scss';
+import styles from '../../../integrations/integration-card.module.scss';
 
 type RouteProps = Readonly<{ params: Promise<{ slug: string }> }>;
 

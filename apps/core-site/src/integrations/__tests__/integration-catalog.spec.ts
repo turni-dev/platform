@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   availableIntegrations,
+  catalogHref,
   categoryFilters,
   filterIntegrations,
   integrationCta,
@@ -70,12 +71,35 @@ describe('availableIntegrations', () => {
 });
 
 describe('categoryFilters', () => {
+  it('builds every link from the page the showcase stands on', () => {
+    const filters = categoryFilters({ category: 'crm' }, '/partners/catalog');
+
+    expect(filters.every((filter) => filter.href.startsWith('/partners/catalog'))).toBe(true);
+  });
+
   it('keeps the current search in every filter link, so the link stays shareable', () => {
     const filters = categoryFilters({ category: 'crm', query: 'битр' });
 
     expect(filters[0]).toEqual({ label: 'Все', href: '/integrations?q=%D0%B1%D0%B8%D1%82%D1%80', current: false });
     expect(filters.find((filter) => filter.label === 'CRM')?.current).toBe(true);
     expect(filters.find((filter) => filter.label === 'CRM')?.href).toContain('category=crm');
+  });
+});
+
+describe('catalogHref', () => {
+  it('falls back to the catalog route when no page path is given', () => {
+    expect(catalogHref({ category: 'crm' })).toBe('/integrations?category=crm');
+  });
+
+  it('builds the address from the page the showcase stands on', () => {
+    expect(catalogHref({ category: 'crm' }, '/partners/catalog')).toBe(
+      '/partners/catalog?category=crm'
+    );
+  });
+
+  it('survives a base path without a leading slash or with a trailing one', () => {
+    expect(catalogHref({}, 'partners/catalog/')).toBe('/partners/catalog');
+    expect(catalogHref({}, '')).toBe('/');
   });
 });
 

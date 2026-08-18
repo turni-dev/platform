@@ -1,4 +1,5 @@
 import { PageSchema, type Page } from '../blocks/page-schema';
+import integrations from './seed/integrations.json' with { type: 'json' };
 import privateAgent from './seed/private-agent.json' with { type: 'json' };
 
 /**
@@ -6,7 +7,10 @@ import privateAgent from './seed/private-agent.json' with { type: 'json' };
  * когда Strapi недоступен, и снимает с локальной разработки требование
  * поднимать CMS ради одной вёрстки.
  */
-const seeds: Readonly<Record<string, unknown>> = { 'products/private-agent': privateAgent };
+const seeds: Readonly<Record<string, unknown>> = {
+  'products/private-agent': privateAgent,
+  integrations
+};
 
 export const seedSlugs: readonly string[] = Object.keys(seeds);
 

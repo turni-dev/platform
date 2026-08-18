@@ -1,5 +1,3 @@
-// Витрина и карточка делят один модуль: это одна страница в двух состояниях,
-// а не два разных экрана.
 .section {
   padding: var(--site-section-space) var(--site-gutter);
 }
@@ -17,29 +15,11 @@
   letter-spacing: var(--site-tracking-heading);
 }
 
-.subheading {
-  margin: var(--site-heading-gap) 0 var(--site-space-3);
-  font-size: var(--site-font-size-subsection);
-  font-weight: var(--site-font-weight-strong);
-}
-
-.lead {
+.intro {
   margin: 0 0 var(--site-space-4);
   max-width: var(--site-text-width);
   color: var(--turni-text-muted);
   font-size: var(--site-font-size-lead);
-}
-
-.body {
-  margin: 0 0 var(--site-space-4);
-  max-width: var(--site-text-width);
-  color: var(--turni-text-muted);
-}
-
-.breadcrumb {
-  margin: 0 0 var(--site-space-4);
-  color: var(--turni-text-muted);
-  font-size: var(--turni-font-size-sm);
 }
 
 .filters {
@@ -66,7 +46,7 @@
 
   &[data-current='true'] {
     border-color: var(--turni-text);
-    font-weight: 600;
+    font-weight: var(--site-font-weight-strong);
   }
 }
 
@@ -92,7 +72,8 @@
   border-radius: var(--turni-radius-md);
   background: var(--turni-surface);
   color: inherit;
-  font-size: 1rem;
+  // Меньше 16px iOS зумит страницу при фокусе в поле.
+  font-size: var(--site-font-size-body);
 }
 
 .searchButton {
@@ -137,20 +118,15 @@
 }
 
 .logo {
-  width: 2rem;
-  height: 2rem;
-  object-fit: contain;
-}
-
-.logoLarge {
-  width: 3rem;
-  height: 3rem;
+  width: var(--site-space-5);
+  height: var(--site-space-5);
   object-fit: contain;
 }
 
 .name {
   margin: 0;
-  font-size: 1.0625rem;
+  font-size: var(--site-font-size-subsection);
+  font-weight: var(--site-font-weight-strong);
 }
 
 .summary {
@@ -180,19 +156,4 @@
 
 .category {
   color: var(--turni-text-muted);
-}
-
-.cta {
-  margin: var(--site-space-5) 0 0;
-}
-
-.ctaLink {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--site-touch-target);
-  padding: 0 var(--site-space-5);
-  border: 1px solid var(--turni-border);
-  border-radius: var(--turni-radius-md);
-  background: var(--turni-surface-subtle);
-  text-decoration: none;
 }

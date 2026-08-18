@@ -135,7 +135,8 @@ const blockPopulate: Readonly<Record<string, readonly string[]>> = {
     'groups.timeline',
     'groups.foreignHosting'
   ],
-  'blocks.logo-wall': ['*']
+  'blocks.logo-wall': ['*'],
+  'blocks.integration-catalog': ['*']
 };
 
 function populateEntries(): ReadonlyArray<readonly [string, string]> {

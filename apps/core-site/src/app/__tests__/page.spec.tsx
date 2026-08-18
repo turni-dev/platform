@@ -82,6 +82,27 @@ describe('site page', () => {
   });
 });
 
+describe('integrations catalog as a page', () => {
+  it('serves /integrations through the catch-all, not through a route of its own', async () => {
+    const markup = await render(['integrations']);
+
+    expect(markup).toContain('data-block="blocks.integration-catalog"');
+  });
+
+  it('builds the filter links from the path of the page the block stands on', async () => {
+    const markup = await render(['integrations'], { category: 'messengers' });
+
+    expect(markup).toContain('href="/integrations?category=messengers"');
+    expect(markup).toContain('action="/integrations"');
+  });
+
+  it('stays alive with an empty catalog when the CMS is unreachable', async () => {
+    const markup = await render(['integrations']);
+
+    expect(markup).toContain('Пока пусто');
+  });
+});
+
 describe('site page with a requested integration', () => {
   it('puts the slug from the address into the lead form as a hidden field', async () => {
     const markup = await render(['products', 'private-agent'], {

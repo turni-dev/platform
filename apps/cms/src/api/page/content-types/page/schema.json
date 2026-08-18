@@ -34,6 +34,7 @@
         "blocks.faq",
         "blocks.lead-form",
         "blocks.logo-wall",
+        "blocks.integration-catalog",
         "blocks.bento",
         "blocks.numbered-steps",
         "blocks.stat-card",

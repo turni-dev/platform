@@ -7,7 +7,11 @@ import {
   type IntegrationCategory
 } from './integration-schema';
 
-/** Адрес витрины: страница живёт своим сегментом, а не приходит из CMS. */
+/**
+ * Адрес карточек каталога: `/integrations/<слаг>` — это маршрут записи типа
+ * контента, а не страница из CMS. Витрина же собирается блоком на любой
+ * странице, поэтому базовым путём для её ссылок он служит лишь по умолчанию.
+ */
 export const CATALOG_PATH = '/integrations';
 
 /** Куда ведёт запрос на недоступную интеграцию — на страницу с формой заявки. */
@@ -82,8 +86,30 @@ export function availableIntegrations(
   return integrations.filter((integration) => integration.status === 'available');
 }
 
-/** Адрес витрины с сохранённым состоянием фильтра — им можно поделиться. */
-export function catalogHref({ category, query }: CatalogQuery): string {
+/**
+ * Путь страницы в виде, пригодном для ссылки: с ведущим слэшем и без хвостового.
+ * Витрина — блок, её могут поставить на любую страницу, поэтому базовый путь
+ * приходит снаружи и доверять его форме нельзя.
+ */
+function normalizeBasePath(basePath: string): string {
+  const trimmed = basePath.trim().replace(/\/+$/, '');
+  if (trimmed.length === 0) {
+    return '/';
+  }
+
+  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+}
+
+/**
+ * Адрес витрины с сохранённым состоянием фильтра — им можно поделиться.
+ * Базовый путь задаёт страница, на которой стоит блок: витрина не привязана
+ * к одному маршруту и работает там, куда её поставил редактор.
+ */
+export function catalogHref(
+  { category, query }: CatalogQuery,
+  basePath: string = CATALOG_PATH
+): string {
+  const base = normalizeBasePath(basePath);
   const params = new URLSearchParams();
   if (category !== undefined) {
     params.set('category', category);
@@ -93,7 +119,7 @@ export function catalogHref({ category, query }: CatalogQuery): string {
   }
   const search = params.toString();
 
-  return search.length === 0 ? CATALOG_PATH : `${CATALOG_PATH}?${search}`;
+  return search.length === 0 ? base : `${base}?${search}`;
 }
 
 export interface CategoryFilter {
@@ -102,10 +128,13 @@ export interface CategoryFilter {
   readonly current: boolean;
 }
 
-export function categoryFilters(current: CatalogQuery): readonly CategoryFilter[] {
+export function categoryFilters(
+  current: CatalogQuery,
+  basePath: string = CATALOG_PATH
+): readonly CategoryFilter[] {
   const all: CategoryFilter = {
     label: 'Все',
-    href: catalogHref({ query: current.query }),
+    href: catalogHref({ query: current.query }, basePath),
     current: current.category === undefined
   };
 
@@ -113,7 +142,7 @@ export function categoryFilters(current: CatalogQuery): readonly CategoryFilter[
     all,
     ...INTEGRATION_CATEGORIES.map((category) => ({
       label: CATEGORY_LABELS[category],
-      href: catalogHref({ category, query: current.query }),
+      href: catalogHref({ category, query: current.query }, basePath),
       current: current.category === category
     }))
   ];

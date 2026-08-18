@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
+import { IntegrationCatalogBlockSchema } from '../../blocks/integration-catalog/schema';
 import { LogoWallBlockSchema } from '../../blocks/logo-wall/schema';
 import { IntegrationSchema } from '../integration-schema';
 
@@ -38,7 +39,13 @@ describe('Strapi integration catalog and its schemas', () => {
     );
   });
 
-  it('lets the page assemble the wall of logos', () => {
+  it('keeps the catalog showcase in step with the CMS', () => {
+    expect(strapiFields('components/blocks/integration-catalog.json')).toEqual(
+      schemaFields(IntegrationCatalogBlockSchema)
+    );
+  });
+
+  it('lets the page assemble the wall of logos and the catalog showcase', () => {
     const page: unknown = JSON.parse(
       readFileSync(resolve(cmsDirectory, 'api/page/content-types/page/schema.json'), 'utf8')
     );
@@ -47,6 +54,7 @@ describe('Strapi integration catalog and its schemas', () => {
       .parse(page).attributes.blocks.components;
 
     expect(blocks).toContain('blocks.logo-wall');
+    expect(blocks).toContain('blocks.integration-catalog');
   });
 
   it('demands the permissions field: a card without it must not publish', () => {
