@@ -1,4 +1,8 @@
-import { Input, Textarea } from '@turni/ui';
+import { Input } from 'antd';
+// Прямой импорт вместо `Input.TextArea`: точечный доступ к антовскому
+// подкомпоненту падает в серверных компонентах Next.js App Router —
+// эта форма отправляется без javascript и намеренно остаётся серверной.
+import TextArea from 'antd/es/input/TextArea';
 import { randomUUID } from 'node:crypto';
 import { LeadFormShell } from './lead-form-shell';
 import type { LeadFormBlock } from './schema';
@@ -68,7 +72,7 @@ export function LeadForm({
             <label className={styles['label']} htmlFor="lead-task">
               {labels.task}
             </label>
-            <Textarea id="lead-task" name="task" rows={5} />
+            <TextArea id="lead-task" name="task" rows={5} />
           </div>
 
           <fieldset className={styles['group']}>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@turni/ui';
+import { Button } from 'antd';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import styles from './lead-form.module.scss';
 
@@ -60,7 +60,7 @@ export function LeadFormShell({
       }}
     >
       {children}
-      <Button type="submit" disabled={state === 'sending'}>
+      <Button type="primary" size="large" htmlType="submit" loading={state === 'sending'}>
         {state === 'sending' ? 'Отправляем…' : submitLabel}
       </Button>
       {state === 'sent' ? (

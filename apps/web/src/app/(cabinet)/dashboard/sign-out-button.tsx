@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Button } from '@turni/ui';
+import { Button } from 'antd';
 import { signOutOwner } from '../../../lib/owner-auth-client';
 
 export function SignOutButton({
@@ -36,7 +36,7 @@ export function SignOutButton({
 
   return (
     <>
-      <Button type="button" onClick={signOut} disabled={pending}>
+      <Button onClick={signOut} loading={pending}>
         {label}
       </Button>
       {failed ? <p role="alert">{failureLabel}</p> : undefined}

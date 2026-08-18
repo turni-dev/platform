@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
-import { Button, Input } from '@turni/ui';
+import { Button, Input } from 'antd';
 import {
   requestOwnerCode,
   verifyOwnerCode,
@@ -57,7 +57,7 @@ export function OwnerEmailForm({ flow }: { flow: OwnerAuthFlow }): React.JSX.Ele
           {error}
         </p>
       )}
-      <Button className={styles['submit']} type="submit" disabled={pending}>
+      <Button className={styles['submit'] ?? ''} type="primary" htmlType="submit" loading={pending}>
         {t(flow === 'register' ? 'registerSubmit' : 'loginSubmit')}
       </Button>
     </form>
@@ -125,10 +125,10 @@ export function OwnerCodeForm({
           {error}
         </p>
       )}
-      <Button className={styles['submit']} type="submit" disabled={pending}>
+      <Button className={styles['submit'] ?? ''} type="primary" htmlType="submit" loading={pending}>
         {t('verifySubmit')}
       </Button>
-      <Button className={styles['secondary']} type="button" onClick={resend} variant="secondary">
+      <Button className={styles['secondary'] ?? ''} htmlType="button" onClick={resend}>
         {t('resend')}
       </Button>
     </form>

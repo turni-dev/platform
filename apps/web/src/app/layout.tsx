@@ -2,8 +2,16 @@ import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import localFont from 'next/font/local';
+import { TurniAntdProvider } from '@turni/ui';
 import './globals.scss';
-import '@turni/ui/tailwind.css';
+
+const manrope = localFont({
+  src: './fonts/manrope-variable.ttf',
+  weight: '400 800',
+  display: 'swap',
+  variable: '--font-body'
+});
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('Dashboard');
@@ -13,11 +21,13 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const messages = await getMessages();
   return (
-    <html lang="ru">
+    <html lang="ru" className={manrope.variable}>
       <body>
-        <NextIntlClientProvider messages={messages}>
-          {children}
-        </NextIntlClientProvider>
+        <TurniAntdProvider>
+          <NextIntlClientProvider messages={messages}>
+            {children}
+          </NextIntlClientProvider>
+        </TurniAntdProvider>
       </body>
     </html>
   );

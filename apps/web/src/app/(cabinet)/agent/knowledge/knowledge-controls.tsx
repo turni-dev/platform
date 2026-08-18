@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Button, Input } from '@turni/ui';
+import { Button, Input } from 'antd';
 import { deleteKnowledgeFile, saveKnowledgeFile } from '../../../../lib/agent-client';
 import styles from '../../cabinet.module.scss';
 
@@ -54,7 +54,7 @@ export function NewKnowledgeFile({
         }}
       />
       <div className={styles['actions']}>
-        <Button type="button" onClick={create} disabled={pending || name.trim() === ''}>
+        <Button type="primary" onClick={create} loading={pending} disabled={name.trim() === ''}>
           {labels.create}
         </Button>
         {failed ? (
@@ -94,7 +94,7 @@ export function DeleteKnowledgeFile({
 
   return (
     <>
-      <Button type="button" onClick={remove} disabled={pending}>
+      <Button danger onClick={remove} loading={pending}>
         {label}
       </Button>
       {failed ? (
