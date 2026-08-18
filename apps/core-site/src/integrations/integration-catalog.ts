@@ -105,7 +105,7 @@ export interface CategoryFilter {
 export function categoryFilters(current: CatalogQuery): readonly CategoryFilter[] {
   const all: CategoryFilter = {
     label: 'Все',
-    href: catalogHref({ ...(current.query === undefined ? {} : { query: current.query }) }),
+    href: catalogHref({ query: current.query }),
     current: current.category === undefined
   };
 
@@ -113,7 +113,7 @@ export function categoryFilters(current: CatalogQuery): readonly CategoryFilter[
     all,
     ...INTEGRATION_CATEGORIES.map((category) => ({
       label: CATEGORY_LABELS[category],
-      href: catalogHref({ category, ...(current.query === undefined ? {} : { query: current.query }) }),
+      href: catalogHref({ category, query: current.query }),
       current: current.category === category
     }))
   ];

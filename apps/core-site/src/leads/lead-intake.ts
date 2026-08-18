@@ -219,8 +219,8 @@ async function process(
             // Метаданные для события в аналитике — не путать с ПДн заявки.
             page: analytics.page,
             source: analytics.source,
-            ...(lead.data.slotId === undefined ? {} : { bookedSlot: lead.data.slotId }),
-            ...(lead.data.slotLabel === undefined ? {} : { slotLabel: lead.data.slotLabel })
+            bookedSlot: lead.data.slotId,
+            slotLabel: lead.data.slotLabel
           }
         })
       });

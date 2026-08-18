@@ -7,7 +7,7 @@ type NavProps = Readonly<{
   brand: string;
   /** Меню приходит из плагина навигации, а не из настроек сайта. */
   nav: readonly NavItem[];
-  navCta?: BlockLink;
+  navCta?: BlockLink | undefined;
 }>;
 
 function NavLink({ item }: { readonly item: NavItem }) {

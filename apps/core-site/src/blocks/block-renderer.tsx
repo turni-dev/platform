@@ -18,12 +18,12 @@ import type { Integration } from '../integrations/integration-schema';
 export interface RenderBlocksOptions {
   /** Слоты консультации: приходят отдельно от CMS-контента блока, потому что
    * их доступность меняется чаще, чем перерисовывается страница. */
-  readonly slots?: readonly BookingSlotOption[];
+  readonly slots?: readonly BookingSlotOption[] | undefined;
   /** Каталог интеграций: стена логотипов рисуется из него, а не из полей блока. */
-  readonly integrations?: readonly Integration[];
+  readonly integrations?: readonly Integration[] | undefined;
   /** Слаг из `?requested_integration=` адреса страницы: форма заявки кладёт
    * его в скрытое поле, остальные блоки о нём не знают. */
-  readonly requestedIntegration?: string;
+  readonly requestedIntegration?: string | undefined;
 }
 
 function renderBlock(block: PageBlock, key: string, options: RenderBlocksOptions): ReactNode {
@@ -53,10 +53,8 @@ function renderBlock(block: PageBlock, key: string, options: RenderBlocksOptions
         <LeadForm
           key={key}
           {...block}
-          {...(options.slots === undefined ? {} : { slots: options.slots })}
-          {...(options.requestedIntegration === undefined
-            ? {}
-            : { requestedIntegration: options.requestedIntegration })}
+          slots={options.slots}
+          requestedIntegration={options.requestedIntegration}
         />
       );
     case 'blocks.logo-wall':

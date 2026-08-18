@@ -8,11 +8,11 @@ import styles from './lead-form.module.scss';
 export interface LeadFormProps extends LeadFormBlock {
   /** Список слотов приходит отдельно от контента блока и может быть пустым —
    * выбор времени тогда просто не рендерится. */
-  readonly slots?: readonly BookingSlotOption[];
+  readonly slots?: readonly BookingSlotOption[] | undefined;
   /** Слаг интеграции из параметра `requested_integration` адреса страницы.
    * Приходит уже проверенным (см. parseRequestedIntegration) и уезжает в
    * заявку скрытым полем — обычным POST, без участия javascript. */
-  readonly requestedIntegration?: string;
+  readonly requestedIntegration?: string | undefined;
 }
 
 /**

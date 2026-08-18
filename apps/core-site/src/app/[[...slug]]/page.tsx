@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { renderBlocks } from '../../blocks/block-renderer';
+import { renderBlocks, type RenderBlocksOptions } from '../../blocks/block-renderer';
 import {
   parseRequestedIntegration,
   REQUESTED_INTEGRATION_PARAM
@@ -53,17 +53,21 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
   const image = page.seo?.metaImage ?? settings.defaultSeo?.metaImage;
   const canonical = page.seo?.canonicalURL;
 
-  return {
-    ...(title === undefined ? {} : { title }),
-    ...(description === undefined ? {} : { description }),
-    ...(canonical === undefined ? {} : { alternates: { canonical } }),
-    ...(page.seo?.metaRobots === undefined ? {} : { robots: page.seo.metaRobots }),
-    openGraph: {
-      ...(title === undefined ? {} : { title }),
-      ...(description === undefined ? {} : { description }),
-      ...(image === undefined ? {} : { images: [image] })
-    }
-  };
+  // Поля выставляются по одному: exactOptionalPropertyTypes не различает
+  // «ключ отсутствует» и «ключ равен undefined», а Next по отсутствующему полю
+  // берёт своё умолчание.
+  const openGraph: NonNullable<Metadata['openGraph']> = {};
+  if (title !== undefined) openGraph.title = title;
+  if (description !== undefined) openGraph.description = description;
+  if (image !== undefined) openGraph.images = [image];
+
+  const metadata: Metadata = { openGraph };
+  if (title !== undefined) metadata.title = title;
+  if (description !== undefined) metadata.description = description;
+  if (canonical !== undefined) metadata.alternates = { canonical };
+  if (page.seo?.metaRobots !== undefined) metadata.robots = page.seo.metaRobots;
+
+  return metadata;
 }
 
 export default async function SitePage({ params, searchParams }: PageProps) {
@@ -84,13 +88,13 @@ export default async function SitePage({ params, searchParams }: PageProps) {
   // не должна зависеть от того, что кто-то дописал в адрес.
   const requestedIntegration = parseRequestedIntegration(query[REQUESTED_INTEGRATION_PARAM]);
 
-  return (
-    <>
-      {renderBlocks(page.blocks, {
-        ...(slots.length === 0 ? {} : { slots }),
-        ...(integrations.length === 0 ? {} : { integrations }),
-        ...(requestedIntegration === undefined ? {} : { requestedIntegration })
-      })}
-    </>
-  );
+  // Пустой список и отсутствие списка для блока — одно и то же, поэтому пустой
+  // не передаём вовсе.
+  const options: RenderBlocksOptions = {
+    slots: slots.length > 0 ? slots : undefined,
+    integrations: integrations.length > 0 ? integrations : undefined,
+    requestedIntegration
+  };
+
+  return <>{renderBlocks(page.blocks, options)}</>;
 }

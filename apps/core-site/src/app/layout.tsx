@@ -31,13 +31,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <Nav
           brand={settings.brand}
           nav={nav}
-          {...(settings.navCta === undefined ? {} : { navCta: settings.navCta })}
+          navCta={settings.navCta}
         />
         <main>{children}</main>
         <Footer
           footerContacts={settings.footerContacts}
           footerLegalLinks={settings.footerLegalLinks}
-          {...(settings.footerNote === undefined ? {} : { footerNote: settings.footerNote })}
+          footerNote={settings.footerNote}
         />
       </body>
     </html>

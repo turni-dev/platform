@@ -6,7 +6,8 @@ import {
   categoryFilters,
   filterIntegrations,
   parseCategory,
-  parseQuery
+  parseQuery,
+  type CatalogQuery
 } from '../../integrations/integration-catalog';
 import { CATEGORY_LABELS, STATUS_LABELS } from '../../integrations/integration-schema';
 import styles from '../../integrations/catalog.module.scss';
@@ -26,10 +27,7 @@ export default async function IntegrationsPage({ searchParams }: RouteProps) {
   const params = await searchParams;
   const category = parseCategory(params['category']);
   const query = parseQuery(params['q']);
-  const current = {
-    ...(category === undefined ? {} : { category }),
-    ...(query === undefined ? {} : { query })
-  };
+  const current: CatalogQuery = { category, query };
 
   const integrations = filterIntegrations(await siteIntegrations.list(), current);
 
