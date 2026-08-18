@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
-import { turniTheme } from '../theme.js';
+import { turniTheme } from '../theme';
 
 describe('AntD theme tokens', () => {
   it('derives its colors and metrics from the semantic tokens in tokens.scss', async () => {

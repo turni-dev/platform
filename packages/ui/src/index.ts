@@ -1,2 +1,2 @@
-export { turniTheme } from './theme.js';
-export { TurniAntdProvider } from './provider.js';
+export { turniTheme } from './theme';
+export { TurniAntdProvider } from './provider';

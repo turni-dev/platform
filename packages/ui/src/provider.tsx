@@ -3,7 +3,7 @@
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { ConfigProvider } from 'antd';
 import type { ReactNode } from 'react';
-import { turniTheme } from './theme.js';
+import { turniTheme } from './theme';
 
 /**
  * Wraps AntD's SSR style registry and theme provider in one place so both
