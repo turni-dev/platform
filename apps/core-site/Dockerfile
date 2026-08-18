@@ -21,6 +21,7 @@ RUN --mount=type=cache,target=/root/.npm \
 FROM dependencies AS build
 COPY nx.json tsconfig.base.json ./
 COPY apps/core-site ./apps/core-site
+COPY packages/ui ./packages/ui
 ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app/apps/core-site
 RUN npx next build
