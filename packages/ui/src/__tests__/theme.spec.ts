@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
-import { turniTheme } from '../theme';
+import { turniTheme } from '../theme.js';
 
 describe('AntD theme tokens', () => {
   it('derives its colors and metrics from the semantic tokens in tokens.scss', async () => {
@@ -19,7 +19,7 @@ describe('AntD theme tokens', () => {
   });
 
   it('turns off runtime style hashing and enables CSS variables, for the Lighthouse-gated build', () => {
-    expect(turniTheme.cssVar).toBe(true);
+    expect(turniTheme.cssVar).toEqual({});
     expect(turniTheme.hashed).toBe(false);
   });
 

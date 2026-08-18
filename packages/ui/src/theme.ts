@@ -6,7 +6,7 @@ import type { ThemeConfig } from 'antd';
  * values to AntD. `theme.spec.ts` catches the two files drifting apart.
  */
 export const turniTheme: ThemeConfig = {
-  cssVar: true,
+  cssVar: {},
   hashed: false,
   token: {
     colorPrimary: '#176b4d',
