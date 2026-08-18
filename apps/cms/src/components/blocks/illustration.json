@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_blocks_illustrations",
+  "info": {
+    "displayName": "Иллюстрация",
+    "icon": "picture"
+  },
+  "options": {},
+  "attributes": {
+    "media": {
+      "type": "component",
+      "repeatable": false,
+      "component": "parts.media",
+      "required": true
+    },
+    "caption": {
+      "type": "string"
+    }
+  }
+}

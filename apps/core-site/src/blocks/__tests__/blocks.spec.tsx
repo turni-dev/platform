@@ -7,6 +7,7 @@ import { ChangelogItemBlockSchema } from '../changelog-item/schema';
 import { FaqAccordion } from '../faq/faq';
 import { FeatureGrid } from '../feature-grid/feature-grid';
 import { Hero } from '../hero/hero';
+import { Illustration } from '../illustration/illustration';
 import { LeadForm } from '../lead-form/lead-form';
 import type { LeadFormBlock } from '../lead-form/schema';
 import { NumberedSteps } from '../numbered-steps/numbered-steps';
@@ -418,5 +419,31 @@ describe('ChangelogItem', () => {
     });
 
     expect(parsed.tags).toEqual(['Сайт', 'Формы']);
+  });
+});
+
+describe('Illustration', () => {
+  const media = { src: '/uploads/flow.png', alt: 'Заявка становится записью', width: 820, height: 733 };
+
+  it('describes the picture and shows the caption', () => {
+    const markup = renderToStaticMarkup(
+      <Illustration __component="blocks.illustration" media={media} caption="Маршрут заявки" />
+    );
+
+    expect(markup).toContain('alt="Заявка становится записью"');
+    expect(markup).toContain('<figcaption');
+    expect(markup).toContain('Маршрут заявки');
+    expect(markup).toMatch(/<img[^>]+width="820"[^>]+height="733"/);
+  });
+
+  it('stays out of the way of the first screen: loads lazily, without priority', () => {
+    const markup = renderToStaticMarkup(
+      <Illustration __component="blocks.illustration" media={media} />
+    );
+
+    // Иллюстрация ниже сгиба не должна конкурировать за канал с LCP-элементом.
+    expect(markup).toContain('loading="lazy"');
+    expect(markup).not.toContain('fetchPriority="high"');
+    expect(markup).not.toContain('<figcaption');
   });
 });

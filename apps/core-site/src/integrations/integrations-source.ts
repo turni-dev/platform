@@ -1,4 +1,4 @@
-import { withoutNulls, type SiteFetch } from '../content/cms-page-source';
+import { fromCms, type SiteFetch } from '../content/cms-page-source';
 import { IntegrationSchema, type Integration } from './integration-schema';
 
 export interface IntegrationsSourceOptions {
@@ -60,7 +60,7 @@ export function createIntegrationsSource(options: IntegrationsSourceOptions): In
         // должна прятать весь каталог — она просто не выходит на витрину.
         const integrations: Integration[] = [];
         for (const entry of data) {
-          const parsed = IntegrationSchema.safeParse(withoutNulls(entry));
+          const parsed = IntegrationSchema.safeParse(fromCms(entry, baseUrl));
           if (parsed.success) {
             integrations.push(parsed.data);
           } else {

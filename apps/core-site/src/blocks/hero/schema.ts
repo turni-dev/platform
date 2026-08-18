@@ -1,12 +1,5 @@
 import { z } from 'zod';
-import { LinkSchema } from '../shared';
-
-export const HeroMediaSchema = z.object({
-  src: z.string().min(1),
-  alt: z.string().min(1),
-  width: z.number().int().positive(),
-  height: z.number().int().positive()
-});
+import { LinkSchema, MediaSchema } from '../shared';
 
 export const HeroBlockSchema = z.object({
   __component: z.literal('blocks.hero'),
@@ -14,7 +7,7 @@ export const HeroBlockSchema = z.object({
   subheading: z.string().min(1),
   primaryCta: LinkSchema,
   secondaryCta: LinkSchema.optional(),
-  media: HeroMediaSchema.optional()
+  media: MediaSchema.optional()
 });
 
 export type HeroBlock = z.infer<typeof HeroBlockSchema>;

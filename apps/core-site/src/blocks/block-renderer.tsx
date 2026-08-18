@@ -5,6 +5,7 @@ import { ChangelogItem } from './changelog-item/changelog-item';
 import { FaqAccordion } from './faq/faq';
 import { FeatureGrid } from './feature-grid/feature-grid';
 import { Hero } from './hero/hero';
+import { Illustration } from './illustration/illustration';
 import { IntegrationCatalog } from './integration-catalog/integration-catalog';
 import { LeadForm } from './lead-form/lead-form';
 import { LogoWall } from './logo-wall/logo-wall';
@@ -53,6 +54,8 @@ function renderBlock(block: PageBlock, key: string, options: RenderBlocksOptions
       return <StatCard key={key} {...block} />;
     case 'blocks.changelog-item':
       return <ChangelogItem key={key} {...block} />;
+    case 'blocks.illustration':
+      return <Illustration key={key} {...block} />;
     case 'blocks.faq':
       return <FaqAccordion key={key} {...block} />;
     case 'blocks.lead-form':

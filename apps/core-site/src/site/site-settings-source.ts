@@ -1,4 +1,4 @@
-import { withoutNulls, type SiteFetch } from '../content/cms-page-source';
+import { fromCms, type SiteFetch } from '../content/cms-page-source';
 import seed from './seed/site-settings.json' with { type: 'json' };
 import { SiteSettingsSchema, type SiteSettings } from './site-settings-schema';
 
@@ -51,7 +51,7 @@ export function createSiteSettingsSource(
         const body: unknown = JSON.parse(await response.text());
         const data =
           typeof body === 'object' && body !== null && 'data' in body ? body.data : undefined;
-        const settings = SiteSettingsSchema.safeParse(withoutNulls(data));
+        const settings = SiteSettingsSchema.safeParse(fromCms(data, baseUrl));
 
         return settings.success ? settings.data : warn(options, 'answer did not match the schema');
       } catch {

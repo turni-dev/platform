@@ -76,7 +76,7 @@ export function createCmsPageSource(options: CmsPageSourceOptions): PageSource {
         return fallback();
       }
 
-      const page = PageSchema.safeParse(withoutNulls(entry));
+      const page = PageSchema.safeParse(fromCms(entry, baseUrl));
       if (!page.success) {
         warn(slug, 'answer did not match the page schema');
 
@@ -89,12 +89,22 @@ export function createCmsPageSource(options: CmsPageSourceOptions): PageSource {
 }
 
 /**
+ * Приводит ответ CMS к тому, чего ждут схемы, за один проход.
+ *
  * Незаполненное поле Strapi отдаёт как `null`, а блок описан через отсутствие
  * поля — без этой чистки страница с любым пустым полем не проходит схему.
+ *
+ * Файлы медиатеки локальный провайдер отдаёт путём без хоста (`/uploads/...`).
+ * Такой адрес браузер запросил бы у сайта, а не у CMS, и получил бы 404, —
+ * поэтому он дополняется origin CMS. Внешний провайдер (S3 и подобные) отдаёт
+ * абсолютный адрес, его не трогаем.
  */
-export function withoutNulls(value: unknown): unknown {
+export function fromCms(value: unknown, baseUrl: string): unknown {
+  if (typeof value === 'string') {
+    return value.startsWith(UPLOADS_PREFIX) ? `${baseUrl}${value}` : value;
+  }
   if (Array.isArray(value)) {
-    return value.map(withoutNulls);
+    return value.map((item) => fromCms(item, baseUrl));
   }
   if (typeof value !== 'object' || value === null) {
     return value;
@@ -103,12 +113,14 @@ export function withoutNulls(value: unknown): unknown {
   const cleaned: Record<string, unknown> = {};
   for (const [key, nested] of Object.entries(value)) {
     if (nested !== null) {
-      cleaned[key] = withoutNulls(nested);
+      cleaned[key] = fromCms(nested, baseUrl);
     }
   }
 
   return cleaned;
 }
+
+const UPLOADS_PREFIX = '/uploads/';
 
 /**
  * Что раскрывать внутри каждого блока динамической зоны. Strapi по `*` отдаёт
@@ -117,7 +129,9 @@ export function withoutNulls(value: unknown): unknown {
  * уезжает на семя.
  */
 const blockPopulate: Readonly<Record<string, readonly string[]>> = {
-  'blocks.hero': ['*'],
+  // У героя своя картинка, а `*` внутрь компонента `parts.media` не заходит:
+  // без явного пути файл приезжает пустым и первый экран остаётся без иллюстрации.
+  'blocks.hero': ['primaryCta', 'secondaryCta', 'media'],
   'blocks.feature-grid': ['*'],
   'blocks.steps': ['*'],
   'blocks.security-list': ['*'],
@@ -136,7 +150,8 @@ const blockPopulate: Readonly<Record<string, readonly string[]>> = {
     'groups.foreignHosting'
   ],
   'blocks.logo-wall': ['*'],
-  'blocks.integration-catalog': ['*']
+  'blocks.integration-catalog': ['*'],
+  'blocks.illustration': ['media']
 };
 
 function populateEntries(): ReadonlyArray<readonly [string, string]> {
