@@ -56,3 +56,6 @@ ops/sops/*.agekey
 ops/sops/*.dec.json
 .gocache/
 .playwright-mcp/
+
+# Strapi regenerates these on every build; they are not source.
+apps/cms/types/generated/
