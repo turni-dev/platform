@@ -32,7 +32,12 @@
         "blocks.security-list",
         "blocks.case-cards",
         "blocks.faq",
-        "blocks.lead-form"
+        "blocks.lead-form",
+        "blocks.logo-wall",
+        "blocks.bento",
+        "blocks.numbered-steps",
+        "blocks.stat-card",
+        "blocks.changelog-item"
       ]
     },
     "seo": {

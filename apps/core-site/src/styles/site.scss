@@ -12,22 +12,56 @@
   --site-space-3: 0.75rem;
   --site-space-4: 1rem;
   --site-space-5: 2rem;
+  --site-space-6: 3rem;
+
+  // Вертикальный ритм секций. Одна шкала на весь сайт: блок выбирает ступень,
+  // а не придумывает число, иначе отступы расходятся от секции к секции и
+  // страница читается дешевле, чем есть. Мобайл 56–80px, десктоп 96–160px.
+  --site-section-space-sm: 3.5rem;
+  --site-section-space: 4.5rem;
+  --site-section-space-lg: 5rem;
+  // Отбивка заголовка секции от её содержимого — та же шкала, ступенью ниже.
+  --site-heading-gap: 2rem;
+
+  // Типографическая шкала. Контраст заголовка и текста задан здесь: заголовок
+  // секции кратно крупнее абзаца (36–56px против 16–18px) и плотнее по
+  // начертанию. Блоки берут ступень, а не пишут свой clamp.
+  --site-font-size-display: clamp(2.75rem, 2.1rem + 3vw, 4rem);
+  --site-font-size-section: clamp(2.25rem, 1.7rem + 2.6vw, 3.5rem);
+  --site-font-size-stat: clamp(2.75rem, 2rem + 3.6vw, 4.25rem);
+  --site-font-size-subsection: clamp(1.125rem, 1.05rem + 0.4vw, 1.375rem);
+  --site-font-size-lead: 1.125rem;
+  --site-font-size-body: 1rem;
+  --site-font-weight-heading: 700;
+  --site-font-weight-strong: 600;
+  --site-line-height-heading: 1.1;
+  --site-line-height-body: 1.6;
+  --site-tracking-heading: -0.02em;
 }
 
 // Меньше 16px iOS зумит страницу при фокусе в поле.
 body {
-  font-size: 1rem;
+  font-size: var(--site-font-size-body);
+  line-height: var(--site-line-height-body);
 }
 
 @media (min-width: 768px) {
   :root {
     --site-gutter: 2rem;
     --site-section-padding: 4rem;
+    --site-section-space-sm: 6rem;
+    --site-section-space: 7.5rem;
+    --site-section-space-lg: 8.5rem;
+    --site-heading-gap: 3rem;
+    --site-font-size-lead: 1.25rem;
   }
 }
 
 @media (min-width: 1280px) {
   :root {
     --site-section-padding: 5rem;
+    --site-section-space-sm: 6rem;
+    --site-section-space: 8rem;
+    --site-section-space-lg: 10rem;
   }
 }

@@ -1,5 +1,5 @@
 .section {
-  padding: var(--site-section-padding) var(--site-gutter);
+  padding: var(--site-section-space) var(--site-gutter);
 }
 
 .inner {
@@ -8,8 +8,11 @@
 }
 
 .heading {
-  margin: 0 0 var(--site-space-5);
-  font-size: clamp(1.375rem, 1.1rem + 1.2vw, 2rem);
+  margin: 0 0 var(--site-heading-gap);
+  font-size: var(--site-font-size-section);
+  font-weight: var(--site-font-weight-heading);
+  line-height: var(--site-line-height-heading);
+  letter-spacing: var(--site-tracking-heading);
 }
 
 .list {
@@ -27,7 +30,7 @@
   min-height: var(--site-touch-target);
   padding: var(--site-space-3) 0;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: var(--site-font-weight-strong);
 
   &:focus-visible {
     outline: var(--turni-focus-width) solid var(--turni-focus-ring);

@@ -1,0 +1,23 @@
+{
+  "collectionName": "components_blocks_logo_walls",
+  "info": {
+    "displayName": "Стена логотипов",
+    "icon": "grid",
+    "description": "Логотипы в блок не заводятся: они приходят из типа контента «Интеграция» со статусом «available». Здесь только обрамление."
+  },
+  "options": {},
+  "attributes": {
+    "heading": {
+      "type": "string",
+      "required": true
+    },
+    "note": {
+      "type": "text"
+    },
+    "cta": {
+      "type": "component",
+      "repeatable": false,
+      "component": "parts.link"
+    }
+  }
+}

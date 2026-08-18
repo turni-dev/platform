@@ -1,0 +1,76 @@
+.section {
+  padding: var(--site-section-space-sm) var(--site-gutter);
+}
+
+.inner {
+  width: min(100%, var(--site-content-width));
+  margin: 0 auto;
+}
+
+.entry {
+  display: grid;
+  gap: var(--site-space-3);
+  justify-items: start;
+  max-width: var(--site-text-width);
+  padding-top: var(--site-space-5);
+  border-top: 1px solid var(--turni-border);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-3);
+  align-items: center;
+  margin: 0;
+  color: var(--turni-text-muted);
+  font-size: var(--turni-font-size-sm);
+}
+
+.version {
+  padding: var(--site-space-1) var(--site-space-2);
+  border: 1px solid var(--turni-border);
+  border-radius: var(--turni-radius-sm);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--site-font-size-subsection);
+  font-weight: var(--site-font-weight-heading);
+  line-height: var(--site-line-height-heading);
+}
+
+.body {
+  margin: 0;
+  color: var(--turni-text-muted);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag {
+  padding: var(--site-space-1) var(--site-space-2);
+  border-radius: var(--turni-radius-sm);
+  background: var(--turni-surface-subtle);
+  color: var(--turni-text-muted);
+  font-size: var(--turni-font-size-sm);
+}
+
+// Единственный акцент в записи — на действии.
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--site-touch-target);
+  color: var(--turni-accent);
+  font-weight: var(--site-font-weight-strong);
+
+  &:focus-visible {
+    outline: var(--turni-focus-width) solid var(--turni-focus-ring);
+    outline-offset: var(--turni-focus-offset);
+  }
+}

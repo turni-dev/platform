@@ -1,0 +1,198 @@
+// Витрина и карточка делят один модуль: это одна страница в двух состояниях,
+// а не два разных экрана.
+.section {
+  padding: var(--site-section-space) var(--site-gutter);
+}
+
+.inner {
+  width: min(100%, var(--site-content-width));
+  margin: 0 auto;
+}
+
+.heading {
+  margin: 0 0 var(--site-space-3);
+  font-size: var(--site-font-size-section);
+  font-weight: var(--site-font-weight-heading);
+  line-height: var(--site-line-height-heading);
+  letter-spacing: var(--site-tracking-heading);
+}
+
+.subheading {
+  margin: var(--site-heading-gap) 0 var(--site-space-3);
+  font-size: var(--site-font-size-subsection);
+  font-weight: var(--site-font-weight-strong);
+}
+
+.lead {
+  margin: 0 0 var(--site-space-4);
+  max-width: var(--site-text-width);
+  color: var(--turni-text-muted);
+  font-size: var(--site-font-size-lead);
+}
+
+.body {
+  margin: 0 0 var(--site-space-4);
+  max-width: var(--site-text-width);
+  color: var(--turni-text-muted);
+}
+
+.breadcrumb {
+  margin: 0 0 var(--site-space-4);
+  color: var(--turni-text-muted);
+  font-size: var(--turni-font-size-sm);
+}
+
+.filters {
+  margin: var(--site-space-5) 0 var(--site-space-4);
+}
+
+.filterList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.filter {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--site-touch-target);
+  padding: 0 var(--site-space-4);
+  border: 1px solid var(--turni-border);
+  border-radius: var(--turni-radius-md);
+  text-decoration: none;
+
+  &[data-current='true'] {
+    border-color: var(--turni-text);
+    font-weight: 600;
+  }
+}
+
+.search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-2);
+  align-items: center;
+  margin: 0 0 var(--site-space-5);
+}
+
+.searchLabel {
+  flex-basis: 100%;
+  color: var(--turni-text-muted);
+  font-size: var(--turni-font-size-sm);
+}
+
+.searchInput {
+  flex: 1 1 14rem;
+  min-height: var(--site-touch-target);
+  padding: 0 var(--site-space-3);
+  border: 1px solid var(--turni-border);
+  border-radius: var(--turni-radius-md);
+  background: var(--turni-surface);
+  color: inherit;
+  font-size: 1rem;
+}
+
+.searchButton {
+  min-height: var(--site-touch-target);
+  padding: 0 var(--site-space-4);
+  border: 1px solid var(--turni-border);
+  border-radius: var(--turni-radius-md);
+  background: var(--turni-surface-subtle);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.empty {
+  margin: 0;
+  max-width: var(--site-text-width);
+  color: var(--turni-text-muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--site-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  height: 100%;
+  padding: var(--site-space-4);
+  border: 1px solid var(--turni-border);
+  border-radius: var(--turni-radius-md);
+  background: var(--turni-surface);
+}
+
+.cardHead {
+  display: flex;
+  gap: var(--site-space-3);
+  align-items: center;
+  margin-bottom: var(--site-space-3);
+}
+
+.logo {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+}
+
+.logoLarge {
+  width: 3rem;
+  height: 3rem;
+  object-fit: contain;
+}
+
+.name {
+  margin: 0;
+  font-size: 1.0625rem;
+}
+
+.summary {
+  margin: 0 0 var(--site-space-3);
+  color: var(--turni-text-muted);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-2);
+  margin: 0;
+  font-size: var(--turni-font-size-sm);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--site-space-2);
+  border: 1px solid var(--turni-border);
+  border-radius: var(--turni-radius-sm);
+
+  &[data-status='available'] {
+    border-color: var(--turni-text);
+  }
+}
+
+.category {
+  color: var(--turni-text-muted);
+}
+
+.cta {
+  margin: var(--site-space-5) 0 0;
+}
+
+.ctaLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--site-touch-target);
+  padding: 0 var(--site-space-5);
+  border: 1px solid var(--turni-border);
+  border-radius: var(--turni-radius-md);
+  background: var(--turni-surface-subtle);
+  text-decoration: none;
+}

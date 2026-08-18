@@ -2,12 +2,16 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
+import { BentoBlockSchema } from '../bento/schema';
 import { CaseCardsBlockSchema } from '../case-cards/schema';
+import { ChangelogItemBlockSchema } from '../changelog-item/schema';
 import { FaqBlockSchema } from '../faq/schema';
 import { FeatureGridBlockSchema } from '../feature-grid/schema';
 import { HeroBlockSchema } from '../hero/schema';
 import { LeadFormBlockSchema } from '../lead-form/schema';
+import { NumberedStepsBlockSchema } from '../numbered-steps/schema';
 import { SecurityListBlockSchema } from '../security-list/schema';
+import { StatCardBlockSchema } from '../stat-card/schema';
 import { StepsBlockSchema } from '../steps/schema';
 
 const componentsDirectory = resolve(
@@ -27,7 +31,11 @@ const blocks: ReadonlyArray<readonly [string, z.ZodObject]> = [
   ['security-list', SecurityListBlockSchema],
   ['case-cards', CaseCardsBlockSchema],
   ['faq', FaqBlockSchema],
-  ['lead-form', LeadFormBlockSchema]
+  ['lead-form', LeadFormBlockSchema],
+  ['bento', BentoBlockSchema],
+  ['numbered-steps', NumberedStepsBlockSchema],
+  ['stat-card', StatCardBlockSchema],
+  ['changelog-item', ChangelogItemBlockSchema]
 ];
 
 function strapiFields(name: string): string[] {

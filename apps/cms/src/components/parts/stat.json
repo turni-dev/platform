@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_parts_stats",
+  "info": {
+    "displayName": "Показатель",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "value": {
+      "type": "string",
+      "required": true
+    },
+    "label": {
+      "type": "string",
+      "required": true
+    },
+    "note": {
+      "type": "string"
+    }
+  }
+}

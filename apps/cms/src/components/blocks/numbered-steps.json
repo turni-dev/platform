@@ -1,0 +1,25 @@
+{
+  "collectionName": "components_blocks_numbered_stepss",
+  "info": {
+    "displayName": "Нумерованные шаги",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "heading": {
+      "type": "string",
+      "required": true
+    },
+    "intro": {
+      "type": "text"
+    },
+    "steps": {
+      "type": "component",
+      "repeatable": true,
+      "component": "parts.numbered-step"
+    },
+    "note": {
+      "type": "text"
+    }
+  }
+}

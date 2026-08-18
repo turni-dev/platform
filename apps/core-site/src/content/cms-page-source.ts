@@ -123,6 +123,10 @@ const blockPopulate: Readonly<Record<string, readonly string[]>> = {
   'blocks.security-list': ['*'],
   'blocks.faq': ['*'],
   'blocks.case-cards': ['cases', 'emptyState.cta'],
+  'blocks.bento': ['tiles.cta'],
+  'blocks.numbered-steps': ['*'],
+  'blocks.stat-card': ['*'],
+  'blocks.changelog-item': ['tags', 'link'],
   'blocks.lead-form': [
     'labels',
     'consent',
@@ -130,7 +134,8 @@ const blockPopulate: Readonly<Record<string, readonly string[]>> = {
     'groups.hasServer',
     'groups.timeline',
     'groups.foreignHosting'
-  ]
+  ],
+  'blocks.logo-wall': ['*']
 };
 
 function populateEntries(): ReadonlyArray<readonly [string, string]> {

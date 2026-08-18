@@ -1,11 +1,16 @@
 import { z } from 'zod';
 import { SeoSchema } from '../site/site-settings-schema';
+import { BentoBlockSchema } from './bento/schema';
 import { CaseCardsBlockSchema } from './case-cards/schema';
+import { ChangelogItemBlockSchema } from './changelog-item/schema';
 import { FaqBlockSchema } from './faq/schema';
 import { FeatureGridBlockSchema } from './feature-grid/schema';
 import { HeroBlockSchema } from './hero/schema';
 import { LeadFormBlockSchema } from './lead-form/schema';
+import { LogoWallBlockSchema } from './logo-wall/schema';
+import { NumberedStepsBlockSchema } from './numbered-steps/schema';
 import { SecurityListBlockSchema } from './security-list/schema';
+import { StatCardBlockSchema } from './stat-card/schema';
 import { StepsBlockSchema } from './steps/schema';
 
 /**
@@ -20,7 +25,12 @@ export const BlockSchema = z.discriminatedUnion('__component', [
   SecurityListBlockSchema,
   CaseCardsBlockSchema,
   FaqBlockSchema,
-  LeadFormBlockSchema
+  LeadFormBlockSchema,
+  LogoWallBlockSchema,
+  BentoBlockSchema,
+  NumberedStepsBlockSchema,
+  StatCardBlockSchema,
+  ChangelogItemBlockSchema
 ]);
 
 export const PageSchema = z.object({
