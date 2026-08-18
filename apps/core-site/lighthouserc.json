@@ -1,0 +1,21 @@
+{
+  "ci": {
+    "collect": {
+      "url": ["http://127.0.0.1:3002/products/private-agent"],
+      "numberOfRuns": 1,
+      "settings": {
+        "preset": "perf",
+        "onlyCategories": ["performance"]
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", { "minScore": 0.9 }]
+      }
+    },
+    "upload": {
+      "target": "filesystem",
+      "outputDir": "./.lighthouseci"
+    }
+  }
+}

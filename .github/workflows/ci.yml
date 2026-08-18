@@ -95,10 +95,55 @@ jobs:
       - name: Check widget gzip size
         run: npm run nx -- run widget:check-size
 
+  lighthouse:
+    name: lighthouse (core-site)
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NX_DAEMON: "false"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --no-audit --progress=false
+
+      - name: Build core-site
+        # No CMS_BASE_URL here on purpose: the site must build and serve from
+        # its seed content alone, the same way it does when the CMS is down.
+        run: npm run nx -- run core-site:build
+
+      - name: Assemble the standalone server
+        run: |
+          cp -r apps/core-site/.next/static apps/core-site/.next/standalone/apps/core-site/.next/static
+          if [ -d apps/core-site/public ]; then
+            cp -r apps/core-site/public apps/core-site/.next/standalone/apps/core-site/public
+          fi
+
+      - name: Start the standalone server
+        run: |
+          PORT=3002 HOSTNAME=127.0.0.1 node apps/core-site/.next/standalone/apps/core-site/server.js &
+          echo $! > server.pid
+          npx --yes wait-on@8 http://127.0.0.1:3002/products/private-agent --timeout 60000
+
+      - name: Run the Lighthouse gate
+        run: npx --yes @lhci/cli@0.13 autorun --config=apps/core-site/lighthouserc.json
+
+      - name: Stop the standalone server
+        if: always()
+        run: kill "$(cat server.pid)" 2>/dev/null || true
+
   publish-image:
     name: publish backend image
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: verify
+    needs: [verify, lighthouse]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
