@@ -1,0 +1,19 @@
+# Use together with the root site stack:
+# docker compose --project-name turni-site --env-file /srv/turni/config/site.env \
+#   -f compose.site.yml -f ops/compose/dev-vps/site.yml up -d --build
+#
+# All ports in compose.site.yml default to 127.0.0.1. This file pins that
+# requirement for the VPS and is intentionally separate from product.yml.
+services:
+  cms-postgres:
+    ports:
+      - "${SITE_BIND_ADDRESS:-127.0.0.1}:${CMS_POSTGRES_PORT:-5433}:5432"
+  cms:
+    ports:
+      - "${SITE_BIND_ADDRESS:-127.0.0.1}:${CMS_PORT:-1337}:1337"
+  mailpit:
+    ports:
+      - "${SITE_BIND_ADDRESS:-127.0.0.1}:${SITE_MAILPIT_UI_PORT:-8026}:8025"
+  core-site:
+    ports:
+      - "${SITE_BIND_ADDRESS:-127.0.0.1}:${CORE_SITE_PORT:-3002}:3002"

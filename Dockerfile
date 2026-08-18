@@ -13,6 +13,7 @@ RUN --mount=type=cache,target=/root/.npm \
 FROM dependencies AS build
 COPY nx.json tsconfig.base.json vitest.config.ts eslint.config.mjs ./
 COPY types ./types
+COPY tools/bootstrap ./tools/bootstrap
 COPY apps/backend ./apps/backend
 COPY packages/contracts ./packages/contracts
 RUN npm run nx -- run-many -t build --projects=backend,contracts

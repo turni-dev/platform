@@ -19,7 +19,7 @@ services:
       POSTGRES_USER: ${CMS_POSTGRES_USER:-strapi}
       POSTGRES_PASSWORD: ${CMS_POSTGRES_PASSWORD:-strapi_local_password}
     ports:
-      - "${CMS_POSTGRES_PORT:-5433}:5432"
+      - "${SITE_BIND_ADDRESS:-127.0.0.1}:${CMS_POSTGRES_PORT:-5433}:5432"
     volumes:
       - turni-cms-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -67,7 +67,7 @@ services:
       # зашифровать API-токен и админка ответит невнятной ошибкой.
       ENCRYPTION_KEY: ${CMS_ENCRYPTION_KEY:-ZGV2LW9ubHktZW5jcnlwdGlvbi1rZXktMzJieXRlcyE=}
     ports:
-      - "${CMS_PORT:-1337}:1337"
+      - "${SITE_BIND_ADDRESS:-127.0.0.1}:${CMS_PORT:-1337}:1337"
 
   # Почта в деве никуда не уходит: письма о заявках видно в веб-интерфейсе.
   mailpit:
@@ -75,7 +75,7 @@ services:
     container_name: turni-site-mailpit
     restart: unless-stopped
     ports:
-      - "${SITE_MAILPIT_UI_PORT:-8026}:8025"
+      - "${SITE_BIND_ADDRESS:-127.0.0.1}:${SITE_MAILPIT_UI_PORT:-8026}:8025"
 
   core-site:
     build:
@@ -92,7 +92,7 @@ services:
       # browser. Provision it through sops/age in any shared environment.
       CMS_WRITE_TOKEN: ${CMS_WRITE_TOKEN:-}
     ports:
-      - "${CORE_SITE_PORT:-3002}:3002"
+      - "${SITE_BIND_ADDRESS:-127.0.0.1}:${CORE_SITE_PORT:-3002}:3002"
 
 volumes:
   turni-cms-postgres-data:

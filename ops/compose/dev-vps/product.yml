@@ -1,0 +1,66 @@
+# Use together with the root product stack:
+# docker compose --project-name turni-product --env-file /srv/turni/config/product.env \
+#   -f compose.yml -f ops/compose/dev-vps/product.yml up -d --build
+#
+# This remains a separate Compose project from the site stack. They do not
+# share a Docker network or a database.
+services:
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: build
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+    command: ["npm", "run", "db:migrate"]
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      HTTP_HOST: 0.0.0.0
+      HTTP_PORT: 3000
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      WIDGET_SESSION_SECRET: ${WIDGET_SESSION_SECRET:?WIDGET_SESSION_SECRET is required}
+      WIDGET_ROUTING_SECRET: ${WIDGET_ROUTING_SECRET:?WIDGET_ROUTING_SECRET is required}
+      OWNER_AUTH_SECRET: ${OWNER_AUTH_SECRET:?OWNER_AUTH_SECRET is required}
+      WEBHOOK_ROUTING_SECRET: ${WEBHOOK_ROUTING_SECRET:?WEBHOOK_ROUTING_SECRET is required}
+      PUBLIC_WEBHOOK_ORIGIN: ${PUBLIC_WEBHOOK_ORIGIN:-https://api.turni.ru}
+      SMTP_HOST: ${SMTP_HOST:?SMTP_HOST is required}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_SECURE: ${SMTP_SECURE:-true}
+      SMTP_USER: ${SMTP_USER:?SMTP_USER is required}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:?SMTP_PASSWORD is required}
+      EMAIL_FROM: ${EMAIL_FROM:?EMAIL_FROM is required}
+      APP_ORIGIN: ${APP_ORIGIN:-https://app.turni.ru}
+      AUTH_COOKIE_SECURE: "true"
+    ports:
+      - "${PRODUCT_BIND_ADDRESS:-127.0.0.1}:${BACKEND_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        BACKEND_ORIGIN: http://backend:3000
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${PRODUCT_BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-3001}:3000"
