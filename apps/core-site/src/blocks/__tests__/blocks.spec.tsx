@@ -1,12 +1,17 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { Bento } from '../bento/bento';
 import { CaseCards } from '../case-cards/case-cards';
+import { ChangelogItem } from '../changelog-item/changelog-item';
+import { ChangelogItemBlockSchema } from '../changelog-item/schema';
 import { FaqAccordion } from '../faq/faq';
 import { FeatureGrid } from '../feature-grid/feature-grid';
 import { Hero } from '../hero/hero';
 import { LeadForm } from '../lead-form/lead-form';
 import type { LeadFormBlock } from '../lead-form/schema';
+import { NumberedSteps } from '../numbered-steps/numbered-steps';
 import { SecurityList } from '../security-list/security-list';
+import { StatCard } from '../stat-card/stat-card';
 import { Steps } from '../steps/steps';
 
 describe('Hero', () => {
@@ -55,6 +60,9 @@ describe('Hero', () => {
     // это изображение и есть LCP-элемент страницы.
     expect(markup).toMatch(/<img[^>]+width="640"[^>]+height="480"/);
     expect(markup).not.toContain('loading="lazy"');
+    // Картинка идёт через next/image (оптимизация и srcset), а не сырым <img src>.
+    expect(markup).toContain('fetchPriority="high"');
+    expect(markup).toMatch(/src="\/_next\/image\?url=/);
   });
 });
 
@@ -275,3 +283,140 @@ describe('LeadForm', () => {
   });
 });
 
+
+describe('Bento', () => {
+  it('reports the size of every tile so the row of equal cards is broken', () => {
+    const markup = renderToStaticMarkup(
+      <Bento
+        __component="blocks.bento"
+        heading="Что внутри"
+        tiles={[
+          { title: 'Диалог', body: 'Агент отвечает сам', size: 'wide' },
+          { title: 'Правила', size: 'tall' },
+          { title: 'Отчёт' }
+        ]}
+      />
+    );
+
+    expect(markup).toContain('data-size="wide"');
+    expect(markup).toContain('data-size="tall"');
+    // Плитка без явного размера остаётся обычной, а не ломает сетку.
+    expect(markup).toContain('data-size="standard"');
+    expect(markup).toContain('Агент отвечает сам');
+  });
+
+  it('carries the tile call to action as a link', () => {
+    const markup = renderToStaticMarkup(
+      <Bento
+        __component="blocks.bento"
+        tiles={[{ title: 'Интеграции', cta: { label: 'Смотреть', href: '/integrations' } }]}
+      />
+    );
+
+    expect(markup).toContain('href="/integrations"');
+    expect(markup).toContain('Смотреть');
+  });
+});
+
+describe('NumberedSteps', () => {
+  it('numbers the steps as an ordered list and keeps the optional caption', () => {
+    const markup = renderToStaticMarkup(
+      <NumberedSteps
+        __component="blocks.numbered-steps"
+        heading="Как это работает"
+        intro="Три шага до запуска"
+        steps={[
+          { title: 'Бриф', body: 'Разбираем процессы', caption: '30 минут' },
+          { title: 'Сборка', body: 'Роль и правила' }
+        ]}
+        note="Запуск за две недели"
+      />
+    );
+
+    expect(markup).toContain('<ol');
+    expect(markup).toContain('Три шага до запуска');
+    expect(markup).toContain('30 минут');
+    expect(markup).toContain('Запуск за две недели');
+  });
+
+  it('renders no markup for a caption the editor left empty', () => {
+    const markup = renderToStaticMarkup(
+      <NumberedSteps
+        __component="blocks.numbered-steps"
+        heading="Как это работает"
+        steps={[{ title: 'Бриф', body: 'Разбираем процессы' }]}
+      />
+    );
+
+    expect(markup).not.toContain('<figcaption');
+  });
+});
+
+describe('StatCard', () => {
+  it('pairs every number with what it measures', () => {
+    const markup = renderToStaticMarkup(
+      <StatCard
+        __component="blocks.stat-card"
+        heading="Цифры"
+        stats={[
+          { value: '10 с', label: 'Ответ гостю', note: 'p95' },
+          { value: '24/7', label: 'Смена агента' }
+        ]}
+        source="Данные пилота"
+      />
+    );
+
+    expect(markup).toContain('10 с');
+    expect(markup).toContain('Ответ гостю');
+    expect(markup).toContain('p95');
+    expect(markup).toContain('Данные пилота');
+  });
+});
+
+describe('ChangelogItem', () => {
+  it('marks the date up as machine readable time', () => {
+    const markup = renderToStaticMarkup(
+      <ChangelogItem
+        __component="blocks.changelog-item"
+        date="2026-08-18"
+        version="0.4.0"
+        title="Слоты консультации"
+        body="Лид выбирает время прямо в форме"
+        tags={['Сайт', 'Формы']}
+        link={{ label: 'Подробнее', href: '/changelog/0-4-0' }}
+      />
+    );
+
+    expect(markup).toMatch(/datetime="2026-08-18"/i);
+    expect(markup).toContain('0.4.0');
+    expect(markup).toContain('Формы');
+    expect(markup).toContain('href="/changelog/0-4-0"');
+  });
+
+  it('keeps an entry without version, tags or link readable', () => {
+    const markup = renderToStaticMarkup(
+      <ChangelogItem
+        __component="blocks.changelog-item"
+        date="2026-08-18"
+        title="Слоты консультации"
+        body="Лид выбирает время прямо в форме"
+      />
+    );
+
+    expect(markup).toContain('<article');
+    expect(markup).not.toContain('<a ');
+    expect(markup).not.toContain('<ul');
+  });
+
+  it('reads a tag both as a plain string and as the repeatable CMS component', () => {
+    const parsed = ChangelogItemBlockSchema.parse({
+      __component: 'blocks.changelog-item',
+      date: '2026-08-18',
+      title: 'Слоты консультации',
+      body: 'Лид выбирает время прямо в форме',
+      tags: ['Сайт', { value: 'Формы' }]
+    });
+
+    expect(parsed.tags).toEqual(['Сайт', 'Формы']);
+  });
+});

@@ -1,0 +1,35 @@
+{
+  "collectionName": "components_blocks_changelog_items",
+  "info": {
+    "displayName": "Запись в журнале изменений",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "date": {
+      "type": "date",
+      "required": true
+    },
+    "version": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "body": {
+      "type": "text",
+      "required": true
+    },
+    "tags": {
+      "type": "component",
+      "repeatable": true,
+      "component": "parts.option"
+    },
+    "link": {
+      "type": "component",
+      "repeatable": false,
+      "component": "parts.link"
+    }
+  }
+}

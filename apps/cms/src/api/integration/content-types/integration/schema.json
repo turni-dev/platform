@@ -1,0 +1,66 @@
+{
+  "kind": "collectionType",
+  "collectionName": "integrations",
+  "info": {
+    "singularName": "integration",
+    "pluralName": "integrations",
+    "displayName": "Интеграция",
+    "description": "Карточка каталога интеграций: витрина /integrations, страница интеграции и стена логотипов на главной берут данные отсюда."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "slug": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "regex": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Латиница для адреса /integrations/{slug}."
+    },
+    "name": {
+      "type": "string",
+      "required": true,
+      "maxLength": 80
+    },
+    "category": {
+      "type": "enumeration",
+      "required": true,
+      "default": "other",
+      "enum": ["calendar", "docs", "messengers", "mail", "crm", "other"]
+    },
+    "summary": {
+      "type": "string",
+      "required": true,
+      "maxLength": 160,
+      "description": "Одна строка для карточки в сетке."
+    },
+    "whatItCan": {
+      "type": "text",
+      "required": true,
+      "description": "Что умеет — список действий человеческим языком, по одному в строке."
+    },
+    "permissionsAsked": {
+      "type": "text",
+      "required": true,
+      "description": "Какие права запрашиваем и зачем. Поле обязательное: без ответа на этот вопрос интеграция на витрину не выходит."
+    },
+    "status": {
+      "type": "enumeration",
+      "required": true,
+      "default": "on_request",
+      "enum": ["available", "in_progress", "on_request"],
+      "description": "Только available попадает на стену логотипов главной."
+    },
+    "logo": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "order": {
+      "type": "integer",
+      "description": "Ручная сортировка внутри категории."
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_blocks_integration_catalogs",
+  "info": {
+    "displayName": "Каталог интеграций",
+    "icon": "apps",
+    "description": "Витрина каталога: карточки в блок не заводятся, они приходят из типа контента «Интеграция». Здесь только обрамление; фильтр и поиск живут в адресе страницы."
+  },
+  "options": {},
+  "attributes": {
+    "heading": {
+      "type": "string",
+      "required": true
+    },
+    "intro": {
+      "type": "text"
+    },
+    "searchLabel": {
+      "type": "string"
+    }
+  }
+}

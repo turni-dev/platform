@@ -4,7 +4,7 @@ import styles from './footer.module.scss';
 type FooterProps = Pick<
   SiteSettings,
   'footerContacts' | 'footerLegalLinks'
-> & { readonly footerNote?: string };
+> & { readonly footerNote?: string | undefined };
 
 export function Footer({ footerContacts, footerLegalLinks, footerNote }: FooterProps) {
   return (

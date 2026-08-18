@@ -1,0 +1,37 @@
+{
+  "kind": "collectionType",
+  "collectionName": "events",
+  "info": {
+    "singularName": "event",
+    "pluralName": "events",
+    "displayName": "Событие аналитики",
+    "description": "Общая таблица событий сайта. Хранит только метаданные (id связанной записи, страница, источник) — никогда имя, контакт или текст задачи. Пишет только сервер (жизненные циклы контент-типов), публичного создания нет."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "type": {
+      "type": "string",
+      "required": true,
+      "description": "Тип события, например 'lead' или 'integration_requested'. Один общий тип для будущих форм — обратной связи, голосования."
+    },
+    "leadId": {
+      "type": "integer",
+      "description": "Числовой id заявки, к которой относится событие. Не относится к другим типам событий."
+    },
+    "integrationSlug": {
+      "type": "string",
+      "maxLength": 60,
+      "description": "Слаг интеграции для события integration_requested. Только слаг каталога, не относится к другим типам событий."
+    },
+    "page": {
+      "type": "string",
+      "description": "Путь страницы, на которой произошло событие."
+    },
+    "source": {
+      "type": "string",
+      "description": "Источник трафика: utm_source, хост-реферер или 'direct'/'site'."
+    }
+  }
+}

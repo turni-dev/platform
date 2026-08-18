@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_parts_numbered_steps",
+  "info": {
+    "displayName": "Нумерованный шаг",
+    "icon": "layer"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "body": {
+      "type": "text",
+      "required": true
+    },
+    "caption": {
+      "type": "string"
+    }
+  }
+}

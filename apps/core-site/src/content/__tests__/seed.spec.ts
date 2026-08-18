@@ -20,6 +20,14 @@ describe('seed content', () => {
     expect(blocks).toContain('blocks.lead-form');
   });
 
+  it('serves the integrations catalog as a page built from the block', () => {
+    const page = seedPage('integrations');
+
+    expect(page?.blocks.map((block) => block.__component)).toEqual([
+      'blocks.integration-catalog'
+    ]);
+  });
+
   it('has nothing for a slug the site does not seed', () => {
     expect(seedPage('unknown-slug')).toBeUndefined();
   });

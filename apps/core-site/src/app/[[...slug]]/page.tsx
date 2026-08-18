@@ -1,10 +1,21 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { renderBlocks } from '../../blocks/block-renderer';
-import { sitePages, siteSettings, siteBookingSlots } from '../../content/site-pages';
+import { renderBlocks, type RenderBlocksOptions } from '../../blocks/block-renderer';
+import {
+  parseCategory,
+  parseQuery,
+  parseRequestedIntegration,
+  REQUESTED_INTEGRATION_PARAM,
+  type CatalogQuery
+} from '../../integrations/integration-catalog';
+import { sitePages, siteSettings, siteBookingSlots, siteIntegrations } from '../../content/site-pages';
 import type { Page } from '../../blocks/page-schema';
 
 type RouteParams = Readonly<{ params: Promise<{ slug?: string[] }> }>;
+
+type SearchParams = Readonly<Record<string, string | string[] | undefined>>;
+
+type PageProps = RouteParams & Readonly<{ searchParams: Promise<SearchParams> }>;
 
 /** Оффер живёт на своём адресе — корень домена его больше не показывает. */
 const OFFER_PATH = 'products/private-agent';
@@ -45,24 +56,57 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
   const image = page.seo?.metaImage ?? settings.defaultSeo?.metaImage;
   const canonical = page.seo?.canonicalURL;
 
-  return {
-    ...(title === undefined ? {} : { title }),
-    ...(description === undefined ? {} : { description }),
-    ...(canonical === undefined ? {} : { alternates: { canonical } }),
-    ...(page.seo?.metaRobots === undefined ? {} : { robots: page.seo.metaRobots }),
-    openGraph: {
-      ...(title === undefined ? {} : { title }),
-      ...(description === undefined ? {} : { description }),
-      ...(image === undefined ? {} : { images: [image] })
-    }
-  };
+  // Поля выставляются по одному: exactOptionalPropertyTypes не различает
+  // «ключ отсутствует» и «ключ равен undefined», а Next по отсутствующему полю
+  // берёт своё умолчание.
+  const openGraph: NonNullable<Metadata['openGraph']> = {};
+  if (title !== undefined) openGraph.title = title;
+  if (description !== undefined) openGraph.description = description;
+  if (image !== undefined) openGraph.images = [image];
+
+  const metadata: Metadata = { openGraph };
+  if (title !== undefined) metadata.title = title;
+  if (description !== undefined) metadata.description = description;
+  if (canonical !== undefined) metadata.alternates = { canonical };
+  if (page.seo?.metaRobots !== undefined) metadata.robots = page.seo.metaRobots;
+
+  return metadata;
 }
 
-export default async function SitePage({ params }: RouteParams) {
+export default async function SitePage({ params, searchParams }: PageProps) {
   const slug = (await params).slug;
   redirectRootToOffer(slug);
 
-  const [page, slots] = await Promise.all([loadPage(slug), siteBookingSlots.get()]);
+  // Каталог интеграций нужен только стене логотипов, но грузится он рядом со
+  // страницей: блок серверный, своего запроса сделать не может.
+  const [page, slots, integrations, query] = await Promise.all([
+    loadPage(slug),
+    siteBookingSlots.get(),
+    siteIntegrations.list(),
+    searchParams
+  ]);
 
-  return <>{renderBlocks(page.blocks, slots.length === 0 ? {} : { slots })}</>;
+  // Пришли из каталога по кнопке «Нужна эта интеграция» — форма отправит слаг
+  // скрытым полем. Значение проверяется здесь, на сервере: разметка страницы
+  // не должна зависеть от того, что кто-то дописал в адрес.
+  const requestedIntegration = parseRequestedIntegration(query[REQUESTED_INTEGRATION_PARAM]);
+
+  // Витрина каталога — блок, а не отдельный маршрут: состояние фильтра она
+  // читает из адреса текущей страницы, а ссылки строит от её же пути.
+  const catalogQuery: CatalogQuery = {
+    category: parseCategory(query['category']),
+    query: parseQuery(query['q'])
+  };
+
+  // Пустой список и отсутствие списка для блока — одно и то же, поэтому пустой
+  // не передаём вовсе.
+  const options: RenderBlocksOptions = {
+    slots: slots.length > 0 ? slots : undefined,
+    integrations: integrations.length > 0 ? integrations : undefined,
+    requestedIntegration,
+    pathname: `/${pathOf(slug)}`,
+    catalogQuery
+  };
+
+  return <>{renderBlocks(page.blocks, options)}</>;
 }

@@ -1,4 +1,11 @@
 import { z } from 'zod';
+import { isHoneypotTripped } from '../anti-abuse/honeypot';
+import { runIdempotently, type IdempotencyGuard } from '../anti-abuse/idempotency';
+import { resolveRequestIdentity } from '../anti-abuse/identity';
+import { decideRateLimit, type RateLimiters } from '../anti-abuse/rate-limit';
+import { parseRequestedIntegration } from '../integrations/integration-catalog';
+import { IntegrationSlugSchema } from '../integrations/integration-schema';
+import { deriveLeadAnalytics } from './lead-analytics';
 
 export type LeadFetch = (
   url: string,
@@ -20,7 +27,19 @@ export interface LeadIntakeOptions {
   readonly apiToken?: string | undefined;
   readonly fetch: LeadFetch;
   readonly onWarning?: (message: string) => void;
+  /**
+   * Per-ip and per-session limiters shared across requests handled by the
+   * same process (the caller must construct these once, at module scope,
+   * and pass the same instances on every call — a fresh instance per call
+   * would never see more than one request and could never block anything).
+   * Omitting this disables rate limiting; production wiring must always
+   * supply it, tests may opt out explicitly.
+   */
+  readonly rateLimit?: RateLimiters | undefined;
 }
+
+class SlotConflictError extends Error {}
+class SlotUnavailableError extends Error {}
 
 const trimmed = z.string().trim().min(1);
 
@@ -40,7 +59,10 @@ const LeadSchema = z.object({
   /** Id слота, если посетитель выбрал время звонка. Необязательное поле. */
   slotId: trimmed.optional(),
   /** Читаемая подпись того же слота — форма прислала её сама, без запроса к CMS. */
-  slotLabel: trimmed.optional()
+  slotLabel: trimmed.optional(),
+  /** Какую интеграцию просили из каталога. Только слаг: в заявку не должен
+   * попадать произвольный текст из адресной строки. */
+  requestedIntegration: IntegrationSlugSchema.optional()
 });
 
 /**
@@ -65,16 +87,50 @@ function parseSlotChoice(raw: string | undefined): { id?: string; label?: string
  * Единственная дверь для заявок. Ключ записи в CMS остаётся на сервере, тело
  * заявки не попадает ни в логи, ни в ответ, а повтор той же попытки не создаёт
  * вторую запись.
+ *
+ * Антиабуз (rate limit, honeypot, идемпотентность) живёт единым переиспользуемым
+ * слоем в `../anti-abuse/*`: эта функция только применяет его к заявке и не
+ * переизобретает ни одну из трёх проверок.
  */
 export async function handleLeadRequest(
   request: Request,
   options: LeadIntakeOptions
 ): Promise<Response> {
-  const form = await request.formData();
+  const identity = resolveRequestIdentity(request);
+  const response = await process(request, options, identity);
+
+  if (identity.setCookie === undefined) {
+    return response;
+  }
+
+  const withCookie = new Response(response.body, response);
+  withCookie.headers.set('Set-Cookie', identity.setCookie);
+
+  return withCookie;
+}
+
+async function process(
+  request: Request,
+  options: LeadIntakeOptions,
+  identity: Readonly<{ ip: string; sessionId: string }>
+): Promise<Response> {
   const wantsJson = (request.headers.get('accept') ?? '').includes('application/json');
 
+  if (options.rateLimit !== undefined) {
+    const decision = decideRateLimit(options.rateLimit, {
+      formName: 'lead',
+      ip: identity.ip,
+      sessionId: identity.sessionId
+    });
+    if (!decision.allowed) {
+      return problem(429, 'Слишком много попыток, подождите немного', wantsJson);
+    }
+  }
+
+  const form = await request.formData();
+
   // Ловушка сработала — отвечаем как при успехе, чтобы не подсказывать боту.
-  if (field(form, 'companySite') !== undefined) {
+  if (isHoneypotTripped(form, 'companySite')) {
     return accepted(wantsJson);
   }
 
@@ -92,7 +148,11 @@ export async function handleLeadRequest(
     consent: field(form, 'consent') ?? '',
     idempotencyKey: field(form, 'idempotencyKey') ?? '',
     slotId: slotChoice.id,
-    slotLabel: slotChoice.label
+    slotLabel: slotChoice.label,
+    // Скрытое поле формы приходит от посетителя так же, как и остальные: всё,
+    // что не слаг, отбрасываем, а не отказываем в приёме заявки — терять
+    // настоящего клиента из-за испорченной ссылки нельзя.
+    requestedIntegration: parseRequestedIntegration(field(form, 'requestedIntegration'))
   });
   if (!lead.success) {
     return problem(422, 'Проверьте контакт и согласие на обработку данных', wantsJson);
@@ -113,67 +173,88 @@ export async function handleLeadRequest(
     headers['Authorization'] = `Bearer ${options.apiToken}`;
   }
 
+  // Метаданные без ПДн: страница и источник читаются только из заголовков
+  // запроса, тело формы сюда не заглядывает.
+  const analytics = deriveLeadAnalytics(request);
+
+  const guard: IdempotencyGuard<Awaited<ReturnType<LeadFetch>>> = {
+    alreadyHandled: (key) => alreadyStored(baseUrl, key, headers, options.fetch),
+    isConcurrentDuplicate: async (response) => !response.ok && (await isDuplicate(response))
+  };
+
   try {
-    if (await alreadyStored(baseUrl, lead.data.idempotencyKey, headers, options.fetch)) {
+    const outcome = await runIdempotently(lead.data.idempotencyKey, guard, async () => {
+      // Бронь пробуем один раз за реальную заявку: alreadyHandled внутри
+      // runIdempotently уже отсеял повтор одной и той же попытки, так что до
+      // сюда мы доходим ровно один раз для каждого идемпотентного ключа.
+      if (lead.data.slotId !== undefined) {
+        const reservation = await reserveSlot(baseUrl, lead.data.slotId, headers, options.fetch);
+        if (reservation === 'conflict') {
+          throw new SlotConflictError();
+        }
+        if (reservation === 'failed') {
+          throw new SlotUnavailableError();
+        }
+      }
+
+      // Список полей перечислен явно: в CMS уезжает только то, что мы собираем.
+      return options.fetch(`${baseUrl}/api/leads`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          data: {
+            name: lead.data.name,
+            contact: lead.data.contact,
+            company: lead.data.company,
+            task: lead.data.task,
+            // В CMS это обычное текстовое поле: редактор читает заявку глазами,
+            // а json-редактор в админке для этого не нужен.
+            channels: lead.data.channels.join(', '),
+            hasServer: lead.data.hasServer,
+            timeline: lead.data.timeline,
+            foreignHosting: lead.data.foreignHosting,
+            requestedIntegration: lead.data.requestedIntegration,
+            idempotencyKey: lead.data.idempotencyKey,
+            consentAt: new Date().toISOString(),
+            // Метаданные для события в аналитике — не путать с ПДн заявки.
+            page: analytics.page,
+            source: analytics.source,
+            bookedSlot: lead.data.slotId,
+            slotLabel: lead.data.slotLabel
+          }
+        })
+      });
+    });
+
+    if (outcome.kind === 'duplicate') {
       return accepted(wantsJson);
     }
 
-    // Бронь пробуем один раз за реальную заявку: alreadyStored выше уже
-    // отсеял повтор одной и той же попытки, так что до сюда мы доходим
-    // ровно один раз для каждого идемпотентного ключа.
-    if (lead.data.slotId !== undefined) {
-      const reservation = await reserveSlot(baseUrl, lead.data.slotId, headers, options.fetch);
-      if (reservation === 'conflict') {
-        return problem(409, 'Этот слот уже заняли, выберите другое время', wantsJson);
-      }
-      if (reservation === 'failed') {
-        options.onWarning?.('Slot reservation could not be completed');
-
-        return problem(502, 'Не отправилось, попробуйте ещё раз', wantsJson);
-      }
-    }
-
-    // Список полей перечислен явно: в CMS уезжает только то, что мы собираем.
-    const response = await options.fetch(`${baseUrl}/api/leads`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        data: {
-          name: lead.data.name,
-          contact: lead.data.contact,
-          company: lead.data.company,
-          task: lead.data.task,
-          // В CMS это обычное текстовое поле: редактор читает заявку глазами,
-          // а json-редактор в админке для этого не нужен.
-          channels: lead.data.channels.join(', '),
-          hasServer: lead.data.hasServer,
-          timeline: lead.data.timeline,
-          foreignHosting: lead.data.foreignHosting,
-          idempotencyKey: lead.data.idempotencyKey,
-          consentAt: new Date().toISOString(),
-          ...(lead.data.slotId === undefined ? {} : { bookedSlot: lead.data.slotId }),
-          ...(lead.data.slotLabel === undefined ? {} : { slotLabel: lead.data.slotLabel })
-        }
-      })
-    });
-    if (!response.ok) {
-      // Уникальный индекс по ключу — вторая линия защиты от повтора: она
-      // срабатывает и тогда, когда две отправки идут одновременно.
-      if (await isDuplicate(response)) {
-        return accepted(wantsJson);
-      }
-
-      options.onWarning?.(`Lead was refused by the CMS with status ${String(response.status)}`);
+    if (!outcome.result.ok) {
+      // Уникальный индекс по ключу уже отловлен в isConcurrentDuplicate выше;
+      // сюда попадает только настоящий отказ CMS.
+      options.onWarning?.(
+        `Lead was refused by the CMS with status ${String(outcome.result.status)}`
+      );
 
       return problem(502, 'Не отправилось, попробуйте ещё раз', wantsJson);
     }
-  } catch {
+
+    return accepted(wantsJson);
+  } catch (error) {
+    if (error instanceof SlotConflictError) {
+      return problem(409, 'Этот слот уже заняли, выберите другое время', wantsJson);
+    }
+    if (error instanceof SlotUnavailableError) {
+      options.onWarning?.('Slot reservation could not be completed');
+
+      return problem(502, 'Не отправилось, попробуйте ещё раз', wantsJson);
+    }
+
     options.onWarning?.('Lead could not be delivered to the CMS');
 
     return problem(502, 'Не отправилось, попробуйте ещё раз', wantsJson);
   }
-
-  return accepted(wantsJson);
 }
 
 /**

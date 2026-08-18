@@ -12,6 +12,9 @@
       "command": "strapi develop",
       "options": { "cwd": "apps/cms" }
     },
+    "test": {
+      "command": "vitest run --config vitest.config.ts apps/cms/src"
+    },
     "start": {
       "command": "strapi start",
       "options": { "cwd": "apps/cms" }

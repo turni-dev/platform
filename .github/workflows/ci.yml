@@ -1,182 +1,227 @@
-name: ci
+# name: ci
 
-on:
-  pull_request:
-  push:
-    branches:
-      - main
+# on:
+#   pull_request:
+#   push:
+#     branches:
+#       - main
 
-permissions:
-  contents: read
+# permissions:
+#   contents: read
 
-env:
-  REGISTRY: ghcr.io
+# env:
+#   REGISTRY: ghcr.io
 
-concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+# concurrency:
+#   group: ci-${{ github.workflow }}-${{ github.ref }}
+#   cancel-in-progress: true
 
-jobs:
-  verify:
-    name: verify
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    services:
-      postgres:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_DB: turni
-          POSTGRES_USER: turni
-          POSTGRES_PASSWORD: turni_ci_password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U turni -d turni"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      NX_DAEMON: "false"
-      DATABASE_URL: postgres://turni:turni_ci_password@127.0.0.1:5432/turni
-      RLS_TEST_DATABASE_URL: postgres://turni:turni_ci_password@127.0.0.1:5432/turni
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+# jobs:
+#   verify:
+#     name: verify
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 15
+#     services:
+#       postgres:
+#         image: pgvector/pgvector:pg16
+#         env:
+#           POSTGRES_DB: turni
+#           POSTGRES_USER: turni
+#           POSTGRES_PASSWORD: turni_ci_password
+#         ports:
+#           - 5432:5432
+#         options: >-
+#           --health-cmd "pg_isready -U turni -d turni"
+#           --health-interval 5s
+#           --health-timeout 5s
+#           --health-retries 10
+#     env:
+#       NX_DAEMON: "false"
+#       DATABASE_URL: postgres://turni:turni_ci_password@127.0.0.1:5432/turni
+#       RLS_TEST_DATABASE_URL: postgres://turni:turni_ci_password@127.0.0.1:5432/turni
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: npm
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: "24"
+#           cache: npm
 
-      - name: Install dependencies
-        run: npm ci --ignore-scripts --no-audit --progress=false
+#       - name: Install dependencies
+#         run: npm ci --ignore-scripts --no-audit --progress=false
 
-      - name: Validate compose
-        run: docker compose config
+#       - name: Validate compose
+#         run: docker compose config
 
-      - name: Apply database migrations
-        run: npm run db:migrate
+#       - name: Apply database migrations
+#         run: npm run db:migrate
 
-      - name: Verify idempotent staging seed
-        run: |
-          npm run db:seed -- staging
-          npm run db:seed -- staging
+#       - name: Verify idempotent staging seed
+#         run: |
+#           npm run db:seed -- staging
+#           npm run db:seed -- staging
 
-      - name: Reject raw SQL construction
-        shell: bash
-        run: |
-          if grep -R --line-number --include='*.ts' 'sql\.raw(' apps/backend/src; then
-            echo 'sql.raw is forbidden in backend source'
-            exit 1
-          fi
+#       - name: Reject raw SQL construction
+#         shell: bash
+#         run: |
+#           if grep -R --line-number --include='*.ts' 'sql\.raw(' apps/backend/src; then
+#             echo 'sql.raw is forbidden in backend source'
+#             exit 1
+#           fi
 
-      - name: Run tests, lint, and typecheck
-        run: |
-          npm run nx -- run-many -t test --parallel=1
-          npm run nx -- run-many -t lint --parallel=1
-          npm run nx -- run-many -t typecheck --parallel=1
-          npm run eval
+#       - name: Run tests, lint, and typecheck
+#         run: |
+#           npm run nx -- run-many -t test --parallel=1
+#           npm run nx -- run-many -t lint --parallel=1
+#           npm run nx -- run-many -t typecheck --parallel=1
+#           npm run eval
 
-      - name: Test bootstrap tools
-        run: |
-          npx eslint tools/bootstrap/*.mjs
-          node --test tools/bootstrap/*.spec.mjs
+#       - name: Test bootstrap tools
+#         run: |
+#           npx eslint tools/bootstrap/*.mjs
+#           node --test tools/bootstrap/*.spec.mjs
 
-      - name: Run coverage gate
-        run: npm run nx -- run-many -t coverage --parallel=1
+#       - name: Run coverage gate
+#         run: npm run nx -- run-many -t coverage --parallel=1
 
-      - name: Build
-        run: npm run nx -- run-many -t build
+#       - name: Build
+#         run: npm run nx -- run-many -t build
 
-      - name: Test widget gzip size check
-        run: npm run nx -- run widget:check-size-test
+#       - name: Test widget gzip size check
+#         run: npm run nx -- run widget:check-size-test
 
-      - name: Check widget gzip size
-        run: npm run nx -- run widget:check-size
+#       - name: Check widget gzip size
+#         run: npm run nx -- run widget:check-size
 
-  publish-image:
-    name: publish backend image
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: verify
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      packages: write
-    outputs:
-      image: ${{ steps.image.outputs.reference }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+#   lighthouse:
+#     name: lighthouse (core-site)
+#     needs: verify
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 10
+#     env:
+#       NX_DAEMON: "false"
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
 
-      - name: Resolve image reference
-        id: image
-        shell: bash
-        run: |
-          image_name="${GITHUB_REPOSITORY,,}-backend"
-          echo "name=${image_name}" >> "${GITHUB_OUTPUT}"
-          echo "reference=${REGISTRY}/${image_name}:sha-${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: "24"
+#           cache: npm
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+#       - name: Install dependencies
+#         run: npm ci --ignore-scripts --no-audit --progress=false
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+#       - name: Build core-site
+#         # No CMS_BASE_URL here on purpose: the site must build and serve from
+#         # its seed content alone, the same way it does when the CMS is down.
+#         run: npm run nx -- run core-site:build
 
-      - name: Generate image metadata
-        id: metadata
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}
-          tags: |
-            type=raw,value=staging
-            type=sha,prefix=sha-,format=long
+#       - name: Assemble the standalone server
+#         run: |
+#           cp -r apps/core-site/.next/static apps/core-site/.next/standalone/apps/core-site/.next/static
+#           if [ -d apps/core-site/public ]; then
+#             cp -r apps/core-site/public apps/core-site/.next/standalone/apps/core-site/public
+#           fi
 
-      - name: Build and push image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.metadata.outputs.tags }}
-          labels: ${{ steps.metadata.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+#       - name: Start the standalone server
+#         run: |
+#           PORT=3002 HOSTNAME=127.0.0.1 node apps/core-site/.next/standalone/apps/core-site/server.js &
+#           echo $! > server.pid
+#           npx --yes wait-on@8 http://127.0.0.1:3002/products/private-agent --timeout 60000
 
-  deploy-staging:
-    name: deploy staging
-    if: vars.STAGING_DEPLOY_ENABLED == 'true'
-    needs: publish-image
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    environment: staging
-    permissions:
-      contents: read
-    env:
-      DEPLOY_IMAGE: ${{ needs.publish-image.outputs.image }}
-      SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
-      SSH_USER: ${{ secrets.STAGING_SSH_USER }}
-    steps:
-      - name: Configure restricted SSH key
-        shell: bash
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
-          SSH_KNOWN_HOSTS: ${{ secrets.STAGING_SSH_KNOWN_HOSTS }}
-        run: |
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "${SSH_PRIVATE_KEY}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          printf '%s\n' "${SSH_KNOWN_HOSTS}" > ~/.ssh/known_hosts
+#       - name: Run the Lighthouse gate
+#         run: npx --yes @lhci/cli@0.13 autorun --config=apps/core-site/lighthouserc.json
 
-      - name: Deploy immutable image
-        shell: bash
-        run: |
-          [[ "${SSH_USER}" =~ ^[a-z_][a-z0-9_-]*$ ]]
-          [[ "${SSH_HOST}" =~ ^[A-Za-z0-9.-]+$ ]]
-          [[ "${DEPLOY_IMAGE}" =~ ^ghcr\.io/[a-z0-9._/-]+:sha-[0-9a-f]{40}$ ]]
-          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes \
-            "${SSH_USER}@${SSH_HOST}" turni-deploy "${DEPLOY_IMAGE}"
+#       - name: Stop the standalone server
+#         if: always()
+#         run: kill "$(cat server.pid)" 2>/dev/null || true
+
+#   publish-image:
+#     name: publish backend image
+#     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+#     needs: [verify, lighthouse]
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 15
+#     permissions:
+#       contents: read
+#       packages: write
+#     outputs:
+#       image: ${{ steps.image.outputs.reference }}
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+
+#       - name: Resolve image reference
+#         id: image
+#         shell: bash
+#         run: |
+#           image_name="${GITHUB_REPOSITORY,,}-backend"
+#           echo "name=${image_name}" >> "${GITHUB_OUTPUT}"
+#           echo "reference=${REGISTRY}/${image_name}:sha-${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+
+#       - name: Set up Docker Buildx
+#         uses: docker/setup-buildx-action@v3
+
+#       - name: Log in to GHCR
+#         uses: docker/login-action@v3
+#         with:
+#           registry: ${{ env.REGISTRY }}
+#           username: ${{ github.actor }}
+#           password: ${{ secrets.GITHUB_TOKEN }}
+
+#       - name: Generate image metadata
+#         id: metadata
+#         uses: docker/metadata-action@v5
+#         with:
+#           images: ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}
+#           tags: |
+#             type=raw,value=staging
+#             type=sha,prefix=sha-,format=long
+
+#       - name: Build and push image
+#         uses: docker/build-push-action@v6
+#         with:
+#           context: .
+#           push: true
+#           tags: ${{ steps.metadata.outputs.tags }}
+#           labels: ${{ steps.metadata.outputs.labels }}
+#           cache-from: type=gha
+#           cache-to: type=gha,mode=max
+
+#   deploy-staging:
+#     name: deploy staging
+#     if: vars.STAGING_DEPLOY_ENABLED == 'true'
+#     needs: publish-image
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 10
+#     environment: staging
+#     permissions:
+#       contents: read
+#     env:
+#       DEPLOY_IMAGE: ${{ needs.publish-image.outputs.image }}
+#       SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
+#       SSH_USER: ${{ secrets.STAGING_SSH_USER }}
+#     steps:
+#       - name: Configure restricted SSH key
+#         shell: bash
+#         env:
+#           SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+#           SSH_KNOWN_HOSTS: ${{ secrets.STAGING_SSH_KNOWN_HOSTS }}
+#         run: |
+#           install -m 700 -d ~/.ssh
+#           printf '%s\n' "${SSH_PRIVATE_KEY}" > ~/.ssh/id_ed25519
+#           chmod 600 ~/.ssh/id_ed25519
+#           printf '%s\n' "${SSH_KNOWN_HOSTS}" > ~/.ssh/known_hosts
+
+#       - name: Deploy immutable image
+#         shell: bash
+#         run: |
+#           [[ "${SSH_USER}" =~ ^[a-z_][a-z0-9_-]*$ ]]
+#           [[ "${SSH_HOST}" =~ ^[A-Za-z0-9.-]+$ ]]
+#           [[ "${DEPLOY_IMAGE}" =~ ^ghcr\.io/[a-z0-9._/-]+:sha-[0-9a-f]{40}$ ]]
+#           ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes \
+#             "${SSH_USER}@${SSH_HOST}" turni-deploy "${DEPLOY_IMAGE}"

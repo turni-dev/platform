@@ -1,0 +1,112 @@
+.section {
+  padding: var(--site-section-space) var(--site-gutter);
+}
+
+.inner {
+  width: min(100%, var(--site-content-width));
+  margin: 0 auto;
+}
+
+.heading {
+  margin: 0;
+  max-width: var(--site-text-width);
+  font-size: var(--site-font-size-section);
+  font-weight: var(--site-font-weight-heading);
+  line-height: var(--site-line-height-heading);
+  letter-spacing: var(--site-tracking-heading);
+}
+
+.intro {
+  margin: var(--site-space-4) 0 0;
+  max-width: var(--site-text-width);
+  color: var(--turni-text-muted);
+  font-size: var(--site-font-size-lead);
+}
+
+// Плитки разного размера: ряд одинаковых карточек ломается на широком экране,
+// на мобильном порядок остаётся линейным.
+.grid {
+  display: grid;
+  gap: var(--site-gap);
+  margin: var(--site-heading-gap) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--site-space-3);
+  padding: var(--site-space-5);
+  border: 1px solid var(--turni-border);
+  border-radius: var(--turni-radius-md);
+  background: var(--turni-surface);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--site-font-size-subsection);
+  font-weight: var(--site-font-weight-strong);
+  line-height: var(--site-line-height-heading);
+}
+
+.body {
+  margin: 0;
+  color: var(--turni-text-muted);
+}
+
+// Единственный акцент в блоке — на действии.
+.cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--site-touch-target);
+  margin-top: auto;
+  color: var(--turni-accent);
+  font-weight: var(--site-font-weight-strong);
+
+  &:focus-visible {
+    outline: var(--turni-focus-width) solid var(--turni-focus-ring);
+    outline-offset: var(--turni-focus-offset);
+  }
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(6, 1fr);
+    grid-auto-rows: minmax(11rem, auto);
+  }
+
+  .tile {
+    grid-column: span 3;
+  }
+
+  .tile[data-size='standard'] {
+    grid-column: span 3;
+  }
+
+  .tile[data-size='wide'] {
+    grid-column: span 6;
+  }
+
+  .tile[data-size='tall'] {
+    grid-column: span 3;
+    grid-row: span 2;
+  }
+}
+
+@media (min-width: 1280px) {
+  .tile,
+  .tile[data-size='standard'] {
+    grid-column: span 2;
+  }
+
+  .tile[data-size='wide'] {
+    grid-column: span 4;
+  }
+
+  .tile[data-size='tall'] {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+}

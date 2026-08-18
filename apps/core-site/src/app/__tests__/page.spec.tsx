@@ -4,12 +4,24 @@ import SitePage, { generateMetadata } from '../[[...slug]]/page';
 
 // Без CMS_BASE_URL страница и настройки собираются из семени — как в локальной
 // разработке, где Strapi поднимать не нужно.
-function route(slug?: string[]): { params: Promise<{ slug?: string[] }> } {
-  return { params: Promise.resolve(slug === undefined ? {} : { slug }) };
+function route(
+  slug?: string[],
+  search: Readonly<Record<string, string | string[] | undefined>> = {}
+): {
+  params: Promise<{ slug?: string[] }>;
+  searchParams: Promise<Readonly<Record<string, string | string[] | undefined>>>;
+} {
+  return {
+    params: Promise.resolve(slug === undefined ? {} : { slug }),
+    searchParams: Promise.resolve(search)
+  };
 }
 
-async function render(slug?: string[]): Promise<string> {
-  return renderToStaticMarkup(await SitePage(route(slug)));
+async function render(
+  slug?: string[],
+  search: Readonly<Record<string, string | string[] | undefined>> = {}
+): Promise<string> {
+  return renderToStaticMarkup(await SitePage(route(slug, search)));
 }
 
 /** `redirect()` бросает специальную ошибку с `NEXT_REDIRECT` в digest —
@@ -67,5 +79,46 @@ describe('site page', () => {
 
     expect(metadata.title).toBe('Turni — ИИ-сотрудник под ключ');
     expect(metadata.description).toContain('ваши процессы');
+  });
+});
+
+describe('integrations catalog as a page', () => {
+  it('serves /integrations through the catch-all, not through a route of its own', async () => {
+    const markup = await render(['integrations']);
+
+    expect(markup).toContain('data-block="blocks.integration-catalog"');
+  });
+
+  it('builds the filter links from the path of the page the block stands on', async () => {
+    const markup = await render(['integrations'], { category: 'messengers' });
+
+    expect(markup).toContain('href="/integrations?category=messengers"');
+    expect(markup).toContain('action="/integrations"');
+  });
+
+  it('stays alive with an empty catalog when the CMS is unreachable', async () => {
+    const markup = await render(['integrations']);
+
+    expect(markup).toContain('Пока пусто');
+  });
+});
+
+describe('site page with a requested integration', () => {
+  it('puts the slug from the address into the lead form as a hidden field', async () => {
+    const markup = await render(['products', 'private-agent'], {
+      requested_integration: 'google-calendar'
+    });
+
+    expect(markup).toContain('name="requestedIntegration"');
+    expect(markup).toContain('value="google-calendar"');
+  });
+
+  it('renders the same page without the field when the parameter is junk', async () => {
+    const markup = await render(['products', 'private-agent'], {
+      requested_integration: '<script>alert(1)</script>'
+    });
+
+    expect(markup).not.toContain('name="requestedIntegration"');
+    expect(markup).not.toContain('alert(1)');
   });
 });

@@ -49,4 +49,4 @@ Read only the relevant notes: overview (`Обзор проекта`, `Платф
 
 ## Commands
 
-`npm install` · `docker compose up` · `npm run nx -- run-many -t serve|test|lint|typecheck` · `npm run eval` · `npm run db:migrate`
+`npm install` (`apps/cms` is deliberately outside the root workspaces, so install its dependencies separately with `npm ci --prefix apps/cms`) · `docker compose up` · `npm run nx -- run-many -t serve|test|lint|typecheck` · `npm run eval` · `npm run db:migrate`
