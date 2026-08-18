@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-turni}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-turni_local_password}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${PRODUCT_BIND_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - turni-postgres-data:/var/lib/postgresql/data
       - ./ops/compose/postgres/init:/docker-entrypoint-initdb.d:ro
@@ -27,7 +27,7 @@ services:
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec", "--save", "60", "1", "--maxmemory-policy", "noeviction"]
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${PRODUCT_BIND_ADDRESS:-127.0.0.1}:${REDIS_PORT:-6379}:6379"
     volumes:
       - turni-redis-durable-data:/data
     healthcheck:
@@ -43,7 +43,7 @@ services:
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "no", "--save", "", "--maxmemory-policy", "allkeys-lru"]
     ports:
-      - "${REDIS_EPHEMERAL_PORT:-6380}:6379"
+      - "${PRODUCT_BIND_ADDRESS:-127.0.0.1}:${REDIS_EPHEMERAL_PORT:-6380}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -60,8 +60,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-turni}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-turni_local_password}
     ports:
-      - "${MINIO_API_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+      - "${PRODUCT_BIND_ADDRESS:-127.0.0.1}:${MINIO_API_PORT:-9000}:9000"
+      - "${PRODUCT_BIND_ADDRESS:-127.0.0.1}:${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       - turni-minio-data:/data
     healthcheck:
@@ -83,8 +83,8 @@ services:
       MP_SMTP_AUTH_ACCEPT_ANY: "true"
       MP_SMTP_AUTH_ALLOW_INSECURE: "true"
     ports:
-      - "${MAILPIT_SMTP_PORT:-1025}:1025"
-      - "${MAILPIT_UI_PORT:-8025}:8025"
+      - "${PRODUCT_BIND_ADDRESS:-127.0.0.1}:${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${PRODUCT_BIND_ADDRESS:-127.0.0.1}:${MAILPIT_UI_PORT:-8025}:8025"
 
 volumes:
   turni-postgres-data:

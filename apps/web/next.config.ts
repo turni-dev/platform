@@ -20,6 +20,7 @@ function backendOrigin(): string {
  * TypeScript source. `resolve.extensionAlias` below is what makes them resolve.
  */
 const nextConfig: NextConfig = {
+  output: 'standalone',
   turbopack: {
     root: resolve(import.meta.dirname, '../..')
   },

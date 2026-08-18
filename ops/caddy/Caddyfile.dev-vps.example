@@ -1,0 +1,32 @@
+# Copy to /etc/caddy/Caddyfile. Values starting with {$...} are read from the
+# Caddy systemd environment file, never committed to Git.
+
+turni.ru {
+    reverse_proxy 127.0.0.1:3002
+}
+
+www.turni.ru {
+    redir https://turni.ru{uri} permanent
+}
+
+cms.turni.ru {
+    # `route` preserves this order: foreign IPs receive 403 before Caddy asks
+    # for Basic Auth. Without it Caddy may reorder directives.
+    route {
+        @blocked not remote_ip {$CMS_ADMIN_IP}
+        respond @blocked "Forbidden" 403
+
+        basic_auth {
+            {$CMS_ADMIN_USER} {$CMS_ADMIN_PASSWORD_HASH}
+        }
+        reverse_proxy 127.0.0.1:1337
+    }
+}
+
+app.turni.ru {
+    reverse_proxy 127.0.0.1:3001
+}
+
+api.turni.ru {
+    reverse_proxy 127.0.0.1:3000
+}
