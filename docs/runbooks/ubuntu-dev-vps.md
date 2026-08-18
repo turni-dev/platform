@@ -86,6 +86,19 @@ sudo -iu turni docker version
 sudo -iu turni docker compose version
 ```
 
+`<<EOF` означает многострочный ввод: после вставки блока shell показывает приглашение `>` и ждёт строку `EOF` без пробелов. Это нормальное поведение. Если ввод прерван или терминал уже ждёт `>`, нажмите `Ctrl+C` и выполните вариант без многострочного ввода:
+
+```bash
+sudo rm -f /etc/apt/sources.list.d/docker.sources
+. /etc/os-release
+printf 'Types: deb\nURIs: https://download.docker.com/linux/ubuntu\nSuites: %s\nComponents: stable\nArchitectures: %s\nSigned-By: /etc/apt/keyrings/docker.asc\n' "${UBUNTU_CODENAME:-$VERSION_CODENAME}" "$(dpkg --print-architecture)" | sudo tee /etc/apt/sources.list.d/docker.sources >/dev/null
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker turni
+sudo -iu turni docker version
+sudo -iu turni docker compose version
+```
+
 Docker-порты обходят обычные правила UFW. Поэтому все сервисные порты должны быть привязаны к `127.0.0.1`, а не к `0.0.0.0`.
 
 ## 3. Установить Caddy и открыть четыре домена
