@@ -3,6 +3,8 @@ import { isHoneypotTripped } from '../anti-abuse/honeypot';
 import { runIdempotently, type IdempotencyGuard } from '../anti-abuse/idempotency';
 import { resolveRequestIdentity } from '../anti-abuse/identity';
 import { decideRateLimit, type RateLimiters } from '../anti-abuse/rate-limit';
+import { parseRequestedIntegration } from '../integrations/integration-catalog';
+import { IntegrationSlugSchema } from '../integrations/integration-schema';
 import { deriveLeadAnalytics } from './lead-analytics';
 
 export type LeadFetch = (
@@ -57,7 +59,10 @@ const LeadSchema = z.object({
   /** Id слота, если посетитель выбрал время звонка. Необязательное поле. */
   slotId: trimmed.optional(),
   /** Читаемая подпись того же слота — форма прислала её сама, без запроса к CMS. */
-  slotLabel: trimmed.optional()
+  slotLabel: trimmed.optional(),
+  /** Какую интеграцию просили из каталога. Только слаг: в заявку не должен
+   * попадать произвольный текст из адресной строки. */
+  requestedIntegration: IntegrationSlugSchema.optional()
 });
 
 /**
@@ -143,7 +148,11 @@ async function process(
     consent: field(form, 'consent') ?? '',
     idempotencyKey: field(form, 'idempotencyKey') ?? '',
     slotId: slotChoice.id,
-    slotLabel: slotChoice.label
+    slotLabel: slotChoice.label,
+    // Скрытое поле формы приходит от посетителя так же, как и остальные: всё,
+    // что не слаг, отбрасываем, а не отказываем в приёме заявки — терять
+    // настоящего клиента из-за испорченной ссылки нельзя.
+    requestedIntegration: parseRequestedIntegration(field(form, 'requestedIntegration'))
   });
   if (!lead.success) {
     return problem(422, 'Проверьте контакт и согласие на обработку данных', wantsJson);
@@ -204,6 +213,7 @@ async function process(
             hasServer: lead.data.hasServer,
             timeline: lead.data.timeline,
             foreignHosting: lead.data.foreignHosting,
+            requestedIntegration: lead.data.requestedIntegration,
             idempotencyKey: lead.data.idempotencyKey,
             consentAt: new Date().toISOString(),
             // Метаданные для события в аналитике — не путать с ПДн заявки.

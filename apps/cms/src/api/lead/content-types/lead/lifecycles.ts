@@ -1,5 +1,8 @@
 import type { Core } from '@strapi/strapi';
-import { buildLeadEventPayload } from '../../../event/build-event-payload';
+import {
+  buildIntegrationRequestEventPayload,
+  buildLeadEventPayload
+} from '../../../event/build-event-payload';
 
 declare const strapi: Core.Strapi;
 
@@ -12,6 +15,7 @@ declare const strapi: Core.Strapi;
 export default {
   async afterCreate(event: { result: Record<string, unknown> }): Promise<void> {
     await recordLeadEvent(event.result);
+    await recordIntegrationRequestEvent(event.result);
 
     const settings = (await strapi
       .documents('api::site-setting.site-setting')
@@ -34,7 +38,8 @@ export default {
       ['Свой сервер', lead['hasServer']],
       ['Срок', lead['timeline']],
       ['Зарубежные серверы', lead['foreignHosting']],
-      ['Время звонка', lead['slotLabel']]
+      ['Время звонка', lead['slotLabel']],
+      ['Запрошенная интеграция', lead['requestedIntegration']]
     ]
       .filter(([, value]) => value !== null && value !== undefined && value !== '')
       .map(([label, value]) => `${String(label)}: ${String(value)}`);
@@ -80,5 +85,30 @@ async function recordLeadEvent(lead: Record<string, unknown>): Promise<void> {
     // Заявка уже сохранена и письмо владельцу уже поставлено в очередь —
     // потерянное аналитическое событие не должно ронять приём заявки.
     strapi.log.error('Lead analytics event could not be recorded');
+  }
+}
+
+/**
+ * Второе метаданное-событие для той же заявки: спека §4 требует знать спрос
+ * на интеграции, которых ещё нет. Пишется рядом с событием заявки и тем же
+ * механизмом — отдельной системы аналитики у сайта нет. Заявка без запроса
+ * интеграции события не порождает, а сорванное событие не роняет приём
+ * заявки, ровно как и у `recordLeadEvent`.
+ */
+async function recordIntegrationRequestEvent(lead: Record<string, unknown>): Promise<void> {
+  const id = lead['id'];
+  if (typeof id !== 'number') {
+    return;
+  }
+
+  const payload = buildIntegrationRequestEventPayload({ ...lead, id });
+  if (payload === undefined) {
+    return;
+  }
+
+  try {
+    await strapi.documents('api::event.event').create(payload);
+  } catch {
+    strapi.log.error('Integration request analytics event could not be recorded');
   }
 }

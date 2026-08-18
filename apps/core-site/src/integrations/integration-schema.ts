@@ -37,15 +37,24 @@ const LogoSchema = z.union([
 ]);
 
 /**
+ * Слаг интеграции: латиница в нижнем регистре, цифры и дефисы. Тем же
+ * правилом проверяется значение `requested_integration` в заявке — заявка
+ * ссылается ровно на то, что может существовать в каталоге, а не на
+ * произвольный текст произвольной длины.
+ */
+export const IntegrationSlugSchema = z
+  .string()
+  .min(1)
+  .max(60)
+  .regex(/^[a-z0-9][a-z0-9-]*$/, 'слаг только латиницей в нижнем регистре');
+
+/**
  * Карточка интеграции. `permissionsAsked` обязательное: интеграция без ответа
  * «какие права запрашиваем и зачем» на витрину не выходит — это требование
  * спеки, а не оформление.
  */
 export const IntegrationSchema = z.object({
-  slug: z
-    .string()
-    .min(1)
-    .regex(/^[a-z0-9][a-z0-9-]*$/, 'слаг только латиницей в нижнем регистре'),
+  slug: IntegrationSlugSchema,
   name: z.string().min(1).max(80),
   category: z.enum(INTEGRATION_CATEGORIES),
   summary: z.string().min(1).max(160),

@@ -9,6 +9,10 @@ export interface LeadFormProps extends LeadFormBlock {
   /** Список слотов приходит отдельно от контента блока и может быть пустым —
    * выбор времени тогда просто не рендерится. */
   readonly slots?: readonly BookingSlotOption[];
+  /** Слаг интеграции из параметра `requested_integration` адреса страницы.
+   * Приходит уже проверенным (см. parseRequestedIntegration) и уезжает в
+   * заявку скрытым полем — обычным POST, без участия javascript. */
+  readonly requestedIntegration?: string;
 }
 
 /**
@@ -22,7 +26,8 @@ export function LeadForm({
   labels,
   groups,
   consent,
-  slots
+  slots,
+  requestedIntegration
 }: LeadFormProps) {
   return (
     <section className={styles['section']} data-block="blocks.lead-form" id="lead">
@@ -33,6 +38,11 @@ export function LeadForm({
           {/* Ключ попытки рождается вместе с формой: повторная отправка той же
               страницы не создаёт вторую заявку даже без javascript. */}
           <input type="hidden" name="idempotencyKey" value={randomUUID()} />
+          {/* Какую интеграцию просили — вопрос не к посетителю: он уже
+              ответил на него, нажав кнопку в каталоге. */}
+          {requestedIntegration === undefined ? null : (
+            <input type="hidden" name="requestedIntegration" value={requestedIntegration} />
+          )}
           <div className={styles['field']}>
             <label className={styles['label']} htmlFor="lead-name">
               {labels.name}

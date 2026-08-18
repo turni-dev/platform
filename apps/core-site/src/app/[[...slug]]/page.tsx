@@ -1,10 +1,18 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { renderBlocks } from '../../blocks/block-renderer';
+import {
+  parseRequestedIntegration,
+  REQUESTED_INTEGRATION_PARAM
+} from '../../integrations/integration-catalog';
 import { sitePages, siteSettings, siteBookingSlots, siteIntegrations } from '../../content/site-pages';
 import type { Page } from '../../blocks/page-schema';
 
 type RouteParams = Readonly<{ params: Promise<{ slug?: string[] }> }>;
+
+type SearchParams = Readonly<Record<string, string | string[] | undefined>>;
+
+type PageProps = RouteParams & Readonly<{ searchParams: Promise<SearchParams> }>;
 
 /** Оффер живёт на своём адресе — корень домена его больше не показывает. */
 const OFFER_PATH = 'products/private-agent';
@@ -58,23 +66,30 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
   };
 }
 
-export default async function SitePage({ params }: RouteParams) {
+export default async function SitePage({ params, searchParams }: PageProps) {
   const slug = (await params).slug;
   redirectRootToOffer(slug);
 
   // Каталог интеграций нужен только стене логотипов, но грузится он рядом со
   // страницей: блок серверный, своего запроса сделать не может.
-  const [page, slots, integrations] = await Promise.all([
+  const [page, slots, integrations, query] = await Promise.all([
     loadPage(slug),
     siteBookingSlots.get(),
-    siteIntegrations.list()
+    siteIntegrations.list(),
+    searchParams
   ]);
+
+  // Пришли из каталога по кнопке «Нужна эта интеграция» — форма отправит слаг
+  // скрытым полем. Значение проверяется здесь, на сервере: разметка страницы
+  // не должна зависеть от того, что кто-то дописал в адрес.
+  const requestedIntegration = parseRequestedIntegration(query[REQUESTED_INTEGRATION_PARAM]);
 
   return (
     <>
       {renderBlocks(page.blocks, {
         ...(slots.length === 0 ? {} : { slots }),
-        ...(integrations.length === 0 ? {} : { integrations })
+        ...(integrations.length === 0 ? {} : { integrations }),
+        ...(requestedIntegration === undefined ? {} : { requestedIntegration })
       })}
     </>
   );

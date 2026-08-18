@@ -60,6 +60,9 @@ describe('Hero', () => {
     // это изображение и есть LCP-элемент страницы.
     expect(markup).toMatch(/<img[^>]+width="640"[^>]+height="480"/);
     expect(markup).not.toContain('loading="lazy"');
+    // Картинка идёт через next/image (оптимизация и srcset), а не сырым <img src>.
+    expect(markup).toContain('fetchPriority="high"');
+    expect(markup).toMatch(/src="\/_next\/image\?url=/);
   });
 });
 

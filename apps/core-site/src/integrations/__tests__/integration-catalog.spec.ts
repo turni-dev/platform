@@ -4,7 +4,9 @@ import {
   categoryFilters,
   filterIntegrations,
   integrationCta,
-  parseCategory
+  parseCategory,
+  parseRequestedIntegration,
+  REQUESTED_INTEGRATION_PARAM
 } from '../integration-catalog';
 import type { Integration } from '../integration-schema';
 
@@ -96,5 +98,28 @@ describe('integrationCta', () => {
     expect(integrationCta(integration({}), {}).href).toBe(
       '/products/private-agent?requested_integration=google-calendar#lead'
     );
+  });
+});
+
+describe('parseRequestedIntegration', () => {
+  it('accepts a slug that looks like a catalog slug', () => {
+    expect(parseRequestedIntegration('google-calendar')).toBe('google-calendar');
+  });
+
+  it('ignores anything that is not a slug — the parameter comes from the address bar', () => {
+    expect(parseRequestedIntegration('Google Календарь')).toBeUndefined();
+    expect(parseRequestedIntegration('<script>alert(1)</script>')).toBeUndefined();
+    expect(parseRequestedIntegration('-leading-dash')).toBeUndefined();
+    expect(parseRequestedIntegration('a'.repeat(1024))).toBeUndefined();
+    expect(parseRequestedIntegration('')).toBeUndefined();
+    expect(parseRequestedIntegration(['a', 'b'])).toBeUndefined();
+    expect(parseRequestedIntegration(undefined)).toBeUndefined();
+  });
+
+  it('reads the same parameter name the catalog button writes', () => {
+    const href = integrationCta(integration({ status: 'on_request' }), {}).href;
+    const value = new URL(href, 'http://localhost').searchParams.get(REQUESTED_INTEGRATION_PARAM);
+
+    expect(parseRequestedIntegration(value ?? undefined)).toBe('google-calendar');
   });
 });

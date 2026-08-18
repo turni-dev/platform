@@ -21,6 +21,9 @@ export interface RenderBlocksOptions {
   readonly slots?: readonly BookingSlotOption[];
   /** Каталог интеграций: стена логотипов рисуется из него, а не из полей блока. */
   readonly integrations?: readonly Integration[];
+  /** Слаг из `?requested_integration=` адреса страницы: форма заявки кладёт
+   * его в скрытое поле, остальные блоки о нём не знают. */
+  readonly requestedIntegration?: string;
 }
 
 function renderBlock(block: PageBlock, key: string, options: RenderBlocksOptions): ReactNode {
@@ -47,7 +50,14 @@ function renderBlock(block: PageBlock, key: string, options: RenderBlocksOptions
       return <FaqAccordion key={key} {...block} />;
     case 'blocks.lead-form':
       return (
-        <LeadForm key={key} {...block} {...(options.slots === undefined ? {} : { slots: options.slots })} />
+        <LeadForm
+          key={key}
+          {...block}
+          {...(options.slots === undefined ? {} : { slots: options.slots })}
+          {...(options.requestedIntegration === undefined
+            ? {}
+            : { requestedIntegration: options.requestedIntegration })}
+        />
       );
     case 'blocks.logo-wall':
       return <LogoWall key={key} {...block} integrations={options.integrations ?? []} />;

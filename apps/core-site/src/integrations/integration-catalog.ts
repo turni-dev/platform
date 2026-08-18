@@ -2,6 +2,7 @@ import type { BlockLink } from '../blocks/shared';
 import {
   CATEGORY_LABELS,
   INTEGRATION_CATEGORIES,
+  IntegrationSlugSchema,
   type Integration,
   type IntegrationCategory
 } from './integration-schema';
@@ -11,6 +12,9 @@ export const CATALOG_PATH = '/integrations';
 
 /** Куда ведёт запрос на недоступную интеграцию — на страницу с формой заявки. */
 export const LEAD_PATH = '/products/private-agent';
+
+/** Публичное имя параметра адреса: оно из спеки и в урле остаётся snake_case. */
+export const REQUESTED_INTEGRATION_PARAM = 'requested_integration';
 
 export interface CatalogQuery {
   readonly category?: IntegrationCategory | undefined;
@@ -38,6 +42,24 @@ export function parseQuery(raw: string | readonly string[] | undefined): string 
   const trimmed = raw.trim();
 
   return trimmed.length === 0 ? undefined : trimmed;
+}
+
+/**
+ * Какая интеграция понадобилась посетителю — читаем из адреса страницы с
+ * формой. Значение приходит от кого угодно, поэтому всё, что не выглядит
+ * слагом каталога, считаем отсутствующим: заявку это не ломает, а записать
+ * в неё килобайт чужого текста через ссылку не даёт.
+ */
+export function parseRequestedIntegration(
+  raw: string | readonly string[] | undefined
+): string | undefined {
+  if (typeof raw !== 'string') {
+    return undefined;
+  }
+
+  const parsed = IntegrationSlugSchema.safeParse(raw.trim());
+
+  return parsed.success ? parsed.data : undefined;
 }
 
 export function filterIntegrations(
@@ -117,7 +139,7 @@ export function integrationCta(integration: Integration, { cabinetUrl }: CtaOpti
 
   return {
     label: 'Нужна эта интеграция',
-    href: `${LEAD_PATH}?requested_integration=${encodeURIComponent(integration.slug)}#lead`
+    href: `${LEAD_PATH}?${REQUESTED_INTEGRATION_PARAM}=${encodeURIComponent(integration.slug)}#lead`
   };
 }
 

@@ -496,3 +496,37 @@ describe('handleLeadRequest analytics metadata', () => {
     expect(data['source']).toBe('direct');
   });
 });
+
+describe('handleLeadRequest requested integration', () => {
+  it('carries the requested integration slug to the CMS', async () => {
+    const { fetch, written } = deps();
+
+    await handleLeadRequest(
+      leadRequest({ requestedIntegration: 'google-calendar' }),
+      options(fetch)
+    );
+
+    expect(written[0]?.body).toMatchObject({ data: { requestedIntegration: 'google-calendar' } });
+  });
+
+  it('stores nothing for that field when the visitor came without the parameter', async () => {
+    const { fetch, written } = deps();
+
+    await handleLeadRequest(leadRequest(), options(fetch));
+
+    expect(JSON.stringify(written[0]?.body)).not.toContain('requestedIntegration');
+  });
+
+  it('drops a value that is not a slug instead of writing it, and still takes the lead', async () => {
+    const { fetch, written } = deps();
+
+    const response = await handleLeadRequest(
+      leadRequest({ requestedIntegration: `${'x'.repeat(2000)} <script>` }),
+      options(fetch)
+    );
+
+    expect(response.status).toBe(303);
+    expect(JSON.stringify(written[0]?.body)).not.toContain('xxxx');
+    expect(JSON.stringify(written[0]?.body)).not.toContain('script');
+  });
+});

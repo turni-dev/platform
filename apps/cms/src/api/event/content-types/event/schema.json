@@ -14,11 +14,16 @@
     "type": {
       "type": "string",
       "required": true,
-      "description": "Тип события, например 'lead'. Один общий тип для будущих форм — обратной связи, голосования."
+      "description": "Тип события, например 'lead' или 'integration_requested'. Один общий тип для будущих форм — обратной связи, голосования."
     },
     "leadId": {
       "type": "integer",
       "description": "Числовой id заявки, к которой относится событие. Не относится к другим типам событий."
+    },
+    "integrationSlug": {
+      "type": "string",
+      "maxLength": 60,
+      "description": "Слаг интеграции для события integration_requested. Только слаг каталога, не относится к другим типам событий."
     },
     "page": {
       "type": "string",
