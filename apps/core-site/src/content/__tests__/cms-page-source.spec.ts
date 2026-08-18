@@ -88,8 +88,10 @@ describe('createCmsPageSource', () => {
     expect(decodeURIComponent(url)).toContain(
       'populate[blocks][on][blocks.case-cards][populate][emptyState][populate][cta][populate]=*'
     );
+    // Картинка героя лежит в компоненте `parts.media`, а файл — ещё уровнем
+    // глубже: по `*` первый экран приехал бы без иллюстрации.
     expect(decodeURIComponent(url)).toContain(
-      'populate[blocks][on][blocks.hero][populate]=*'
+      'populate[blocks][on][blocks.hero][populate][media][populate]=*'
     );
   });
 
@@ -195,5 +197,79 @@ describe('createCmsPageSource', () => {
     await source.getPage('products/private-agent');
 
     expect(warnings.at(-1)).not.toContain('токен');
+  });
+});
+
+describe('media from the CMS library', () => {
+  it('serves the illustration from the CMS origin, not from the site', async () => {
+    const fetch = respondWith({
+      data: [
+        {
+          id: 7,
+          slug: 'products/private-agent',
+          title: 'Заголовок',
+          blocks: [
+            {
+              id: 1,
+              __component: 'blocks.illustration',
+              media: {
+                id: 2,
+                alt: 'Схема маршрута заявки',
+                // Локальный провайдер Strapi отдаёт путь без хоста: как есть он
+                // ушёл бы на origin сайта и вернул 404 вместо картинки.
+                file: { url: '/uploads/flow_1a2b.png', width: 820, height: 733 }
+              }
+            }
+          ]
+        }
+      ]
+    });
+
+    const page = await createCmsPageSource({
+      baseUrl: 'https://cms.example.com/',
+      fetch
+    }).getPage('products/private-agent');
+
+    expect(page?.blocks[0]).toEqual({
+      __component: 'blocks.illustration',
+      media: {
+        src: 'https://cms.example.com/uploads/flow_1a2b.png',
+        alt: 'Схема маршрута заявки',
+        width: 820,
+        height: 733
+      }
+    });
+  });
+
+  it('leaves an already absolute address alone (S3 и любой внешний провайдер)', async () => {
+    const fetch = respondWith({
+      data: [
+        {
+          id: 7,
+          slug: 'products/private-agent',
+          title: 'Заголовок',
+          blocks: [
+            {
+              id: 1,
+              __component: 'blocks.illustration',
+              media: {
+                id: 2,
+                alt: 'Схема',
+                file: { url: 'https://cdn.example.com/flow.png', width: 820, height: 733 }
+              }
+            }
+          ]
+        }
+      ]
+    });
+
+    const page = await createCmsPageSource({
+      baseUrl: 'https://cms.example.com',
+      fetch
+    }).getPage('products/private-agent');
+
+    expect(page?.blocks[0]).toMatchObject({
+      media: { src: 'https://cdn.example.com/flow.png' }
+    });
   });
 });

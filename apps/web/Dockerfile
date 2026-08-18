@@ -31,8 +31,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
 COPY --from=build --chown=node:node /app/apps/web/.next/standalone ./
 COPY --from=build --chown=node:node /app/apps/web/.next/static ./apps/web/.next/static
+# Next standalone emits a CommonJS server. The repository root is ESM, so run
+# it under a .cjs extension instead of inheriting the root package type.
+RUN mv /app/apps/web/server.js /app/apps/web/server.cjs
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD ["node", "-e", "fetch('http://127.0.0.1:3000/login').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
-CMD ["node", "apps/web/server.js"]
+CMD ["node", "apps/web/server.cjs"]

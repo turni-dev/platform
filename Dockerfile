@@ -7,6 +7,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json .npmrc ./
 COPY packages/contracts/package.json packages/contracts/package.json
+COPY packages/llm/package.json packages/llm/package.json
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --ignore-scripts --no-audit --progress=false
 
@@ -16,6 +17,7 @@ COPY types ./types
 COPY tools/bootstrap ./tools/bootstrap
 COPY apps/backend ./apps/backend
 COPY packages/contracts ./packages/contracts
+COPY packages/llm ./packages/llm
 RUN npm run nx -- run-many -t build --projects=backend,contracts
 
 FROM node:${NODE_VERSION} AS production-dependencies
@@ -33,6 +35,13 @@ WORKDIR /app
 
 COPY --from=production-dependencies --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist/apps/backend/apps/backend/src ./dist
+RUN mkdir -p node_modules/@turni/contracts node_modules/@turni/llm && \
+    printf '%s\n' '{"name":"@turni/contracts","type":"module","exports":{".":"./index.js"}}' \
+      > node_modules/@turni/contracts/package.json && \
+    printf '%s\n' '{"name":"@turni/llm","type":"module","exports":{".":"./index.js"}}' \
+      > node_modules/@turni/llm/package.json
+COPY --from=build --chown=node:node /app/dist/apps/backend/packages/contracts/src ./node_modules/@turni/contracts
+COPY --from=build --chown=node:node /app/dist/apps/backend/packages/llm/src ./node_modules/@turni/llm
 
 USER node
 EXPOSE 3000

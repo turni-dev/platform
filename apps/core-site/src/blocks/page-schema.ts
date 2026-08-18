@@ -6,6 +6,7 @@ import { ChangelogItemBlockSchema } from './changelog-item/schema';
 import { FaqBlockSchema } from './faq/schema';
 import { FeatureGridBlockSchema } from './feature-grid/schema';
 import { HeroBlockSchema } from './hero/schema';
+import { IllustrationBlockSchema } from './illustration/schema';
 import { IntegrationCatalogBlockSchema } from './integration-catalog/schema';
 import { LeadFormBlockSchema } from './lead-form/schema';
 import { LogoWallBlockSchema } from './logo-wall/schema';
@@ -32,7 +33,8 @@ export const BlockSchema = z.discriminatedUnion('__component', [
   BentoBlockSchema,
   NumberedStepsBlockSchema,
   StatCardBlockSchema,
-  ChangelogItemBlockSchema
+  ChangelogItemBlockSchema,
+  IllustrationBlockSchema
 ]);
 
 export const PageSchema = z.object({

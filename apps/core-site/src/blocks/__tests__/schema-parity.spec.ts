@@ -8,6 +8,7 @@ import { ChangelogItemBlockSchema } from '../changelog-item/schema';
 import { FaqBlockSchema } from '../faq/schema';
 import { FeatureGridBlockSchema } from '../feature-grid/schema';
 import { HeroBlockSchema } from '../hero/schema';
+import { IllustrationBlockSchema } from '../illustration/schema';
 import { LeadFormBlockSchema } from '../lead-form/schema';
 import { NumberedStepsBlockSchema } from '../numbered-steps/schema';
 import { SecurityListBlockSchema } from '../security-list/schema';
@@ -35,7 +36,8 @@ const blocks: ReadonlyArray<readonly [string, z.ZodObject]> = [
   ['bento', BentoBlockSchema],
   ['numbered-steps', NumberedStepsBlockSchema],
   ['stat-card', StatCardBlockSchema],
-  ['changelog-item', ChangelogItemBlockSchema]
+  ['changelog-item', ChangelogItemBlockSchema],
+  ['illustration', IllustrationBlockSchema]
 ];
 
 function strapiFields(name: string): string[] {

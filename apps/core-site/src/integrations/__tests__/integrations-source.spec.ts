@@ -40,7 +40,9 @@ describe('createIntegrationsSource', () => {
         whatItCan: 'Создаёт события\nПереносит встречи',
         permissionsAsked: 'Чтение и запись событий календаря — чтобы ставить встречи.',
         status: 'available',
-        logo: '/uploads/google-calendar.svg',
+        // Логотип приезжает путём без хоста, а показывается с сайта:
+        // без origin CMS карточка каталога отдала бы 404 вместо картинки.
+        logo: 'http://cms:1337/uploads/google-calendar.svg',
         order: 2
       }
     ]);

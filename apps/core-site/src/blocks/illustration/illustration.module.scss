@@ -1,0 +1,26 @@
+.section {
+  margin: 0;
+  padding: var(--site-section-space-sm) var(--site-gutter);
+}
+
+.inner {
+  width: min(100%, var(--site-content-width));
+  margin: 0 auto;
+}
+
+// Картинка сжимается под узкий экран, но не растягивается за свои пиксели:
+// апскейл прозрачного рендера даёт мыло на любом мониторе.
+.media {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.caption {
+  margin: var(--site-space-4) auto 0;
+  max-width: var(--site-text-width);
+  color: var(--turni-text-muted);
+  font-size: var(--turni-font-size-sm);
+  text-align: center;
+}
