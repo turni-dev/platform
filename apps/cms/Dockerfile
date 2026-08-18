@@ -25,6 +25,7 @@ FROM node:${NODE_VERSION} AS runtime
 ENV NODE_ENV=production
 WORKDIR /opt/app
 COPY --from=build --chown=node:node /opt/app ./
+RUN mkdir -p /opt/app/public/uploads && chown node:node /opt/app/public/uploads
 USER node
 EXPOSE 1337
 CMD ["npm", "run", "start"]
