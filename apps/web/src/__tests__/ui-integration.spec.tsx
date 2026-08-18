@@ -13,13 +13,13 @@ describe('shared UI controls integration', () => {
     const knowledge = read('app/(cabinet)/agent/knowledge/knowledge-controls.tsx');
     const signOut = read('app/(cabinet)/dashboard/sign-out-button.tsx');
 
-    expect(auth).toContain("from '@turni/ui'");
+    expect(auth).toContain("from 'antd'");
     expect(auth).toMatch(/type="email"[\s\S]*required/);
     expect(auth).toContain('autoComplete="email"');
     expect(auth).toContain('pattern=');
     expect(auth).toContain('inputMode=');
     expect(knowledge).toContain('name=');
-    expect(editor).toContain('<Textarea');
+    expect(editor).toContain('<Input.TextArea');
     for (const source of [auth, create, editor, knowledge, signOut]) {
       expect(source).not.toMatch(/<button\b/);
       expect(source).not.toMatch(/<input\b/);

@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Button } from '@turni/ui';
+import { Button } from 'antd';
 import { createAgent } from '../../../lib/agent-client';
 import styles from '../cabinet.module.scss';
 
@@ -31,7 +31,7 @@ export function CreateAgentButton({
 
   return (
     <div className={styles['actions']}>
-      <Button type="button" onClick={create} disabled={pending}>
+      <Button type="primary" onClick={create} loading={pending}>
         {label}
       </Button>
       {failed ? (

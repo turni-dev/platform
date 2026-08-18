@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Button, Textarea } from '@turni/ui';
+import { Button, Input } from 'antd';
 import { saveInstructions, saveKnowledgeFile } from '../../../lib/agent-client';
 import styles from '../cabinet.module.scss';
 
@@ -53,15 +53,16 @@ export function MarkdownEditor({
 
   return (
     <div className={styles['editor']}>
-      <Textarea
+      <Input.TextArea
         value={content}
         onChange={(event) => {
           setContent(event.target.value);
           setState('idle');
         }}
+        autoSize={{ minRows: 12 }}
       />
       <div className={styles['actions']}>
-        <Button type="button" onClick={save} disabled={state === 'saving'}>
+        <Button type="primary" onClick={save} loading={state === 'saving'}>
           {state === 'saving' ? labels.saving : labels.save}
         </Button>
         {state === 'saved' ? <p className={styles['status']}>{labels.saved}</p> : undefined}
