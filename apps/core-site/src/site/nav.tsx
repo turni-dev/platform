@@ -1,4 +1,4 @@
-import { Button } from '@turni/ui';
+import { Button } from 'antd';
 import type { BlockLink } from '../blocks/shared';
 import type { NavItem } from './site-settings-schema';
 import styles from './nav.module.scss';
@@ -56,8 +56,8 @@ export function Nav({ brand, nav, navCta }: NavProps) {
           </ul>
         </nav>
         {navCta ? (
-          <Button asChild>
-            <a href={navCta.href}>{navCta.label}</a>
+          <Button type="primary" href={navCta.href}>
+            {navCta.label}
           </Button>
         ) : null}
       </div>

@@ -1,4 +1,4 @@
-import { Button } from '@turni/ui';
+import { Button } from 'antd';
 import Image from 'next/image';
 import type { HeroBlock } from './schema';
 import styles from './hero.module.scss';
@@ -11,8 +11,8 @@ export function Hero({ heading, subheading, primaryCta, secondaryCta, media }: H
           <h1 className={styles['heading']}>{heading}</h1>
           <p className={styles['subheading']}>{subheading}</p>
           <div className={styles['actions']}>
-            <Button asChild>
-              <a href={primaryCta.href}>{primaryCta.label}</a>
+            <Button type="primary" size="large" href={primaryCta.href}>
+              {primaryCta.label}
             </Button>
             {secondaryCta ? (
               <a className={styles['ghost']} href={secondaryCta.href}>

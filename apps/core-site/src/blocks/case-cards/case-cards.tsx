@@ -1,4 +1,4 @@
-import { Button } from '@turni/ui';
+import { Button } from 'antd';
 import type { CaseCardsBlock } from './schema';
 import styles from './case-cards.module.scss';
 
@@ -11,8 +11,8 @@ export function CaseCards({ heading, emptyState, cases }: CaseCardsBlock) {
           emptyState === undefined ? null : (
             <div className={styles['empty']}>
               <p className={styles['emptyBody']}>{emptyState.body}</p>
-              <Button asChild>
-                <a href={emptyState.cta.href}>{emptyState.cta.label}</a>
+              <Button type="primary" href={emptyState.cta.href}>
+                {emptyState.cta.label}
               </Button>
             </div>
           )
