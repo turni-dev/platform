@@ -25,7 +25,10 @@ describe('readHttpEnv', () => {
         SMTP_USER: 'no-reply@turni.ru',
         SMTP_PASSWORD: 'smtp-password',
         EMAIL_FROM: 'Turni <no-reply@turni.ru>',
-        APP_ORIGIN: 'https://app.turni.ru'
+        APP_ORIGIN: 'https://app.turni.ru',
+        GOOGLE_OAUTH_CLIENT_ID: 'google-client-id',
+        GOOGLE_OAUTH_CLIENT_SECRET: 'google-client-secret',
+        GOOGLE_OAUTH_STATE_SECRET: 'test-google-oauth-state-secret-long-enough!!'
       })
     ).toEqual({
       HTTP_HOST: '0.0.0.0',
@@ -43,7 +46,10 @@ describe('readHttpEnv', () => {
       SMTP_PASSWORD: 'smtp-password',
       EMAIL_FROM: 'Turni <no-reply@turni.ru>',
       APP_ORIGIN: 'https://app.turni.ru',
-      AUTH_COOKIE_SECURE: true
+      AUTH_COOKIE_SECURE: true,
+      GOOGLE_OAUTH_CLIENT_ID: 'google-client-id',
+      GOOGLE_OAUTH_CLIENT_SECRET: 'google-client-secret',
+      GOOGLE_OAUTH_STATE_SECRET: 'test-google-oauth-state-secret-long-enough!!'
     });
   });
 
@@ -62,7 +68,10 @@ describe('readHttpEnv', () => {
         SMTP_USER: 'no-reply@turni.ru',
         SMTP_PASSWORD: 'smtp-password',
         EMAIL_FROM: 'Turni <no-reply@turni.ru>',
-        APP_ORIGIN: 'https://app.turni.ru'
+        APP_ORIGIN: 'https://app.turni.ru',
+        GOOGLE_OAUTH_CLIENT_ID: 'google-client-id',
+        GOOGLE_OAUTH_CLIENT_SECRET: 'google-client-secret',
+        GOOGLE_OAUTH_STATE_SECRET: 'test-google-oauth-state-secret-long-enough!!'
       })
     ).toEqual({
       HTTP_HOST: '127.0.0.1',
@@ -80,7 +89,10 @@ describe('readHttpEnv', () => {
       SMTP_PASSWORD: 'smtp-password',
       EMAIL_FROM: 'Turni <no-reply@turni.ru>',
       APP_ORIGIN: 'https://app.turni.ru',
-      AUTH_COOKIE_SECURE: true
+      AUTH_COOKIE_SECURE: true,
+      GOOGLE_OAUTH_CLIENT_ID: 'google-client-id',
+      GOOGLE_OAUTH_CLIENT_SECRET: 'google-client-secret',
+      GOOGLE_OAUTH_STATE_SECRET: 'test-google-oauth-state-secret-long-enough!!'
     });
   });
 
@@ -102,7 +114,10 @@ describe('readHttpEnv', () => {
         SMTP_USER: 'no-reply@turni.ru',
         SMTP_PASSWORD: 'smtp-password',
         EMAIL_FROM: 'Turni <no-reply@turni.ru>',
-        APP_ORIGIN: 'https://app.turni.ru'
+        APP_ORIGIN: 'https://app.turni.ru',
+        GOOGLE_OAUTH_CLIENT_ID: 'google-client-id',
+        GOOGLE_OAUTH_CLIENT_SECRET: 'google-client-secret',
+        GOOGLE_OAUTH_STATE_SECRET: 'test-google-oauth-state-secret-long-enough!!'
       })
     ).toThrow();
   });
@@ -121,7 +136,10 @@ describe('readHttpEnv', () => {
       SMTP_USER: 'no-reply@turni.ru',
       SMTP_PASSWORD: 'smtp-password',
       EMAIL_FROM: 'Turni <no-reply@turni.ru>',
-      APP_ORIGIN: 'https://app.turni.ru'
+      APP_ORIGIN: 'https://app.turni.ru',
+      GOOGLE_OAUTH_CLIENT_ID: 'google-client-id',
+      GOOGLE_OAUTH_CLIENT_SECRET: 'google-client-secret',
+      GOOGLE_OAUTH_STATE_SECRET: 'test-google-oauth-state-secret-long-enough!!'
     };
 
     expect(() => readHttpEnv({ ...base, OWNER_AUTH_SECRET: 'too-short' })).toThrow();
@@ -146,7 +164,10 @@ describe('readHttpEnv', () => {
       SMTP_USER: 'no-reply@turni.ru',
       SMTP_PASSWORD: 'smtp-password',
       EMAIL_FROM: 'Turni <no-reply@turni.ru>',
-      APP_ORIGIN: 'http://localhost:4200'
+      APP_ORIGIN: 'http://localhost:4200',
+      GOOGLE_OAUTH_CLIENT_ID: 'google-client-id',
+      GOOGLE_OAUTH_CLIENT_SECRET: 'google-client-secret',
+      GOOGLE_OAUTH_STATE_SECRET: 'test-google-oauth-state-secret-long-enough!!'
     };
 
     expect(readHttpEnv(base).AUTH_COOKIE_SECURE).toBe(true);

@@ -27,13 +27,22 @@ const HttpEnvSchema = z.object({
   AUTH_COOKIE_SECURE: z
     .enum(['true', 'false'])
     .default('true')
-    .transform((value) => value === 'true')
+    .transform((value) => value === 'true'),
+  /** Public; identifies the app to Google, never a credential on its own. */
+  GOOGLE_OAUTH_CLIENT_ID: z.string().trim().min(1),
+  GOOGLE_OAUTH_CLIENT_SECRET: z.string().trim().min(1),
+  /** Signs the OAuth `state` a consent redirect carries; the callback trusts
+   * nothing else, since Google's redirect carries no session cookie. Reuses
+   * `PUBLIC_WEBHOOK_ORIGIN` for the redirect URI Google calls back on — the
+   * callback is a public entrance like a webhook, not an APP_ORIGIN page. */
+  GOOGLE_OAUTH_STATE_SECRET: z.string().min(32)
 }).superRefine((env, context) => {
   const secrets = [
     ['WIDGET_SESSION_SECRET', env.WIDGET_SESSION_SECRET],
     ['WIDGET_ROUTING_SECRET', env.WIDGET_ROUTING_SECRET],
     ['OWNER_AUTH_SECRET', env.OWNER_AUTH_SECRET],
-    ['WEBHOOK_ROUTING_SECRET', env.WEBHOOK_ROUTING_SECRET]
+    ['WEBHOOK_ROUTING_SECRET', env.WEBHOOK_ROUTING_SECRET],
+    ['GOOGLE_OAUTH_STATE_SECRET', env.GOOGLE_OAUTH_STATE_SECRET]
   ] as const;
 
   for (const [name, secret] of secrets) {
