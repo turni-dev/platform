@@ -8,6 +8,21 @@ export const GoogleOauthStateClaimsSchema = z.strictObject({
 
 export type GoogleOauthStateClaims = z.infer<typeof GoogleOauthStateClaimsSchema>;
 
+/**
+ * The one error `verify` ever throws: forged, malformed, replayed or expired
+ * are all the same answer to a caller. Its own class exists so the HTTP
+ * layer can refuse precisely a bad `state` and let every other failure
+ * — a Google API error, a cipher failure, a database error — propagate and
+ * be logged as the internal failure it is, instead of looking identical to
+ * an attacker's guess.
+ */
+export class GoogleOauthStateInvalidError extends Error {
+  public constructor(message: string) {
+    super(message);
+    this.name = 'GoogleOauthStateInvalidError';
+  }
+}
+
 const GoogleOauthStatePayloadSchema = GoogleOauthStateClaimsSchema.extend({
   issuedAt: z.iso.datetime()
 });
@@ -63,17 +78,17 @@ export class GoogleOauthStateService {
       rest.length > 0 ||
       !this.isSignatureValid(payload, signature)
     ) {
-      throw new Error('Invalid Google OAuth state.');
+      throw new GoogleOauthStateInvalidError('Invalid Google OAuth state.');
     }
 
     if (this.consumed.has(state)) {
-      throw new Error('Google OAuth state was already used.');
+      throw new GoogleOauthStateInvalidError('Google OAuth state was already used.');
     }
 
     const parsed = this.parsePayload(payload);
     const ageMs = this.clock().getTime() - new Date(parsed.issuedAt).getTime();
     if (ageMs < 0 || ageMs > ttlMs) {
-      throw new Error('Google OAuth state has expired.');
+      throw new GoogleOauthStateInvalidError('Google OAuth state has expired.');
     }
 
     this.consumed.set(state, new Date(parsed.issuedAt).getTime() + ttlMs);
@@ -87,7 +102,7 @@ export class GoogleOauthStateService {
         JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'))
       );
     } catch {
-      throw new Error('Invalid Google OAuth state.');
+      throw new GoogleOauthStateInvalidError('Invalid Google OAuth state.');
     }
   }
 

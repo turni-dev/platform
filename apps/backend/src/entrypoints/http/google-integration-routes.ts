@@ -6,6 +6,7 @@ import {
   GoogleConnectionNotPendingError,
   type GoogleConnectionService
 } from '../../modules/integrations/google/application/google-connection-service.js';
+import { GoogleOauthStateInvalidError } from '../../modules/integrations/google/application/google-oauth-state.js';
 import {
   GoogleConnectionStatusSchema,
   type GoogleConnectionRepositoryPort,
@@ -106,24 +107,14 @@ export function registerGoogleIntegrationRoutes(
       return forbidden(reply);
     }
 
-    try {
+    return attempt(reply, async () => {
       await options.service.completeConsent({
         code: query.data.code,
         state: query.data.state
       });
 
       return reply.redirect(options.cabinetRedirectUrl, 302);
-    } catch (error) {
-      if (error instanceof GoogleAgentMissingError) {
-        return notFound(reply);
-      }
-
-      // A forged, replayed or expired state, or a failed exchange with
-      // Google itself: none of that is a detail worth exposing to a request
-      // that carries no session at all — refuse the same way a bad webhook
-      // routing key is refused.
-      return forbidden(reply);
-    }
+    });
   });
 
   fastify.post(
@@ -180,6 +171,12 @@ async function attempt(
     }
     if (error instanceof GoogleConnectionMissingError) {
       return internalFailure(reply, 'google connection missing after activation', error);
+    }
+    if (error instanceof GoogleOauthStateInvalidError) {
+      // A forged, replayed or expired state: the one thing the callback
+      // trusts nothing else for. Refused the same way a bad webhook routing
+      // key is refused, before any Google API call or write has happened.
+      return forbidden(reply);
     }
     if (error instanceof z.ZodError) {
       return invalidRequest(reply);

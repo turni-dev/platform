@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHttpApp } from '../app.js';
 import { SecretCipher } from '../../../platform/crypto/secret-cipher.js';
 import type { SecretKeyRing } from '../../../platform/crypto/secret-key-ring.js';
@@ -107,6 +107,9 @@ class InMemoryConnections implements GoogleConnectionRepositoryPort {
 
 class FakeGoogleOauthClient implements GoogleOauthPort {
   public exchangedCodes: string[] = [];
+  /** Simulates a genuine downstream failure — Google's token endpoint
+   * erroring, a timeout, whatever — distinct from an untrusted `state`. */
+  public failExchangeWith: Error | undefined;
 
   public authorizationUrl(input: Readonly<{ state: string; redirectUri: string }>): string {
     const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
@@ -124,6 +127,10 @@ class FakeGoogleOauthClient implements GoogleOauthPort {
     expiresAt: Date;
     scopes: readonly string[];
   }> {
+    if (this.failExchangeWith !== undefined) {
+      return Promise.reject(this.failExchangeWith);
+    }
+
     this.exchangedCodes.push(input.code);
 
     return Promise.resolve({
@@ -281,6 +288,22 @@ describe('Google integration HTTP routes', () => {
 
     expect(response.statusCode).toBe(403);
     expect(context.connections.rows).toHaveLength(0);
+  });
+
+  it('surfaces a genuine downstream failure as an internal error, not a refusal', async () => {
+    const state = context.stateService.issue({ tenantId, userId });
+    context.oauth.failExchangeWith = new Error('Google token endpoint returned 503');
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/v1/integrations/google/callback?code=auth-code&state=${encodeURIComponent(state)}`
+    });
+
+    expect(response.statusCode).toBe(500);
+    expect(consoleError).toHaveBeenCalled();
+    expect(context.connections.rows).toHaveLength(0);
+    consoleError.mockRestore();
   });
 
   it('completes a genuine callback and redirects into the cabinet', async () => {
