@@ -26,6 +26,7 @@ import { GuestSessionService } from '../../modules/channels/application/guest-se
 import { UuidV7Generator } from '../../modules/channels/application/uuid-v7-generator.js';
 import { PostgresGuestSessionStore } from '../../modules/channels/infrastructure/database/postgres-guest-session-store.js';
 import { WidgetRoutingKeyService } from '../../modules/channels/application/widget-routing-key.js';
+import { PostgresIdempotencyKeyRepository } from '../../platform/idempotency/postgres-idempotency-key-repository.js';
 import { AgentConfigurationAnalytics } from '../../modules/agent-core/application/agent-configuration-analytics.js';
 import { AgentConfigurationService } from '../../modules/agent-core/application/agent-configuration-service.js';
 import { PostgresAgentFileStore } from '../../modules/agent-core/infrastructure/database/postgres-agent-file-store.js';
@@ -198,6 +199,7 @@ function composeChannels(
     cabinet: {
       accessTokens: new OwnerAccessTokenService(env.OWNER_AUTH_SECRET),
       allowedOrigins: [new URL(env.APP_ORIGIN).origin],
+      idempotency: new PostgresIdempotencyKeyRepository(database),
       service: new VkConnectionService({
         connections,
         cipher,

@@ -62,6 +62,15 @@ export function forbidden(reply: FastifyReply): FastifyReply {
   });
 }
 
+/** An `Idempotency-Key` reused for a request whose body no longer matches. */
+export function conflict(reply: FastifyReply): FastifyReply {
+  return reply.code(409).send({
+    type: ProblemType.InvalidRequest,
+    title: 'Conflict',
+    status: 409
+  });
+}
+
 /**
  * An error we do not model is ours, not the caller's. The caller sees nothing
  * but a generic failure; the cause goes to the operator's log.

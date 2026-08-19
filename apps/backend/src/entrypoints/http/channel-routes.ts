@@ -6,6 +6,8 @@ import {
   type VkConnectionService
 } from '../../modules/channels/application/vk-connection-service.js';
 import type { OwnerAccessTokenService } from '../../modules/tenancy/application/owner-access-token.js';
+import type { IdempotencyKeyRepositoryPort } from '../../platform/idempotency/idempotency-key-repository.port.js';
+import { withIdempotency } from '../../platform/idempotency/with-idempotency.js';
 import { OwnerRequestGuard } from './owner-request-guard.js';
 import { internalFailure, invalidRequest, notFound } from './problems.js';
 
@@ -13,6 +15,8 @@ export interface ChannelHttpOptions {
   readonly service: VkConnectionService;
   readonly accessTokens: OwnerAccessTokenService;
   readonly allowedOrigins: readonly string[];
+  /** Backs the optional `Idempotency-Key` header on `POST /channels/vk`. */
+  readonly idempotency: IdempotencyKeyRepositoryPort;
 }
 
 const ChannelRoute = {
@@ -24,6 +28,11 @@ const VkConnectBodySchema = z.strictObject({
   accessKey: z.string().trim().min(1).max(500),
   groupId: z.coerce.number().int().positive()
 });
+
+const IdempotencyKeyHeaderSchema = z.string().trim().min(1).max(200).optional();
+
+/** The table's `expires_at` is meant to hold a replay window of one day. */
+const IdempotencyTtlSeconds = 86_400;
 
 /**
  * The cabinet's view of connected channels. Every route runs behind the owner
@@ -55,14 +64,28 @@ export function registerChannelRoutes(
           return invalidRequest(reply);
         }
 
-        return reply.code(201).send(
-          await options.service.connect({
-            tenantId: owner.tenantId,
-            userId: owner.userId,
-            accessKey: body.data.accessKey,
-            groupId: body.data.groupId
-          })
+        const headerValue = request.headers['idempotency-key'];
+        const key = IdempotencyKeyHeaderSchema.parse(
+          Array.isArray(headerValue) ? headerValue[0] : headerValue
         );
+
+        return withIdempotency({
+          repository: options.idempotency,
+          tenantId: owner.tenantId,
+          key,
+          request: body.data,
+          reply,
+          ttlSeconds: IdempotencyTtlSeconds,
+          run: async () => ({
+            statusCode: 201,
+            body: await options.service.connect({
+              tenantId: owner.tenantId,
+              userId: owner.userId,
+              accessKey: body.data.accessKey,
+              groupId: body.data.groupId
+            })
+          })
+        });
       })
     )
   );
