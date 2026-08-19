@@ -8,6 +8,60 @@ const monorepoRoot = resolve(import.meta.dirname, '../..');
 
 type RemotePattern = NonNullable<NonNullable<NextConfig['images']>['remotePatterns']>[number];
 
+/**
+ * Медиатека Strapi отдаёт картинки с другого origin, поэтому `next/image` по
+ * умолчанию отказывается их оптимизировать. `images.remotePatterns`
+ * запекается в standalone-сборку один раз при `next build` — рантаймовый
+ * `CMS_BASE_URL` в docker-compose на уже собранный образ не влияет. Прод-сборка
+ * идёт намеренно без `CMS_BASE_URL` (сайт обязан собираться и без CMS — на
+ * этом держится гейт Lighthouse), а в рантайме сайт всё равно ходит на
+ * известный CMS-хост дев-контура. Поэтому известные хосты медиатеки заданы
+ * явно, а не только через `CMS_BASE_URL` — иначе после такой сборки картинки
+ * из CMS никогда не проходят allow-list, независимо от рантайм-окружения.
+ */
+const KNOWN_CMS_MEDIA_HOSTS: readonly RemotePattern[] = [
+  { protocol: 'https', hostname: 'cms.turni.ru', pathname: '/**' },
+  { protocol: 'http', hostname: 'cms', port: '1337', pathname: '/**' }
+];
+
+function parseCmsBaseUrl(baseUrl: string | undefined): RemotePattern | undefined {
+  if (baseUrl === undefined || baseUrl.length === 0) {
+    return undefined;
+  }
+
+  let url: URL;
+  try {
+    url = new URL(baseUrl);
+  } catch {
+    return undefined;
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return undefined;
+  }
+
+  return {
+    protocol: url.protocol === 'https:' ? 'https' : 'http',
+    hostname: url.hostname,
+    port: url.port,
+    pathname: '/**'
+  };
+}
+
+function cmsRemotePatterns(baseUrl: string | undefined): readonly RemotePattern[] {
+  const fromEnv = parseCmsBaseUrl(baseUrl);
+  const alreadyListed = (pattern: RemotePattern): boolean =>
+    KNOWN_CMS_MEDIA_HOSTS.some(
+      (known) =>
+        known.protocol === pattern.protocol &&
+        known.hostname === pattern.hostname &&
+        known.port === pattern.port
+    );
+
+  return fromEnv === undefined || alreadyListed(fromEnv)
+    ? KNOWN_CMS_MEDIA_HOSTS
+    : [...KNOWN_CMS_MEDIA_HOSTS, fromEnv];
+}
+
 const nextConfig: NextConfig = {
   output: 'standalone',
   outputFileTracingRoot: monorepoRoot,
@@ -20,35 +74,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
-/**
- * Медиатека Strapi отдаёт картинки с другого origin, поэтому `next/image` по
- * умолчанию отказывается их оптимизировать. Сайт обязан собираться и без CMS
- * (на этом держится гейт Lighthouse), так что отсутствующий или битый
- * `CMS_BASE_URL` не должен ронять сборку — он просто оставляет
- * `remotePatterns` пустым, и герой рендерится без картинки.
- */
-function cmsRemotePatterns(baseUrl: string | undefined): readonly RemotePattern[] {
-  if (baseUrl === undefined || baseUrl.length === 0) {
-    return [];
-  }
-
-  let url: URL;
-  try {
-    url = new URL(baseUrl);
-  } catch {
-    return [];
-  }
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    return [];
-  }
-
-  return [
-    {
-      protocol: url.protocol === 'https:' ? 'https' : 'http',
-      hostname: url.hostname,
-      port: url.port,
-      pathname: '/**'
-    }
-  ];
-}
