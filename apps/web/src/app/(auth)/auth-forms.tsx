@@ -57,6 +57,7 @@ export function OwnerEmailForm({ flow }: { flow: OwnerAuthFlow }): React.JSX.Ele
           {error}
         </p>
       )}
+      {/* `?? ''` satisfies antd's `className: string` under noUncheckedIndexedAccess + exactOptionalPropertyTypes (styles[...] is string | undefined); type="primary" is just for antd semantics, visual styling comes from the CSS module class */}
       <Button className={styles['submit'] ?? ''} type="primary" htmlType="submit" loading={pending}>
         {t(flow === 'register' ? 'registerSubmit' : 'loginSubmit')}
       </Button>
@@ -125,6 +126,7 @@ export function OwnerCodeForm({
           {error}
         </p>
       )}
+      {/* see OwnerEmailForm above for why `?? ''` is needed and why styling isn't via antd's type prop */}
       <Button className={styles['submit'] ?? ''} type="primary" htmlType="submit" loading={pending}>
         {t('verifySubmit')}
       </Button>
