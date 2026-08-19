@@ -90,4 +90,26 @@ describe('GoogleOauthClient', () => {
     expect(failure).toBeInstanceOf(GoogleApiError);
     expect((failure as GoogleApiError).status).toBe(429);
   });
+
+  it('fetches the account email tied to an access token, for display only', async () => {
+    const fetchMock = respond({ email: 'owner@example.com', user_id: '123' });
+    const client = new GoogleOauthClient({ clientId: 'id', clientSecret: 'shh', fetch: fetchMock });
+
+    const email = await client.fetchAccountEmail('a-token');
+
+    expect(email).toBe('owner@example.com');
+    const [url] = (fetchMock as unknown as { mock: { calls: [URL, RequestInit?][] } }).mock.calls[0]!;
+    expect(String(url)).toContain('access_token=a-token');
+    expect(String(url)).not.toContain('shh');
+  });
+
+  it('refuses a tokeninfo response with no email', async () => {
+    const client = new GoogleOauthClient({
+      clientId: 'id',
+      clientSecret: 'shh',
+      fetch: respond({ user_id: '123' })
+    });
+
+    await expect(client.fetchAccountEmail('a-token')).rejects.toBeInstanceOf(GoogleApiError);
+  });
 });

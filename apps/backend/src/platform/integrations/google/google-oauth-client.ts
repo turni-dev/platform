@@ -9,6 +9,7 @@ export const GOOGLE_OAUTH_SCOPES = [
 
 const authorizationBase = 'https://accounts.google.com/o/oauth2/v2/auth';
 const tokenBase = 'https://oauth2.googleapis.com/token';
+const tokenInfoBase = 'https://oauth2.googleapis.com/tokeninfo';
 
 const GoogleTokenSuccessSchema = z.object({
   access_token: z.string(),
@@ -16,6 +17,14 @@ const GoogleTokenSuccessSchema = z.object({
   token_type: z.string(),
   refresh_token: z.string().optional(),
   scope: z.string().optional()
+});
+
+/** The account's own email is basic account info tied to any valid access
+ * token — Google returns it here regardless of the scopes granted, so the
+ * wizard never has to request `email`/`profile` on top of the two
+ * least-privilege scopes just to label a connection in the UI. */
+const GoogleTokenInfoSchema = z.object({
+  email: z.string().min(1).optional()
 });
 
 const GoogleTokenErrorSchema = z.object({
@@ -120,6 +129,27 @@ export class GoogleOauthClient {
       accessToken: payload.access_token,
       expiresAt: new Date(Date.now() + payload.expires_in * 1000)
     };
+  }
+
+  /** Display-only: never trusted as an identity claim, and never itself a
+   * secret, so it travels over a query string like Google's own endpoint
+   * expects. */
+  public async fetchAccountEmail(accessToken: string): Promise<string> {
+    const url = new URL(tokenInfoBase);
+    url.searchParams.set('access_token', accessToken);
+
+    const response = await this.fetch(url);
+    if (!response.ok) {
+      throw await this.toApiError(response);
+    }
+
+    const json: unknown = await response.json();
+    const email = GoogleTokenInfoSchema.parse(json).email;
+    if (email === undefined) {
+      throw new GoogleApiError(200, 'missing_account_email');
+    }
+
+    return email;
   }
 
   private async postToken(
