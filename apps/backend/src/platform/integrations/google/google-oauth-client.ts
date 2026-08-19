@@ -131,14 +131,29 @@ export class GoogleOauthClient {
       body
     });
 
-    const json: unknown = await response.json();
-
     if (!response.ok) {
-      const error = GoogleTokenErrorSchema.parse(json);
-      throw new GoogleApiError(response.status, error.error);
+      throw await this.toApiError(response);
     }
 
+    const json: unknown = await response.json();
+
     return GoogleTokenSuccessSchema.parse(json);
+  }
+
+  /** A non-2xx body might not be JSON at all (an empty body, an HTML error
+   * page from a load balancer or WAF, a rate-limit response) — never let
+   * that surface as a raw SyntaxError or ZodError instead of a typed
+   * GoogleApiError. */
+  private async toApiError(response: Response): Promise<GoogleApiError> {
+    try {
+      const json: unknown = await response.json();
+      const parsed = GoogleTokenErrorSchema.safeParse(json);
+      const code = parsed.success ? parsed.data.error : 'unknown_error';
+
+      return new GoogleApiError(response.status, code);
+    } catch {
+      return new GoogleApiError(response.status, 'unknown_error');
+    }
   }
 
   /** Client secret and any token material must survive neither a log line

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { GoogleSheetsClient } from '../google-sheets-client.js';
 import { GoogleApiError } from '../google-oauth-client.js';
 
@@ -24,6 +24,13 @@ function transport(
   };
 
   return { fetch: fetchMock as unknown as typeof fetch, calls: () => calls };
+}
+
+function nonJsonTransport(status: number, body = ''): typeof fetch {
+  return vi.fn(
+    (): Promise<Response> =>
+      Promise.resolve(new Response(body, { status, headers: { 'content-type': 'text/html' } }))
+  );
 }
 
 describe('GoogleSheetsClient', () => {
@@ -76,6 +83,34 @@ describe('GoogleSheetsClient', () => {
     expect(failure).toBeInstanceOf(GoogleApiError);
     expect((failure as GoogleApiError).status).toBe(401);
     expect(JSON.stringify(failure)).not.toContain('secret-token');
+  });
+
+  it('turns a non-JSON error body (e.g. a WAF or gateway error page) into a typed GoogleApiError', async () => {
+    const client = new GoogleSheetsClient({
+      accessToken: 'secret-token',
+      fetch: nonJsonTransport(502, '<html>Bad Gateway</html>')
+    });
+
+    const failure = await client
+      .readRange({ spreadsheetId: 'sheet-id', range: 'Sheet1!A1:B2' })
+      .catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(GoogleApiError);
+    expect((failure as GoogleApiError).status).toBe(502);
+  });
+
+  it('turns an empty error body into a typed GoogleApiError', async () => {
+    const client = new GoogleSheetsClient({
+      accessToken: 'secret-token',
+      fetch: nonJsonTransport(429)
+    });
+
+    const failure = await client
+      .readRange({ spreadsheetId: 'sheet-id', range: 'Sheet1!A1:B2' })
+      .catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(GoogleApiError);
+    expect((failure as GoogleApiError).status).toBe(429);
   });
 
   it('never serializes its access token', () => {

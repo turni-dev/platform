@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { GoogleOauthClient, GOOGLE_OAUTH_SCOPES } from '../google-oauth-client.js';
+import { GoogleApiError, GoogleOauthClient, GOOGLE_OAUTH_SCOPES } from '../google-oauth-client.js';
 
 function respond(body: unknown, status = 200): typeof fetch {
   return vi.fn(
@@ -7,6 +7,13 @@ function respond(body: unknown, status = 200): typeof fetch {
       Promise.resolve(
         new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
       )
+  );
+}
+
+function respondNonJson(status: number, body = ''): typeof fetch {
+  return vi.fn(
+    (): Promise<Response> =>
+      Promise.resolve(new Response(body, { status, headers: { 'content-type': 'text/html' } }))
   );
 }
 
@@ -51,5 +58,36 @@ describe('GoogleOauthClient', () => {
       .catch((error: unknown) => error);
 
     expect(JSON.stringify(failure)).not.toContain('shh');
+  });
+
+  it('turns a non-JSON error body (e.g. a WAF or gateway error page) into a typed GoogleApiError', async () => {
+    const client = new GoogleOauthClient({
+      clientId: 'id',
+      clientSecret: 'shh',
+      fetch: respondNonJson(502, '<html>Bad Gateway</html>')
+    });
+
+    const failure = await client
+      .exchangeCode({ code: 'bad', redirectUri: 'https://app.example/cb' })
+      .catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(GoogleApiError);
+    expect((failure as GoogleApiError).status).toBe(502);
+    expect(JSON.stringify(failure)).not.toContain('shh');
+  });
+
+  it('turns an empty error body (e.g. a 429 with no body) into a typed GoogleApiError', async () => {
+    const client = new GoogleOauthClient({
+      clientId: 'id',
+      clientSecret: 'shh',
+      fetch: respondNonJson(429)
+    });
+
+    const failure = await client
+      .refreshAccessToken('r-token')
+      .catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(GoogleApiError);
+    expect((failure as GoogleApiError).status).toBe(429);
   });
 });

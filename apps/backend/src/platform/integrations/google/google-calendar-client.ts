@@ -57,11 +57,11 @@ export class GoogleCalendarClient {
       headers: { Authorization: `Bearer ${this.accessToken}` }
     });
 
-    const json: unknown = await response.json();
-
     if (!response.ok) {
-      throw this.toApiError(response.status, json);
+      throw await this.toApiError(response);
     }
+
+    const json: unknown = await response.json();
 
     return GoogleEventListSchema.parse(json);
   }
@@ -88,20 +88,30 @@ export class GoogleCalendarClient {
       body: JSON.stringify(input.event)
     });
 
-    const json: unknown = await response.json();
-
     if (!response.ok) {
-      throw this.toApiError(response.status, json);
+      throw await this.toApiError(response);
     }
+
+    const json: unknown = await response.json();
 
     return GoogleEventSchema.parse(json);
   }
 
-  private toApiError(status: number, json: unknown): GoogleApiError {
-    const parsed = GoogleErrorEnvelopeSchema.safeParse(json);
-    const code = parsed.success ? (parsed.data.error.status ?? String(parsed.data.error.code)) : 'unknown_error';
+  /** A non-2xx body might not be JSON at all (an empty body, an HTML error
+   * page from a load balancer or WAF) — never let that surface as a raw
+   * SyntaxError or ZodError instead of a typed GoogleApiError. */
+  private async toApiError(response: Response): Promise<GoogleApiError> {
+    try {
+      const json: unknown = await response.json();
+      const parsed = GoogleErrorEnvelopeSchema.safeParse(json);
+      const code = parsed.success
+        ? (parsed.data.error.status ?? String(parsed.data.error.code))
+        : 'unknown_error';
 
-    return new GoogleApiError(status, code);
+      return new GoogleApiError(response.status, code);
+    } catch {
+      return new GoogleApiError(response.status, 'unknown_error');
+    }
   }
 
   /** Access token material must survive neither a log line nor a serialized
