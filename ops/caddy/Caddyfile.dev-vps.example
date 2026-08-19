@@ -10,17 +10,10 @@ www.turni.ru {
 }
 
 cms.turni.ru {
-    # `route` preserves this order: foreign IPs receive 403 before Caddy asks
-    # for Basic Auth. Without it Caddy may reorder directives.
-    route {
-        @blocked not remote_ip {$CMS_ADMIN_IP}
-        respond @blocked "Forbidden" 403
-
-        basic_auth {
-            {$CMS_ADMIN_USER} {$CMS_ADMIN_PASSWORD_HASH}
-        }
-        reverse_proxy 127.0.0.1:1337
+    basic_auth {
+        {$CMS_ADMIN_USER} {$CMS_ADMIN_PASSWORD_HASH}
     }
+    reverse_proxy 127.0.0.1:1337
 }
 
 app.turni.ru {

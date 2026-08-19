@@ -125,14 +125,13 @@ printf '[Service]\nEnvironmentFile=/etc/caddy/turni.env\n' | sudo tee /etc/syste
 В `/etc/caddy/turni.env` укажите только подстановки для CMS:
 
 ```dotenv
-CMS_ADMIN_IP=<ваш-статический-публичный-IP>
 CMS_ADMIN_USER=turni-admin
 CMS_ADMIN_PASSWORD_HASH=<результат-sudo-caddy-hash-password>
 ```
 
-Маршруты шаблона: `turni.ru` → core-site, `www.turni.ru` → редирект на основной домен, `cms.turni.ru` → Strapi только с разрешённого IP + Basic Auth, `app.turni.ru` → кабинет и `api.turni.ru` → backend. CMS защищена отдельно; не меняйте её на публичный маршрут.
+Маршруты шаблона: `turni.ru` → core-site, `www.turni.ru` → редирект на основной домен, `cms.turni.ru` → Strapi с Basic Auth, `app.turni.ru` → кабинет и `api.turni.ru` → backend. CMS защищена отдельно; не меняйте её на публичный маршрут.
 
-Перед включением убедитесь, что DNS уже указывает на VPS: Caddy сам выпустит HTTPS-сертификаты, когда сможет принять порт 80/443. `remote_ip` здесь верен, потому что Caddy принимает соединение напрямую, без внешнего CDN/proxy. Если перед ним появится CDN, замените эту часть на `client_ip` и настройте trusted proxies по [документации Caddy matchers](https://caddyserver.com/docs/caddyfile/matchers).
+Перед включением убедитесь, что DNS уже указывает на VPS: Caddy сам выпустит HTTPS-сертификаты, когда сможет принять порт 80/443.
 
 ```bash
 sudo systemctl daemon-reload
