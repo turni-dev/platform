@@ -113,23 +113,9 @@ sudo chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg /etc/apt/sou
 sudo apt update && sudo apt install -y caddy
 ```
 
-Создайте парольный хэш интерактивно, чтобы пароль не попал в историю shell: `sudo caddy hash-password`. Скопируйте [`ops/caddy/Caddyfile.dev-vps.example`](../../ops/caddy/Caddyfile.dev-vps.example) в `/etc/caddy/Caddyfile` и создайте системный environment-файл с ограниченными правами:
+Скопируйте [`ops/caddy/Caddyfile.dev-vps.example`](../../ops/caddy/Caddyfile.dev-vps.example) в `/etc/caddy/Caddyfile`:
 
-```bash
-sudo install -m 640 -o root -g caddy /dev/null /etc/caddy/turni.env
-sudoedit /etc/caddy/turni.env
-sudo install -d -m 755 /etc/systemd/system/caddy.service.d
-printf '[Service]\nEnvironmentFile=/etc/caddy/turni.env\n' | sudo tee /etc/systemd/system/caddy.service.d/override.conf >/dev/null
-```
-
-В `/etc/caddy/turni.env` укажите только подстановки для CMS:
-
-```dotenv
-CMS_ADMIN_USER=turni-admin
-CMS_ADMIN_PASSWORD_HASH=<результат-sudo-caddy-hash-password>
-```
-
-Маршруты шаблона: `turni.ru` → core-site, `www.turni.ru` → редирект на основной домен, `cms.turni.ru` → Strapi с Basic Auth, `app.turni.ru` → кабинет и `api.turni.ru` → backend. CMS защищена отдельно; не меняйте её на публичный маршрут.
+Маршруты шаблона: `turni.ru` → core-site, `www.turni.ru` → редирект на основной домен, `cms.turni.ru` → Strapi, `app.turni.ru` → кабинет и `api.turni.ru` → backend.
 
 Перед включением убедитесь, что DNS уже указывает на VPS: Caddy сам выпустит HTTPS-сертификаты, когда сможет принять порт 80/443.
 

@@ -10,9 +10,6 @@ www.turni.ru {
 }
 
 cms.turni.ru {
-    basic_auth {
-        {$CMS_ADMIN_USER} {$CMS_ADMIN_PASSWORD_HASH}
-    }
     reverse_proxy 127.0.0.1:1337
 }
 
