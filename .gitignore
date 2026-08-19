@@ -68,3 +68,4 @@ apps/cms/types/generated/
 # Исходники и подготовленные к загрузке файлы остаются локальными.
 /illustrations/
 /*.png
+.worktrees/
