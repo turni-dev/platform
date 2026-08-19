@@ -18,6 +18,10 @@ import {
 import { registerAgentRoutes, type AgentHttpOptions } from './agent-routes.js';
 import { registerChannelRoutes, type ChannelHttpOptions } from './channel-routes.js';
 import {
+  registerGoogleIntegrationRoutes,
+  type GoogleIntegrationHttpOptions
+} from './google-integration-routes.js';
+import {
   registerVkWebhookRoutes,
   type VkWebhookHttpOptions
 } from './vk-webhook-routes.js';
@@ -48,6 +52,7 @@ export type HttpAppOptions = Readonly<{
   agent?: AgentHttpOptions;
   channels?: ChannelHttpOptions;
   vkWebhook?: VkWebhookHttpOptions;
+  google?: GoogleIntegrationHttpOptions;
   guestSessionService?: DurableGuestSessionService;
   widgetMessageHandler?: WidgetMessageHandler;
   cabinetStream?: CabinetStream;
@@ -91,6 +96,10 @@ export async function createHttpApp(
 
   if (options?.vkWebhook !== undefined) {
     registerVkWebhookRoutes(fastify, options.vkWebhook);
+  }
+
+  if (options?.google !== undefined) {
+    registerGoogleIntegrationRoutes(fastify, options.google);
   }
 
   fastify.get(HttpRoute.CabinetStream, (request, reply) => {
