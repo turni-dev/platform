@@ -138,6 +138,28 @@ describe('PostgresSkillRegistry', () => {
     await expect(registry.resolveActive('calendar-write-event')).resolves.toBeUndefined();
   });
 
+  it('parses input_schema and output_schema when returned as JSON strings', async () => {
+    const database = new FakeDatabase();
+    database.transactionHandle.rowsFor = (sql) => {
+      if (sql.includes('SELECT') && sql.includes('WHERE slug') && sql.includes('version')) {
+        return [
+          {
+            ...skillRow,
+            input_schema: JSON.stringify({ type: 'object', properties: { foo: { type: 'string' } } }),
+            output_schema: JSON.stringify({ type: 'object', properties: { bar: { type: 'number' } } })
+          }
+        ];
+      }
+      return [];
+    };
+    const registry = new PostgresSkillRegistry(database, { next: () => skillId });
+
+    const skill = await registry.get('calendar-write-event', 1);
+
+    expect(skill?.inputSchema).toEqual({ type: 'object', properties: { foo: { type: 'string' } } });
+    expect(skill?.outputSchema).toEqual({ type: 'object', properties: { bar: { type: 'number' } } });
+  });
+
   it('lists every version of a slug in ascending order', async () => {
     const database = new FakeDatabase();
     database.transactionHandle.rowsFor = () => [
