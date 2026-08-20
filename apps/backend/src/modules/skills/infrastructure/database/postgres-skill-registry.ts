@@ -19,6 +19,35 @@ export class SkillNotFoundError extends Error {
   }
 }
 
+export class SkillVersionConflictError extends Error {
+  public constructor(slug: string, version: number) {
+    super(`Skill ${slug}@${version} was already published by a concurrent request`);
+    this.name = 'SkillVersionConflictError';
+  }
+}
+
+const UNIQUE_VIOLATION_SQLSTATE = '23505';
+const SKILLS_SLUG_VERSION_CONSTRAINT = 'skills_slug_version_uidx';
+
+function isUniqueViolation(error: unknown): error is { code: string; constraint_name?: string } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code: unknown }).code === UNIQUE_VIOLATION_SQLSTATE
+  );
+}
+
+function isSkillSlugVersionConflict(error: unknown): boolean {
+  if (!isUniqueViolation(error)) {
+    return false;
+  }
+
+  return (
+    error.constraint_name === undefined || error.constraint_name === SKILLS_SLUG_VERSION_CONSTRAINT
+  );
+}
+
 const jsonbColumn = z
   .union([z.string(), z.record(z.string(), z.unknown())])
   .transform((value) => (typeof value === 'string' ? (JSON.parse(value) as unknown) : value));
@@ -76,8 +105,10 @@ export class PostgresSkillRegistry implements SkillRegistryPort {
       const nextVersion = (maxVersionRows[0]?.max_version ?? 0) + 1;
       const id = this.ids.next();
 
-      const rows = z.array(SkillRowSchema).parse(
-        await transaction.execute(sql`
+      let insertResult: unknown;
+
+      try {
+        insertResult = await transaction.execute(sql`
           INSERT INTO skills (
             id, slug, version, capability_id, input_schema, output_schema,
             permissions, active, created_by
@@ -88,8 +119,16 @@ export class PostgresSkillRegistry implements SkillRegistryPort {
             ${request.permissions}, false, ${request.createdBy}
           )
           RETURNING ${columns}
-        `)
-      );
+        `);
+      } catch (error) {
+        if (isSkillSlugVersionConflict(error)) {
+          throw new SkillVersionConflictError(request.slug, nextVersion);
+        }
+
+        throw error;
+      }
+
+      const rows = z.array(SkillRowSchema).parse(insertResult);
 
       return toSkillDefinition(rows[0]!);
     });

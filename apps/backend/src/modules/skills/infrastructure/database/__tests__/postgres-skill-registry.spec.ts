@@ -5,7 +5,11 @@ import type {
   TenantDatabase,
   TenantTransaction
 } from '../../../../../platform/database/with-tenant.js';
-import { PostgresSkillRegistry, SkillNotFoundError } from '../postgres-skill-registry.js';
+import {
+  PostgresSkillRegistry,
+  SkillNotFoundError,
+  SkillVersionConflictError
+} from '../postgres-skill-registry.js';
 
 const skillId = '018f2d15-7b34-7a20-8f49-b2f1a430e4d1';
 const createdBy = '018f2d15-7b34-7a20-8f49-b2f1a430e4d2';
@@ -100,6 +104,35 @@ describe('PostgresSkillRegistry', () => {
       query.sql.includes('INSERT INTO skills')
     );
     expect(insert?.params).toContain(2);
+  });
+
+  it('throws SkillVersionConflictError when a concurrent publish wins the unique index race', async () => {
+    const database = new FakeDatabase();
+    database.transactionHandle.rowsFor = (sql) => {
+      if (sql.includes('MAX(version)')) {
+        return [{ max_version: null }];
+      }
+      if (sql.includes('INSERT INTO skills')) {
+        const uniqueViolation = Object.assign(
+          new Error('duplicate key value violates unique constraint "skills_slug_version_uidx"'),
+          { code: '23505', constraint_name: 'skills_slug_version_uidx' }
+        );
+        throw uniqueViolation;
+      }
+      return [];
+    };
+    const registry = new PostgresSkillRegistry(database, { next: () => skillId });
+
+    await expect(
+      registry.publish({
+        slug: 'calendar-write-event',
+        capabilityId: 'google.calendar.events.create',
+        inputSchema: {},
+        outputSchema: {},
+        permissions: [],
+        createdBy: null
+      })
+    ).rejects.toBeInstanceOf(SkillVersionConflictError);
   });
 
   it('activates a version and deactivates the previously active one in the same transaction', async () => {
