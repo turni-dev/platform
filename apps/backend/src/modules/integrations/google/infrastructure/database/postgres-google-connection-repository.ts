@@ -72,12 +72,12 @@ export class PostgresGoogleConnectionRepository implements GoogleConnectionRepos
       transaction
         .execute(
           sql`
-            INSERT INTO google_connections (
-              id, tenant_id, agent_id, status, scopes,
-              refresh_token_enc, google_account_email, resources
+            INSERT INTO integration_connections (
+              id, tenant_id, agent_id, provider_slug, status, granted_scopes,
+              credentials_enc, provider_account_email, resources
             ) VALUES (
               ${connection.id}, ${connection.tenantId}, ${connection.agentId},
-              ${connection.status}, ${connection.scopes},
+              'google', ${connection.status}, ${connection.scopes},
               ${connection.refreshTokenEncrypted}, ${connection.googleAccountEmail},
               ${JSON.stringify(connection.resources)}::jsonb
             )
@@ -93,9 +93,9 @@ export class PostgresGoogleConnectionRepository implements GoogleConnectionRepos
     return withTenant(this.database, tenant, async (transaction) => {
       const rows = z.array(SummaryRowSchema).parse(
         await transaction.execute(sql`
-          SELECT id, status, google_account_email, resources
-          FROM google_connections
-          WHERE tenant_id = ${tenant} AND deleted_at IS NULL
+          SELECT id, status, provider_account_email AS google_account_email, resources
+          FROM integration_connections
+          WHERE tenant_id = ${tenant} AND provider_slug = 'google' AND deleted_at IS NULL
           ORDER BY created_at DESC
           LIMIT 1
         `)
@@ -119,7 +119,7 @@ export class PostgresGoogleConnectionRepository implements GoogleConnectionRepos
       wasUpdated(
         transaction,
         sql`
-          UPDATE google_connections
+          UPDATE integration_connections
           SET status = 'active',
               resources = ${JSON.stringify(request.resources)}::jsonb
           WHERE tenant_id = ${request.tenantId}
@@ -144,9 +144,11 @@ export class PostgresGoogleConnectionRepository implements GoogleConnectionRepos
       transaction
         .execute(
           sql`
-            UPDATE google_connections
-            SET refresh_token_enc = ${request.refreshTokenEncrypted}
-            WHERE tenant_id = ${request.tenantId} AND id = ${request.connectionId}
+          UPDATE integration_connections
+          SET credentials_enc = ${request.refreshTokenEncrypted}
+          WHERE tenant_id = ${request.tenantId}
+            AND provider_slug = 'google'
+            AND id = ${request.connectionId}
           `
         )
         .then(() => undefined)

@@ -12,16 +12,18 @@ import {
 
 const tenantSetting = sql`nullif(current_setting('app.tenant_id', true), '')::uuid`;
 
-export const googleConnections = pgTable(
-  'google_connections',
+export const integrationConnections = pgTable(
+  'integration_connections',
   {
     id: uuid('id').primaryKey(),
     tenantId: uuid('tenant_id').notNull(),
     agentId: uuid('agent_id').notNull(),
+    providerSlug: text('provider_slug').notNull(),
+    providerVersion: text('provider_version').default('1').notNull(),
     status: text('status').default('pending').notNull(),
-    scopes: text('scopes').array().notNull(),
-    refreshTokenEncrypted: text('refresh_token_enc'),
-    googleAccountEmail: text('google_account_email'),
+    grantedScopes: text('granted_scopes').array().notNull(),
+    credentialsEncrypted: text('credentials_enc'),
+    providerAccountEmail: text('provider_account_email'),
     /** `{ "calendarId": "...", "spreadsheetId": "..." }` today; future
      * Google services (Gmail, Drive, ...) add new keys to this same jsonb
      * column instead of new dedicated columns, so no schema migration is
@@ -41,13 +43,13 @@ export const googleConnections = pgTable(
   },
   (table) => [
     check(
-      'google_connections_status_check',
+      'integration_connections_status_check',
       sql`${table.status} in ('pending', 'active', 'error', 'disabled')`
     ),
-    index('google_connections_tenant_idx')
-      .on(table.tenantId)
+    index('integration_connections_tenant_provider_idx')
+      .on(table.tenantId, table.providerSlug)
       .where(sql`${table.deletedAt} is null`),
-    pgPolicy('google_connections_tenant_isolation', {
+    pgPolicy('integration_connections_tenant_isolation', {
       for: 'all',
       to: 'app_rw',
       using: sql`${table.tenantId} = ${tenantSetting}`,
@@ -56,4 +58,4 @@ export const googleConnections = pgTable(
   ]
 ).enableRLS();
 
-export const googleTables = [googleConnections] as const;
+export const integrationTables = [integrationConnections] as const;
