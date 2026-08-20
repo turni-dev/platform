@@ -28,6 +28,10 @@ import { PostgresGuestSessionStore } from '../../modules/channels/infrastructure
 import { WidgetRoutingKeyService } from '../../modules/channels/application/widget-routing-key.js';
 import { PostgresIdempotencyKeyRepository } from '../../platform/idempotency/postgres-idempotency-key-repository.js';
 import { AgentConfigurationAnalytics } from '../../modules/agent-core/application/agent-configuration-analytics.js';
+import { GoogleConnectionService } from '../../modules/integrations/google/application/google-connection-service.js';
+import { GoogleIntegrationAnalytics } from '../../modules/integrations/google/application/google-integration-analytics.js';
+import { GoogleOauthStateService } from '../../modules/integrations/google/application/google-oauth-state.js';
+import { PostgresGoogleConnectionRepository } from '../../modules/integrations/google/infrastructure/database/postgres-google-connection-repository.js';
 import { AgentConfigurationService } from '../../modules/agent-core/application/agent-configuration-service.js';
 import { PostgresAgentFileStore } from '../../modules/agent-core/infrastructure/database/postgres-agent-file-store.js';
 import { PostgresAgentRepository } from '../../modules/agent-core/infrastructure/database/postgres-agent-repository.js';
@@ -46,10 +50,12 @@ import { InMemoryKeyValueCache } from '../../platform/cache/in-memory-key-value-
 import { createPostgresTenantDatabase } from '../../platform/database/postgres-tenant-database.js';
 import { readHttpEnv } from '../../platform/env.js';
 import { createNodemailerTransport } from '../../platform/integrations/smtp/nodemailer-transport.js';
+import { GoogleOauthClient } from '../../platform/integrations/google/index.js';
 import { SmtpOwnerAuthNotifier } from '../../platform/integrations/smtp/smtp-owner-auth-notifier.js';
 import { createHttpApp } from './app.js';
 import type { AgentHttpOptions } from './agent-routes.js';
 import type { OwnerAuthHttpOptions } from './owner-auth-routes.js';
+import type { GoogleIntegrationHttpOptions } from './google-integration-routes.js';
 
 async function bootstrap(): Promise<void> {
   const env = readHttpEnv();
@@ -72,6 +78,7 @@ async function bootstrap(): Promise<void> {
       guestSessionService: guestSessions,
       ownerAuth: composeOwnerAuth(env, database.database),
       agent: composeAgent(env, database.database),
+      google: composeGoogle(env, database.database),
       channels: channels.cabinet,
       vkWebhook: channels.webhook
     });
@@ -91,6 +98,44 @@ async function bootstrap(): Promise<void> {
     }
     throw error;
   }
+}
+
+function composeGoogle(
+  env: ReturnType<typeof readHttpEnv>,
+  database: ReturnType<typeof createPostgresTenantDatabase>['database']
+): GoogleIntegrationHttpOptions {
+  const ids = new UuidV7Generator();
+  const connections = new PostgresGoogleConnectionRepository(database);
+  const agents = new PostgresAgentRepository(database);
+
+  return {
+    service: new GoogleConnectionService({
+      connections,
+      cipher: new SecretCipher('credentials', readSecretKeyRing('credentials')),
+      agents: {
+        findByTenant: async (tenantId) => {
+          const agent = await agents.findByTenant(tenantId);
+          return agent === undefined ? undefined : { agentId: agent.agentId };
+        }
+      },
+      oauth: new GoogleOauthClient({
+        clientId: env.GOOGLE_OAUTH_CLIENT_ID,
+        clientSecret: env.GOOGLE_OAUTH_CLIENT_SECRET
+      }),
+      stateService: new GoogleOauthStateService(env.GOOGLE_OAUTH_STATE_SECRET),
+      redirectUri: new URL('/api/v1/integrations/google/callback', env.PUBLIC_WEBHOOK_ORIGIN).toString(),
+      ids,
+      analytics: new GoogleIntegrationAnalytics(
+        new DatabaseDomainEventBus(new PostgresDomainEventStore(database)),
+        ids
+      ),
+      clock: () => new Date()
+    }),
+    connections,
+    accessTokens: new OwnerAccessTokenService(env.OWNER_AUTH_SECRET),
+    allowedOrigins: [new URL(env.APP_ORIGIN).origin],
+    cabinetRedirectUrl: new URL('/integrations/google', env.APP_ORIGIN).toString()
+  };
 }
 
 /**
