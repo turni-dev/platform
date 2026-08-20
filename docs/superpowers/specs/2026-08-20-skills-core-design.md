@@ -90,15 +90,51 @@ CREATE TABLE skills (
 CREATE UNIQUE INDEX skills_slug_version_uidx ON skills (slug, version);
 CREATE UNIQUE INDEX skills_slug_active_uidx ON skills (slug) WHERE active;
 
-GRANT SELECT, INSERT ON skills TO app_rw;
-GRANT UPDATE (active) ON skills TO app_rw;
+CREATE FUNCTION protect_skill_version()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF OLD.id IS DISTINCT FROM NEW.id OR
+     OLD.slug IS DISTINCT FROM NEW.slug OR
+     OLD.version IS DISTINCT FROM NEW.version OR
+     OLD.capability_id IS DISTINCT FROM NEW.capability_id OR
+     OLD.input_schema IS DISTINCT FROM NEW.input_schema OR
+     OLD.output_schema IS DISTINCT FROM NEW.output_schema OR
+     OLD.permissions IS DISTINCT FROM NEW.permissions OR
+     OLD.created_by IS DISTINCT FROM NEW.created_by OR
+     OLD.created_at IS DISTINCT FROM NEW.created_at THEN
+    RAISE EXCEPTION 'skill versions are immutable';
+  END IF;
+  RETURN NEW;
+END
+$$;
+CREATE TRIGGER skills_immutable_version
+  BEFORE UPDATE ON skills
+  FOR EACH ROW EXECUTE FUNCTION protect_skill_version();
+
+CREATE FUNCTION reject_skill_delete()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'skill versions cannot be deleted';
+END
+$$;
+CREATE TRIGGER skills_no_delete
+  BEFORE DELETE ON skills
+  FOR EACH ROW EXECUTE FUNCTION reject_skill_delete();
+
+GRANT SELECT, INSERT, UPDATE ON skills TO app_rw;
 ```
 
-Immutability is enforced by the grant, not only by application code:
-`app_rw` can `INSERT` a new version and flip the `active` column, but cannot
-`UPDATE` any other column and cannot `DELETE`. This gives the same guarantee
-the `prompts` non-negotiable describes for LLM prompts, without introducing
-RLS machinery this table doesn't need.
+Immutability follows the exact pattern already used for `prompts`
+(`protect_prompt_version`/`reject_prompt_delete` in
+`apps/backend/src/modules/policy/infrastructure/database/migrations/0007_policy.sql`):
+a `BEFORE UPDATE` trigger raises unless every column except `active` is
+unchanged, and a `BEFORE DELETE` trigger always raises. `app_rw` gets an
+ordinary `GRANT SELECT, INSERT, UPDATE` (no column-level grant, no `DELETE`)
+because the trigger — not the grant — is what makes a published version
+immutable. Unlike `prompts` (where `app_rw` has no write access at all and an
+external CI process inserts rows), `app_rw` here does insert and activate
+rows, because `SkillRegistryPort.publish`/`activate` run as part of the
+application in this ticket's scope.
 
 Drizzle schema (`infrastructure/database/schema.ts`) mirrors this table
 definition, following the `policies`/`prompts` schema file's structure
@@ -129,15 +165,18 @@ are DB-backed from this ticket onward per the approved design.
   `strictObject` rejects unknown keys, `SkillPublishInputSchema` rejects a
   caller-supplied `version` or `active`.
 - `apps/backend/src/modules/skills/infrastructure/database/__tests__/postgres-skill-registry.spec.ts`
-  — against the real test Postgres (pattern: `google-connection-service`
-  tests): `publish` assigns version 1 then 2 for the same slug; `activate`
-  deactivates the prior active version atomically; activating a nonexistent
-  `(slug, version)` throws `SkillNotFoundError`; `resolveActive` returns
-  `undefined` when no version is active; `list` returns all versions ordered.
+  — a fake `TenantTransaction` that compiles each `sql` template through
+  Drizzle's `PgDialect` and asserts on the resulting SQL text and params
+  (pattern: `postgres-agent-store.spec.ts`, not a real database connection):
+  `publish` assigns version 1 then 2 for the same slug; `activate` issues a
+  deactivate-then-activate pair inside one transaction; activating a
+  nonexistent `(slug, version)` throws `SkillNotFoundError`; `resolveActive`
+  returns `undefined` when no version is active; `list` returns all versions
+  ordered.
 - `apps/backend/src/modules/skills/infrastructure/database/__tests__/migration.spec.ts`
   — static assertions on the migration SQL (pattern: policy module's
-  `migration.spec.ts`): table/index names, the `GRANT UPDATE (active)`
-  column restriction, absence of `ENABLE ROW LEVEL SECURITY`.
+  `migration.spec.ts`): table/index names, the `skills_immutable_version` and
+  `skills_no_delete` triggers, absence of `ENABLE ROW LEVEL SECURITY`.
 
 ## Out of scope (later tickets)
 
