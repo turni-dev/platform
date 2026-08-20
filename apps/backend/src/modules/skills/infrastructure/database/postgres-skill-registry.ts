@@ -9,7 +9,7 @@ import {
 import { sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { timestampColumn } from '../../../../platform/database/sql-timestamp.js';
-import type { TenantDatabase, TenantTransaction } from '../../../../platform/database/with-tenant.js';
+import type { TenantDatabase } from '../../../../platform/database/with-tenant.js';
 import type { UuidV7GeneratorPort } from '../uuid-v7-generator.js';
 
 export class SkillNotFoundError extends Error {
