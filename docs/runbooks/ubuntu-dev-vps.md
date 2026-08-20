@@ -9,7 +9,7 @@
 | `compose.site.yml` + `ops/compose/dev-vps/site.yml`: отдельные CMS Postgres, Strapi CMS и core-site | immutable GHCR-образы и ограниченная deploy-команда на VPS |
 | `compose.yml` + `ops/compose/dev-vps/product.yml`: Postgres, Redis (2 роли), MinIO, Mailpit, миграции, backend и cabinet | отдельная database-login роль `NOBYPASSRLS` для backend перед пилотными данными |
 | `apps/web/Dockerfile` и Dockerfile backend: standalone-сборки приложения | активный GitHub Actions workflow: `.github/workflows/ci.yml` сейчас полностью закомментирован |
-| `ops/caddy/Caddyfile.dev-vps.example`: четыре домена, HTTPS и защита CMS | CI/CD с GHCR и готовый `turni-deploy` на VPS |
+| `ops/caddy/Caddyfile.dev-vps.example`: четыре домена и HTTPS | CI/CD с GHCR и готовый `turni-deploy` на VPS |
 | SOPS/age bootstrap | site/product образы в GHCR |
 
 `ops/compose/dev-vps/product.yml` добавляет к продуктовой инфраструктуре миграции, backend и кабинет. `ops/compose/dev-vps/site.yml` оставляет site-стек отдельным. Оба Compose-проекта не делят Docker-сеть или БД; связь между доменами делает только Caddy через `127.0.0.1`.
@@ -19,9 +19,7 @@
 ## Входные данные владельца
 
 - IPv4 VPS и SSH-ключ администратора;
-- A/AAAA записи `turni.ru`, `www.turni.ru`, `cms.turni.ru`, `app.turni.ru` и `api.turni.ru`, все на IP VPS;
-- статический публичный IP администратора для CMS;
-- новый пароль почты: старый, присланный в чат, отозван и не используется;
+- A-записи `turni.ru`, `www.turni.ru`, `cms.turni.ru`, `app.turni.ru` и `api.turni.ru`, все на IP VPS;
 - офлайн age identity и два проверенных офлайн-бэкапа; private key не копируется в Git, GitHub Secrets, мессенджер или на VPS;
 - отдельный GHCR read-only token только если образы приватные. Для GitHub Packages это classic PAT с минимальным `read:packages`.
 
@@ -71,25 +69,6 @@ sudo apt install -y ca-certificates curl
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
-sudo tee /etc/apt/sources.list.d/docker.sources >/dev/null <<EOF
-Types: deb
-URIs: https://download.docker.com/linux/ubuntu
-Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
-Components: stable
-Architectures: $(dpkg --print-architecture)
-Signed-By: /etc/apt/keyrings/docker.asc
-EOF
-sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-sudo usermod -aG docker turni
-sudo -iu turni docker version
-sudo -iu turni docker compose version
-```
-
-`<<EOF` означает многострочный ввод: после вставки блока shell показывает приглашение `>` и ждёт строку `EOF` без пробелов. Это нормальное поведение. Если ввод прерван или терминал уже ждёт `>`, нажмите `Ctrl+C` и выполните вариант без многострочного ввода:
-
-```bash
-sudo rm -f /etc/apt/sources.list.d/docker.sources
 . /etc/os-release
 printf 'Types: deb\nURIs: https://download.docker.com/linux/ubuntu\nSuites: %s\nComponents: stable\nArchitectures: %s\nSigned-By: /etc/apt/keyrings/docker.asc\n' "${UBUNTU_CODENAME:-$VERSION_CODENAME}" "$(dpkg --print-architecture)" | sudo tee /etc/apt/sources.list.d/docker.sources >/dev/null
 sudo apt update
@@ -113,28 +92,44 @@ sudo chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg /etc/apt/sou
 sudo apt update && sudo apt install -y caddy
 ```
 
-Скопируйте [`ops/caddy/Caddyfile.dev-vps.example`](../../ops/caddy/Caddyfile.dev-vps.example) в `/etc/caddy/Caddyfile`:
-
 Маршруты шаблона: `turni.ru` → core-site, `www.turni.ru` → редирект на основной домен, `cms.turni.ru` → Strapi, `app.turni.ru` → кабинет и `api.turni.ru` → backend.
 
-Перед включением убедитесь, что DNS уже указывает на VPS: Caddy сам выпустит HTTPS-сертификаты, когда сможет принять порт 80/443.
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl restart caddy
-sudo systemctl is-active --quiet caddy
-curl -I https://turni.ru
-curl -I https://cms.turni.ru
-curl -I https://app.turni.ru
-curl -I https://api.turni.ru/healthz
-```
+После clone репозитория в следующем разделе скопируйте Caddyfile и перезапустите Caddy. Перед включением убедитесь, что DNS уже указывает на VPS: Caddy сам выпустит HTTPS-сертификаты, когда сможет принять порт 80/443.
 
 ## 4. Разместить репозиторий и изолировать порты
 
 ```bash
 sudo install -d -m 0750 -o turni -g turni /srv/turni
-sudo -iu turni git clone git@github.com:turni-dev/platform.git /srv/turni/platform
+sudo -u turni mkdir -p /home/turni/.ssh
+sudo -u turni ssh-keygen -t ed25519 -C 'turni-vps-deploy' -f /home/turni/.ssh/github_turni_deploy
+sudo -u turni cat /home/turni/.ssh/github_turni_deploy.pub
 sudo -iu turni mkdir -p /srv/turni/config
+```
+
+Добавьте показанный public key в GitHub: repository → **Settings** → **Deploy keys** →
+**Add deploy key**. Дайте только read-only доступ. Затем создайте
+`/home/turni/.ssh/config`:
+
+```text
+Host github.com
+  IdentityFile ~/.ssh/github_turni_deploy
+  IdentitiesOnly yes
+```
+
+Права на файл должны принадлежать `turni`. Проверьте SSH и клонируйте `main`:
+
+```bash
+sudoedit /home/turni/.ssh/config
+sudo chown turni:turni /home/turni/.ssh/config
+sudo chmod 600 /home/turni/.ssh/config
+sudo -u turni ssh -T git@github.com
+sudo -u turni git clone --branch main git@github.com:turni-dev/platform.git /srv/turni/platform
+```
+
+```bash
+sudo cp /srv/turni/platform/ops/caddy/Caddyfile.dev-vps.example /etc/caddy/Caddyfile
+sudo caddy validate --config /etc/caddy/Caddyfile
+sudo systemctl restart caddy
 ```
 
 Не публикуйте наружу Postgres, Redis, MinIO, Strapi или Mailpit. Все порты в `compose.yml` и `compose.site.yml` по умолчанию привязаны к `127.0.0.1`; наружу открывает только Caddy порты 80 и 443. Не переопределяйте `PRODUCT_BIND_ADDRESS` или `SITE_BIND_ADDRESS` значением `0.0.0.0`.
@@ -143,7 +138,7 @@ sudo -iu turni mkdir -p /srv/turni/config
 
 Источником остаётся `ops/sops/secrets.enc.json`; смотрите [`ops/sops/README.md`](../../ops/sops/README.md). На сервере нет private age identity: расшифрованные значения доставляет владелец из защищённого канала в файлы с правами `0600`.
 
-Скопируйте примеры из репозитория, но создавайте реальные файлы только вне Git. В `product.env` секреты подписи должны быть разными и длиной не менее 32 символов; `DATABASE_URL` указывает внутри Docker на `postgres`, а не на `localhost`. `APP_ORIGIN=https://app.turni.ru`, а `PUBLIC_WEBHOOK_ORIGIN=https://api.turni.ru` уже заданы в шаблоне — это важно для cookie и VK callback.
+Скопируйте примеры из репозитория, но создавайте реальные файлы только вне Git. В `product.env` секреты подписи должны быть разными и длиной не менее 32 символов; `KEY_CREDENTIALS_V1` — base64 от 32 случайных байтов; `DATABASE_URL` указывает внутри Docker на `postgres`, а не на `localhost`. В `site.env` позже появятся `CMS_API_TOKEN` и `CMS_WRITE_TOKEN`; их создают в Strapi и не коммитят. `APP_ORIGIN=https://app.turni.ru`, а `PUBLIC_WEBHOOK_ORIGIN=https://api.turni.ru` уже заданы в шаблоне — это важно для cookie и VK callback.
 
 ```bash
 sudo -iu turni cp /srv/turni/platform/ops/compose/dev-vps/site.env.example /srv/turni/config/site.env
@@ -162,14 +157,14 @@ sudo -iu turni bash -lc 'cd /srv/turni/platform && docker compose --project-name
 Проверки и безопасная диагностика:
 
 ```bash
-sudo -iu turni docker compose --project-name turni-site -f /srv/turni/platform/compose.site.yml ps
-sudo -iu turni docker compose --project-name turni-product -f /srv/turni/platform/compose.yml -f /srv/turni/platform/ops/compose/dev-vps/product.yml ps
+sudo -iu turni docker compose --project-name turni-site --env-file /srv/turni/config/site.env -f /srv/turni/platform/compose.site.yml -f /srv/turni/platform/ops/compose/dev-vps/site.yml ps
+sudo -iu turni docker compose --project-name turni-product --env-file /srv/turni/config/product.env -f /srv/turni/platform/compose.yml -f /srv/turni/platform/ops/compose/dev-vps/product.yml ps
 curl -fsS http://127.0.0.1:3002/ >/dev/null
 curl -fsS http://127.0.0.1:1337/admin >/dev/null
 curl -fsS http://127.0.0.1:3001/login >/dev/null
 curl -fsS http://127.0.0.1:3000/healthz >/dev/null
-sudo -iu turni docker compose --project-name turni-site -f /srv/turni/platform/compose.site.yml logs --tail=100 core-site cms
-sudo -iu turni docker compose --project-name turni-product -f /srv/turni/platform/compose.yml -f /srv/turni/platform/ops/compose/dev-vps/product.yml logs --tail=100 migrate backend web
+sudo -iu turni docker compose --project-name turni-site --env-file /srv/turni/config/site.env -f /srv/turni/platform/compose.site.yml -f /srv/turni/platform/ops/compose/dev-vps/site.yml logs --tail=100 core-site cms
+sudo -iu turni docker compose --project-name turni-product --env-file /srv/turni/config/product.env -f /srv/turni/platform/compose.yml -f /srv/turni/platform/ops/compose/dev-vps/product.yml logs --tail=100 migrate backend web
 ```
 
 Не отправляйте в issue/чат полный вывод логов CMS или формы: там могут быть контакты и тексты заявок.
@@ -192,7 +187,7 @@ sudo -iu turni docker compose --project-name turni-product -f /srv/turni/platfor
 
 - `docker compose ps` обоих проектов показывает здоровые сервисы, а `migrate` завершился с кодом 0;
 - `https://turni.ru` открывает сайт;
-- `https://cms.turni.ru` возвращает 403 с чужого IP и basic auth с разрешённого;
+- `https://cms.turni.ru/admin` открывает Strapi; в текущем dev-шаблоне CMS доступна без gateway-защиты;
 - `https://app.turni.ru/login` открывает кабинет, а `https://api.turni.ru/healthz` возвращает 200;
 - с внешней машины не доступны `5432`, `5433`, `6379`, `6380`, `9000`, `9001`, `1025`, `1337`, `3000`, `3001` и `3002`;
 - пароль почты и ключи не находятся через `git grep`, `history` или GitHub Secrets, кроме допустимых deploy SSH credentials.
