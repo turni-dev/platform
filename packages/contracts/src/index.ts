@@ -10,3 +10,4 @@ export * from './ports/agent-configuration.js';
 export * from './ports/owner-auth.js';
 export * from './ports/payment.js';
 export * from './ports/google-integration.js';
+export * from './ports/mcp.js';

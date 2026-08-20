@@ -14,7 +14,7 @@
 
 **Files:**
 - Create: `packages/contracts/src/ports/mcp.ts`
-- Create: `packages/contracts/src/ports/__tests__/mcp.spec.ts`
+- Create: `packages/contracts/src/__tests__/mcp.spec.ts`
 - Modify: `packages/contracts/src/index.ts`
 
 - [ ] **Step 1: Write the failing contract tests**
@@ -32,7 +32,7 @@ it('accepts only named read or write capabilities', () => {
 
 - [ ] **Step 2: Run the test and observe its import failure**
 
-Run: `npx vitest run --config vitest.config.ts packages/contracts/src/ports/__tests__/mcp.spec.ts`
+Run: `npx vitest run --config vitest.config.ts packages/contracts/src/__tests__/mcp.spec.ts`
 
 - [ ] **Step 3: Add `mcp.ts` with a boundary that carries no vendor types**
 
@@ -53,7 +53,7 @@ Use Zod schemas for every concrete DTO, export the port from `index.ts`, and mod
 
 - [ ] **Step 4: Run the contract test and strict typecheck**
 
-Run: `npx vitest run --config vitest.config.ts packages/contracts/src/ports/__tests__/mcp.spec.ts && npx tsc -p packages/contracts/tsconfig.lib.json --noEmit`
+Run: `npx vitest run --config vitest.config.ts packages/contracts/src/__tests__/mcp.spec.ts && npx tsc -p packages/contracts/tsconfig.lib.json --noEmit`
 
 - [ ] **Step 5: Commit**
 
