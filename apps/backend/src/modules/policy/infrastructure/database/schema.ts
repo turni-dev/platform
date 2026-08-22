@@ -186,10 +186,32 @@ export const agentRunSpend = pgTable(
   ]
 ).enableRLS();
 
+export const policyProvisioning = pgTable(
+  'policy_provisioning',
+  {
+    tenantId: uuid('tenant_id').notNull(),
+    agentId: uuid('agent_id').notNull(),
+    defaultsVersion: text('defaults_version').notNull(),
+    defaultsFingerprint: text('defaults_fingerprint').notNull(),
+    appliedAt: createdAt(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    primaryKey({ columns: [table.tenantId, table.agentId] }),
+    pgPolicy('policy_provisioning_tenant_isolation', {
+      for: 'all',
+      to: 'app_rw',
+      using: sql`${table.tenantId} = ${tenantSetting}`,
+      withCheck: sql`${table.tenantId} = ${tenantSetting}`
+    })
+  ]
+).enableRLS();
+
 export const policyTables = [
   policies,
   prompts,
   modelConfigs,
   evalCases,
-  agentRunSpend
+  agentRunSpend,
+  policyProvisioning
 ] as const;
