@@ -4,9 +4,9 @@ Turni is a TypeScript/Nx monorepo for AI employees; MVP-1 starts with a restaura
 
 ## Source Of Truth
 
-Obsidian notes in `1. Projects/Личное/ИИ сотрудник или команда` are authoritative. Before implementation, read the task card in `Доска MVP-1` (take only `Готово к работе`, WIP=1) and its linked spec. If notes and code differ, follow notes and record the question.
+`docs/context/` and `openspec/` are authoritative — not Obsidian. Before implementation, read the active card in `docs/context/task-board.md` (`В работе` / next `Готово к работе`, WIP=1) and its linked `openspec/changes/<slug>` (proposal/tasks/design) if one exists; if not, propose one before starting. If context and code differ, follow context and record the question.
 
-Read only the relevant notes: overview (`Обзор проекта`, `Платформа — ядро продукта`), architecture/data/API, LLM runtime, policy/eval/security, or NFR/frontend architecture. Do not load unrelated notes.
+Read only the relevant files: overview (`docs/context/overview.md`, `docs/context/decisions.md`, `docs/context/product-scope.md`), `docs/context/architecture/*` for architecture/data/API/LLM runtime, `docs/context/security-and-quality.md` for policy/eval/security, `docs/context/architecture/frontend-and-nfr.md` for NFR/frontend architecture. Do not load unrelated files. `docs/context/archive/` is historical/business material, not needed for day-to-day coding.
 
 ## Architecture
 
