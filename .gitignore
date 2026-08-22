@@ -69,3 +69,4 @@ apps/cms/types/generated/
 /illustrations/
 /*.png
 .worktrees/
+.claude/worktrees/
