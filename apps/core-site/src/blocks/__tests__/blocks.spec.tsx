@@ -10,6 +10,7 @@ import { Hero } from '../hero/hero';
 import { Illustration } from '../illustration/illustration';
 import { LeadForm } from '../lead-form/lead-form';
 import type { LeadFormBlock } from '../lead-form/schema';
+import { LegalDocument } from '../legal-document/legal-document';
 import { NumberedSteps } from '../numbered-steps/numbered-steps';
 import { SecurityList } from '../security-list/security-list';
 import { StatCard } from '../stat-card/stat-card';
@@ -419,6 +420,84 @@ describe('ChangelogItem', () => {
     });
 
     expect(parsed.tags).toEqual(['Сайт', 'Формы']);
+  });
+});
+
+describe('LegalDocument', () => {
+  const body = [
+    'Настоящий документ описывает условия.',
+    '',
+    '## 1. Раздел',
+    '',
+    '1.1. Текст раздела с **важной** оговоркой.',
+    '',
+    '- Первый пункт',
+    '- Второй пункт'
+  ].join('\n');
+
+  it('shows a prominent draft badge before the heading when the document is unreviewed', () => {
+    const markup = renderToStaticMarkup(
+      <LegalDocument
+        __component="blocks.legal-document"
+        heading="Оферта"
+        updatedAt="2026-08-22"
+        draft={true}
+        body={body}
+      />
+    );
+
+    expect(markup).toContain('data-draft-badge="true"');
+    expect(markup).toContain('Черновик — ожидает проверки юриста');
+    // Бейдж стоит раньше заголовка документа в разметке — его нельзя пропустить.
+    expect(markup.indexOf('data-draft-badge')).toBeLessThan(markup.indexOf('<h1'));
+  });
+
+  it('omits the badge once the document is marked reviewed', () => {
+    const markup = renderToStaticMarkup(
+      <LegalDocument
+        __component="blocks.legal-document"
+        heading="Оферта"
+        updatedAt="2026-08-22"
+        draft={false}
+        body={body}
+      />
+    );
+
+    expect(markup).not.toContain('data-draft-badge');
+    expect(markup).not.toContain('Черновик');
+  });
+
+  it('renders the markdown body as headings, formatted text and a list', () => {
+    const markup = renderToStaticMarkup(
+      <LegalDocument
+        __component="blocks.legal-document"
+        heading="Оферта"
+        updatedAt="2026-08-22"
+        draft={true}
+        body={body}
+      />
+    );
+
+    expect(markup).toContain('<h2');
+    expect(markup).toContain('1. Раздел');
+    expect(markup).toContain('<strong');
+    expect(markup).toContain('важной');
+    expect(markup).toContain('<ul');
+    expect(markup).toContain('Первый пункт');
+  });
+
+  it('carries the last-updated date as machine-readable time', () => {
+    const markup = renderToStaticMarkup(
+      <LegalDocument
+        __component="blocks.legal-document"
+        heading="Оферта"
+        updatedAt="2026-08-22"
+        draft={true}
+        body={body}
+      />
+    );
+
+    expect(markup).toMatch(/<time datetime="2026-08-22"/i);
   });
 });
 

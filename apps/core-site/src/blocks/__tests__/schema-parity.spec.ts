@@ -10,6 +10,7 @@ import { FeatureGridBlockSchema } from '../feature-grid/schema';
 import { HeroBlockSchema } from '../hero/schema';
 import { IllustrationBlockSchema } from '../illustration/schema';
 import { LeadFormBlockSchema } from '../lead-form/schema';
+import { LegalDocumentBlockSchema } from '../legal-document/schema';
 import { NumberedStepsBlockSchema } from '../numbered-steps/schema';
 import { SecurityListBlockSchema } from '../security-list/schema';
 import { StatCardBlockSchema } from '../stat-card/schema';
@@ -37,7 +38,8 @@ const blocks: ReadonlyArray<readonly [string, z.ZodObject]> = [
   ['numbered-steps', NumberedStepsBlockSchema],
   ['stat-card', StatCardBlockSchema],
   ['changelog-item', ChangelogItemBlockSchema],
-  ['illustration', IllustrationBlockSchema]
+  ['illustration', IllustrationBlockSchema],
+  ['legal-document', LegalDocumentBlockSchema]
 ];
 
 function strapiFields(name: string): string[] {

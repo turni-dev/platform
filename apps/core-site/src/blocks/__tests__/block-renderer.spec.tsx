@@ -40,6 +40,13 @@ describe('renderBlocks', () => {
         date: '2026-08-18',
         title: 'Слоты',
         body: 'Лид выбирает время'
+      },
+      {
+        __component: 'blocks.legal-document',
+        heading: 'Оферта',
+        updatedAt: '2026-08-22',
+        draft: true,
+        body: 'Текст документа.'
       }
     ];
 

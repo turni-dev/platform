@@ -9,6 +9,7 @@ import { HeroBlockSchema } from './hero/schema';
 import { IllustrationBlockSchema } from './illustration/schema';
 import { IntegrationCatalogBlockSchema } from './integration-catalog/schema';
 import { LeadFormBlockSchema } from './lead-form/schema';
+import { LegalDocumentBlockSchema } from './legal-document/schema';
 import { LogoWallBlockSchema } from './logo-wall/schema';
 import { NumberedStepsBlockSchema } from './numbered-steps/schema';
 import { SecurityListBlockSchema } from './security-list/schema';
@@ -34,7 +35,8 @@ export const BlockSchema = z.discriminatedUnion('__component', [
   NumberedStepsBlockSchema,
   StatCardBlockSchema,
   ChangelogItemBlockSchema,
-  IllustrationBlockSchema
+  IllustrationBlockSchema,
+  LegalDocumentBlockSchema
 ]);
 
 export const PageSchema = z.object({

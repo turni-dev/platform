@@ -8,6 +8,7 @@ import { Hero } from './hero/hero';
 import { Illustration } from './illustration/illustration';
 import { IntegrationCatalog } from './integration-catalog/integration-catalog';
 import { LeadForm } from './lead-form/lead-form';
+import { LegalDocument } from './legal-document/legal-document';
 import { LogoWall } from './logo-wall/logo-wall';
 import { NumberedSteps } from './numbered-steps/numbered-steps';
 import { SecurityList } from './security-list/security-list';
@@ -58,6 +59,8 @@ function renderBlock(block: PageBlock, key: string, options: RenderBlocksOptions
       return <Illustration key={key} {...block} />;
     case 'blocks.faq':
       return <FaqAccordion key={key} {...block} />;
+    case 'blocks.legal-document':
+      return <LegalDocument key={key} {...block} />;
     case 'blocks.lead-form':
       return (
         <LeadForm
