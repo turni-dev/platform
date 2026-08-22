@@ -138,7 +138,7 @@ sudo systemctl restart caddy
 
 Источником остаётся `ops/sops/secrets.enc.json`; смотрите [`ops/sops/README.md`](../../ops/sops/README.md). На сервере нет private age identity: расшифрованные значения доставляет владелец из защищённого канала в файлы с правами `0600`.
 
-Скопируйте примеры из репозитория, но создавайте реальные файлы только вне Git. В `product.env` секреты подписи должны быть разными и длиной не менее 32 символов; `KEY_CREDENTIALS_V1` — base64 от 32 случайных байтов; `DATABASE_URL` указывает внутри Docker на `postgres`, а не на `localhost`. В `site.env` позже появятся `CMS_API_TOKEN` и `CMS_WRITE_TOKEN`; их создают в Strapi и не коммитят. `APP_ORIGIN=https://app.turni.ru`, а `PUBLIC_WEBHOOK_ORIGIN=https://api.turni.ru` уже заданы в шаблоне — это важно для cookie и VK callback.
+Скопируйте примеры из репозитория, но создавайте реальные файлы только вне Git. В `product.env` секреты подписи должны быть разными и длиной не менее 32 символов; `KEY_CREDENTIALS_V1` — base64 от 32 случайных байтов; `DATABASE_URL` указывает внутри Docker на `postgres`, а не на `localhost`. В `site.env` позже появятся `CMS_READ_TOKEN` и `CMS_WRITE_TOKEN` — два узких токена (read-only и create-only), а не один full-access; их создают в Strapi admin и не коммитят, см. `apps/cms/README.md` и `docs/runbooks/site-cms-token-migration.md`. `APP_ORIGIN=https://app.turni.ru`, а `PUBLIC_WEBHOOK_ORIGIN=https://api.turni.ru` уже заданы в шаблоне — это важно для cookie и VK callback.
 
 ```bash
 sudo -iu turni cp /srv/turni/platform/ops/compose/dev-vps/site.env.example /srv/turni/config/site.env

@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { isHoneypotTripped } from '../anti-abuse/honeypot';
-import { runIdempotently, type IdempotencyGuard } from '../anti-abuse/idempotency';
+import {
+  runIdempotently,
+  type IdempotencyGuard,
+  type IdempotencyKeyStore
+} from '../anti-abuse/idempotency';
 import { resolveRequestIdentity } from '../anti-abuse/identity';
 import { decideRateLimit, type RateLimiters } from '../anti-abuse/rate-limit';
 import { parseRequestedIntegration } from '../integrations/integration-catalog';
@@ -10,7 +14,7 @@ import { deriveLeadAnalytics } from './lead-analytics';
 export type LeadFetch = (
   url: string,
   init: Readonly<{
-    method: 'GET' | 'POST';
+    method: 'POST';
     headers: Readonly<Record<string, string>>;
     body?: string;
   }>
@@ -24,6 +28,12 @@ export type LeadFetch = (
 
 export interface LeadIntakeOptions {
   readonly baseUrl?: string | undefined;
+  /**
+   * The CMS token used for this request. Must be write-only in Strapi
+   * (create on `lead`/`feedback` and the booking-slot `reserve` action) —
+   * never grant it find/findOne on `lead`, or a leaked site token would let
+   * an attacker read every visitor's submission. See `apps/cms/README.md`.
+   */
   readonly apiToken?: string | undefined;
   readonly fetch: LeadFetch;
   readonly onWarning?: (message: string) => void;
@@ -36,6 +46,16 @@ export interface LeadIntakeOptions {
    * supply it, tests may opt out explicitly.
    */
   readonly rateLimit?: RateLimiters | undefined;
+  /**
+   * Process-local record of idempotency keys already delivered to the CMS.
+   * Stands in for a CMS read: the write token has no find/findOne on `lead`,
+   * so this pre-check cannot ask the CMS "have I seen this key". Omitting it
+   * disables the pre-check — a resubmission still cannot create a second
+   * record, because the CMS unique-index violation (`isConcurrentDuplicate`
+   * below) is the real safety net; production wiring must always supply it,
+   * tests may opt out explicitly.
+   */
+  readonly idempotencyStore?: IdempotencyKeyStore | undefined;
 }
 
 class SlotConflictError extends Error {}
@@ -177,8 +197,12 @@ async function process(
   // запроса, тело формы сюда не заглядывает.
   const analytics = deriveLeadAnalytics(request);
 
+  const idempotencyStore = options.idempotencyStore;
   const guard: IdempotencyGuard<Awaited<ReturnType<LeadFetch>>> = {
-    alreadyHandled: (key) => alreadyStored(baseUrl, key, headers, options.fetch),
+    // Не читаем CMS: у write-токена нет find/findOne на lead (см. комментарий
+    // к `idempotencyStore` в LeadIntakeOptions). Пре-чек — только память
+    // процесса; настоящую защиту от гонки даёт isConcurrentDuplicate ниже.
+    alreadyHandled: (key) => Promise.resolve(idempotencyStore?.has(key) ?? false),
     isConcurrentDuplicate: async (response) => !response.ok && (await isDuplicate(response))
   };
 
@@ -240,6 +264,11 @@ async function process(
       return problem(502, 'Не отправилось, попробуйте ещё раз', wantsJson);
     }
 
+    // Запоминаем ключ только после настоящего успеха: неудачная попытка
+    // (не связанная с гонкой по уникальному ключу) должна остаться
+    // повторяемой.
+    idempotencyStore?.remember(lead.data.idempotencyKey);
+
     return accepted(wantsJson);
   } catch (error) {
     if (error instanceof SlotConflictError) {
@@ -291,32 +320,6 @@ async function isDuplicate(
   }
 
   return (await response.text()).includes('must be unique');
-}
-
-async function alreadyStored(
-  baseUrl: string,
-  idempotencyKey: string,
-  headers: Readonly<Record<string, string>>,
-  fetch: LeadFetch
-): Promise<boolean> {
-  const query = new URLSearchParams({ 'filters[idempotencyKey][$eq]': idempotencyKey });
-  const response = await fetch(`${baseUrl}/api/leads?${query.toString()}`, {
-    method: 'GET',
-    headers
-  });
-  if (!response.ok) {
-    return false;
-  }
-
-  const parsed: unknown = JSON.parse(await response.text());
-
-  return (
-    typeof parsed === 'object' &&
-    parsed !== null &&
-    'data' in parsed &&
-    Array.isArray(parsed.data) &&
-    parsed.data.length > 0
-  );
 }
 
 function field(form: FormData, name: string): string | undefined {

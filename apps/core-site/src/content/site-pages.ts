@@ -1,6 +1,7 @@
 import { createCmsPageSource, type PageSource } from './cms-page-source';
 import { createCmsSlugsSource, type SlugSource } from './site-slugs-source';
 import { createBookingSlotsSource, type BookingSlotOption } from '../site/booking-slots-source';
+import { readCmsEnv } from '../config/cms-env';
 import { createIntegrationSlugsSource } from '../integrations/integration-slugs';
 import { createIntegrationsSource, type IntegrationsSource } from '../integrations/integrations-source';
 import { createNavigationSource } from '../site/navigation-source';
@@ -9,9 +10,18 @@ import type { NavItem, SiteSettings } from '../site/site-settings-schema';
 
 export type { SlugSource };
 
+const env = readCmsEnv();
+
+/**
+ * Единственное место, где сайт узнаёт адрес CMS и её read-only токен.
+ * `CMS_READ_TOKEN` в Strapi даёт только `find`/`findOne` на страницы,
+ * настройки, навигацию, каталог интеграций и доступность слотов — никогда
+ * `create`/`update`/`delete` (см. `apps/cms/README.md`). Переменной нет —
+ * работаем на семени, поэтому локальная разработка не требует поднятого Strapi.
+ */
 const connection = {
-  baseUrl: process.env['CMS_BASE_URL'],
-  apiToken: process.env['CMS_API_TOKEN'],
+  baseUrl: env.CMS_BASE_URL,
+  apiToken: env.CMS_READ_TOKEN,
   fetch: (url: string, init: Readonly<{ headers: Readonly<Record<string, string>> }>) =>
     fetch(url, { ...init, next: { revalidate: 60 } }),
   onWarning: (message: string): void => {
@@ -19,10 +29,6 @@ const connection = {
   }
 };
 
-/**
- * Единственное место, где сайт узнаёт адрес CMS. Переменной нет — работаем на
- * семени, поэтому локальная разработка не требует поднятого Strapi.
- */
 export const sitePages: PageSource = createCmsPageSource(connection);
 
 export const siteSettings: { get(): Promise<SiteSettings> } =
@@ -56,4 +62,4 @@ export const siteSlugSources: readonly SlugSource[] = [sitePageSlugs, integratio
  * Адрес кабинета. Пока переменная не задана, кнопка «Подключить» вести некуда,
  * и карточка честно просит оставить заявку вместо ссылки в пустоту.
  */
-export const cabinetUrl: string | undefined = process.env['CABINET_BASE_URL'];
+export const cabinetUrl: string | undefined = env.CABINET_BASE_URL;

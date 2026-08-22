@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { handleLeadRequest, type LeadFetch } from '../lead-intake';
+import { InMemoryIdempotencyKeyStore } from '../../anti-abuse/idempotency';
 import { InMemoryRateLimiter } from '../../anti-abuse/rate-limit';
 import { SESSION_COOKIE_NAME } from '../../anti-abuse/identity';
 
@@ -8,24 +9,16 @@ interface Written {
   readonly body: unknown;
 }
 
-function deps(existing: readonly string[] = []): {
+function deps(): {
   fetch: LeadFetch;
   written: Written[];
   warnings: string[];
 } {
   const written: Written[] = [];
   const warnings: string[] = [];
+  // Only POST: the write token this fetch stands in for has no find/findOne
+  // on `lead`, so lead-intake never issues a GET here (see idempotency.ts).
   const fetch = vi.fn<LeadFetch>((url, init) => {
-    if (init.method === 'GET') {
-      const known = existing.some((key) => url.includes(key));
-
-      return Promise.resolve({
-        ok: true,
-        status: 200,
-        text: () => Promise.resolve(JSON.stringify({ data: known ? [{ id: 1 }] : [] }))
-      });
-    }
-
     written.push({ url, body: JSON.parse(init.body ?? '{}') as unknown });
 
     return Promise.resolve({
@@ -173,27 +166,36 @@ describe('handleLeadRequest', () => {
     expect(written).toHaveLength(0);
   });
 
-  it('writes one lead when the same attempt is submitted twice', async () => {
-    const first = deps();
-    await handleLeadRequest(leadRequest(), options(first.fetch));
+  it('writes one lead when the same attempt is submitted twice on the same instance', async () => {
+    const { fetch, written } = deps();
+    const idempotencyStore = new InMemoryIdempotencyKeyStore(60_000);
+    const opts = { ...options(fetch), idempotencyStore };
 
-    const second = deps(['key-1']);
-    const response = await handleLeadRequest(leadRequest(), options(second.fetch));
+    const first = await handleLeadRequest(leadRequest(), opts);
+    const second = await handleLeadRequest(leadRequest(), opts);
 
-    expect(response.status).toBe(303);
-    expect(second.written).toHaveLength(0);
+    expect(first.status).toBe(303);
+    expect(second.status).toBe(303);
+    expect(written).toHaveLength(1);
+  });
+
+  it('skips the local pre-check and lets both attempts reach the CMS when no store is configured', async () => {
+    const { fetch, written } = deps();
+
+    const first = await handleLeadRequest(leadRequest(), options(fetch));
+    const second = await handleLeadRequest(leadRequest(), options(fetch));
+
+    expect(first.status).toBe(303);
+    expect(second.status).toBe(303);
+    // Real duplicate protection at this point is the CMS unique-index
+    // violation (covered by the test above) — this fixture always accepts,
+    // so without a store both attempts land as writes.
+    expect(written).toHaveLength(2);
   });
 
   it('accepts a lead the unique key already refused, without a second record', async () => {
     const written: Written[] = [];
-    const racing = vi.fn<LeadFetch>((url, init) => {
-      if (init.method === 'GET') {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          text: () => Promise.resolve(JSON.stringify({ data: [] }))
-        });
-      }
+    const racing = vi.fn<LeadFetch>((url) => {
       written.push({ url, body: null });
 
       return Promise.resolve({
@@ -217,17 +219,22 @@ describe('handleLeadRequest', () => {
     expect(written).toHaveLength(1);
   });
 
+  it('does not remember the key after a genuine CMS failure, so a retry can still succeed', async () => {
+    const idempotencyStore = new InMemoryIdempotencyKeyStore(60_000);
+    const failing = vi.fn<LeadFetch>(() => Promise.reject(new Error('ECONNREFUSED')));
+
+    const first = await handleLeadRequest(leadRequest(), {
+      ...options(failing),
+      idempotencyStore
+    });
+
+    expect(first.status).toBe(502);
+    expect(idempotencyStore.has('key-1')).toBe(false);
+  });
+
   it('reports a failure without leaking what the visitor wrote', async () => {
     const warnings: string[] = [];
-    const failing = vi.fn<LeadFetch>((_url, init) =>
-      init.method === 'GET'
-        ? Promise.resolve({
-            ok: true,
-            status: 200,
-            text: () => Promise.resolve(JSON.stringify({ data: [] }))
-          })
-        : Promise.reject(new Error('ECONNREFUSED'))
-    );
+    const failing = vi.fn<LeadFetch>(() => Promise.reject(new Error('ECONNREFUSED')));
 
     const response = await handleLeadRequest(leadRequest(), options(failing, warnings));
 
@@ -259,14 +266,6 @@ function depsWithReservation(reserveStatus: number): {
   const written: Written[] = [];
   const reserved: string[] = [];
   const fetch = vi.fn<LeadFetch>((url, init) => {
-    if (init.method === 'GET') {
-      return Promise.resolve({
-        ok: true,
-        status: 200,
-        text: () => Promise.resolve(JSON.stringify({ data: [] }))
-      });
-    }
-
     if (url.includes('/reserve')) {
       reserved.push(url);
 
