@@ -35,6 +35,7 @@ Read only the relevant files: overview (`docs/context/overview.md`, `docs/contex
 2. Keep scope narrow: branch <=2 days, PR <=400 lines, feature flag where deploy differs from release. Respect CODEOWNERS; do not change contracts or migrations without founder review.
 3. Write the focused test first. After each edit run affected tests/typecheck/lint; run full affected workflows and eval when closing the card.
 4. Commit atomic verified changes. DoD: main, tests and eval green, analytics events, policy preserved, docs/ADR updated, card closed with a comment.
+5. Keep backend and frontend (`apps/web`, `apps/core-site`) in balance. A backend capability without the screen that uses it is not done — an unbounded lead lets the backend outrun what the frontend can ever catch up to. When a backend card ships a capability an owner/guest needs to act on (approvals, connections, automations, policy-visible state), open or update the matching frontend card in the same batch, not as an unscheduled follow-up. When picking the next batch of ready-to-work cards, check feature parity between the two layers before adding more backend-only scope.
 
 ## Test and Artifact Hygiene
 
