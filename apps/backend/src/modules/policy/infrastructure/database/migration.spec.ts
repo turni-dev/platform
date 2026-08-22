@@ -6,6 +6,10 @@ const modelRoutingMigrationUrl = new URL(
   './migrations/0014_policy_model_routing.sql',
   import.meta.url
 );
+const layerHierarchyMigrationUrl = new URL(
+  './migrations/0022_policy_layer_hierarchy.sql',
+  import.meta.url
+);
 
 describe('policy migration', () => {
   it('creates the complete policy table slice', async () => {
@@ -87,5 +91,19 @@ describe('policy migration', () => {
       /CONSTRAINT model_configs_api_kind_check\s+CHECK/
     );
     expect(migration).not.toContain('CREATE TABLE model_configs');
+  });
+
+  it('expands the layer hierarchy without dropping the legacy custom value', async () => {
+    const migration = await readFile(layerHierarchyMigrationUrl, 'utf8');
+
+    expect(migration).toContain('ALTER TABLE policies DROP CONSTRAINT policies_layer_check');
+    expect(migration).toMatch(
+      /ALTER TABLE policies ADD CONSTRAINT policies_layer_check\s+CHECK/
+    );
+    expect(migration).toContain(
+      "CHECK (layer IN ('locked', 'workspace', 'agent', 'user', 'custom'))"
+    );
+    expect(migration).not.toContain('CREATE TABLE');
+    expect(migration).not.toContain('DROP TABLE');
   });
 });
