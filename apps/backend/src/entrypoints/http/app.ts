@@ -19,6 +19,10 @@ import { registerProblemErrorHandler } from '../../platform/http/problem-error-h
 import { sendProblem } from '../../platform/http/problem-details.js';
 import type { ReadinessPort } from '../../platform/http/readiness.js';
 import { registerAgentRoutes, type AgentHttpOptions } from './agent-routes.js';
+import {
+  registerAutomationRoutes,
+  type AutomationHttpOptions
+} from './automation-routes.js';
 import { registerChannelRoutes, type ChannelHttpOptions } from './channel-routes.js';
 import {
   registerGoogleIntegrationRoutes,
@@ -57,6 +61,7 @@ export type HttpAppOptions = Readonly<{
   channels?: ChannelHttpOptions;
   vkWebhook?: VkWebhookHttpOptions;
   google?: GoogleIntegrationHttpOptions;
+  automations?: AutomationHttpOptions;
   guestSessionService?: DurableGuestSessionService;
   widgetMessageHandler?: WidgetMessageHandler;
   cabinetStream?: CabinetStream;
@@ -129,6 +134,10 @@ export async function createHttpApp(
 
   if (options?.google !== undefined) {
     registerGoogleIntegrationRoutes(fastify, options.google);
+  }
+
+  if (options?.automations !== undefined) {
+    registerAutomationRoutes(fastify, options.automations);
   }
 
   fastify.get(HttpRoute.CabinetStream, (request, reply) => {
