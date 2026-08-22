@@ -4,7 +4,7 @@ Turni is a TypeScript/Nx monorepo for AI employees; MVP-1 starts with a restaura
 
 ## Source Of Truth
 
-`docs/context/` and `openspec/` are authoritative — not Obsidian. Before implementation, read the active card in `docs/context/task-board.md` (`В работе` / next `Готово к работе`, WIP=1) and its linked `openspec/changes/<slug>` (proposal/tasks/design) if one exists; if not, propose one before starting. If context and code differ, follow context and record the question.
+`docs/context/` and `openspec/` are authoritative — not Obsidian. Before implementation, read the active card(s) in `docs/context/task-board.md` (`В работе` / next `Готово к работе`) and the linked `openspec/changes/<slug>` (proposal/tasks/design) if one exists; if not, propose one before starting. WIP=1 is a human-capacity rule and does not bind agent-driven cards — an agent may run multiple `В работе` cards in parallel when they are independent. If context and code differ, follow context and record the question.
 
 Read only the relevant files: overview (`docs/context/overview.md`, `docs/context/decisions.md`, `docs/context/product-scope.md`), `docs/context/architecture/*` for architecture/data/API/LLM runtime, `docs/context/security-and-quality.md` for policy/eval/security, `docs/context/architecture/frontend-and-nfr.md` for NFR/frontend architecture. Do not load unrelated files. `docs/context/archive/` is historical/business material, not needed for day-to-day coding.
 
