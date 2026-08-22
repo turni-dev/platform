@@ -19,7 +19,8 @@
     "db:seed": "node tools/bootstrap/demo-seed.mjs",
     "secrets:init": "node tools/bootstrap/secret-bootstrap.mjs",
     "eval": "tsx tools/bootstrap/eval-runner.ts",
-    "db:migrate": "node tools/bootstrap/db-migrate.mjs"
+    "db:migrate": "node tools/bootstrap/db-migrate.mjs",
+    "openapi:generate": "tsx tools/bootstrap/generate-openapi.ts"
   },
   "dependencies": {
     "@fastify/websocket": "^11.3.0",

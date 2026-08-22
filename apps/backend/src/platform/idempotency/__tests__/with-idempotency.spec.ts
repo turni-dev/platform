@@ -37,6 +37,13 @@ class FakeRepository implements IdempotencyKeyRepositoryPort {
 class FakeReply {
   public statusCode: number | undefined;
   public body: unknown;
+  public readonly headers = new Map<string, string>();
+
+  public header(name: string, value: string): this {
+    this.headers.set(name, value);
+
+    return this;
+  }
 
   public code(statusCode: number): this {
     this.statusCode = statusCode;

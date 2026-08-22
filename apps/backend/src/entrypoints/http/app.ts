@@ -15,6 +15,9 @@ import {
   WidgetChatConnection,
   type WidgetMessageHandler
 } from '../../modules/channels/application/widget-chat-connection.js';
+import { registerProblemErrorHandler } from '../../platform/http/problem-error-handler.js';
+import { sendProblem } from '../../platform/http/problem-details.js';
+import type { ReadinessPort } from '../../platform/http/readiness.js';
 import { registerAgentRoutes, type AgentHttpOptions } from './agent-routes.js';
 import { registerChannelRoutes, type ChannelHttpOptions } from './channel-routes.js';
 import {
@@ -38,6 +41,7 @@ const healthStatus: HealthStatus = {
 
 const HttpRoute = {
   Health: '/healthz',
+  Ready: '/readyz',
   GuestSessions: '/api/v1/guest/sessions',
   GuestChat: '/api/v1/guest/chat',
   CabinetStream: '/api/v1/streams/cabinet'
@@ -57,6 +61,9 @@ export type HttpAppOptions = Readonly<{
   widgetMessageHandler?: WidgetMessageHandler;
   cabinetStream?: CabinetStream;
   authorizeCabinetStream?: (request: FastifyRequest) => boolean;
+  /** Backs `/readyz`. Without it, `/readyz` reports the process healthy but
+   * checks no dependency — only `/healthz` is guaranteed to exist. */
+  readiness?: ReadinessPort;
 }>;
 
 export async function createHttpApp(
@@ -80,7 +87,29 @@ export async function createHttpApp(
   const cabinetStream = options?.cabinetStream ?? new CabinetStream();
   const authorizeCabinetStream = options?.authorizeCabinetStream ?? (() => false);
   await fastify.register(fastifyWebsocket);
+  registerProblemErrorHandler(fastify);
   fastify.get(HttpRoute.Health, () => healthStatus);
+  fastify.get(HttpRoute.Ready, async (_request, reply) => {
+    if (options?.readiness === undefined) {
+      return reply.send({ status: 'ok', service: 'turni-backend', checks: { database: 'ok' } });
+    }
+
+    try {
+      await options.readiness.ping();
+
+      return reply.send({ status: 'ok', service: 'turni-backend', checks: { database: 'ok' } });
+    } catch (error) {
+      console.error('Readiness check failed', error);
+
+      return sendProblem(reply, {
+        type: ProblemType.InvalidRequest,
+        title: 'Service unavailable',
+        status: 503,
+        detail: 'The database is not reachable.',
+        instance: HttpRoute.Ready
+      });
+    }
+  });
 
   if (options?.ownerAuth !== undefined) {
     registerOwnerAuthRoutes(fastify, options.ownerAuth);
@@ -104,7 +133,7 @@ export async function createHttpApp(
 
   fastify.get(HttpRoute.CabinetStream, (request, reply) => {
     if (!authorizeCabinetStream(request)) {
-      return reply.code(401).send({
+      return sendProblem(reply, {
         type: ProblemType.Unauthorized,
         title: 'Unauthorized',
         status: 401
@@ -129,7 +158,7 @@ export async function createHttpApp(
     fastify.post(HttpRoute.GuestSessions, async (request, reply) => {
       const parsedRequest = GuestSessionRequestSchema.safeParse(request.body);
       if (!parsedRequest.success) {
-        return reply.code(400).send({
+        return sendProblem(reply, {
           type: ProblemType.InvalidRequest,
           title: 'Invalid request',
           status: 400
@@ -139,7 +168,7 @@ export async function createHttpApp(
       try {
         return reply.code(201).send(await guestSessions.issue(parsedRequest.data));
       } catch {
-        return reply.code(400).send({
+        return sendProblem(reply, {
           type: ProblemType.InvalidRequest,
           title: 'Invalid request',
           status: 400
