@@ -1,21 +1,24 @@
 import { ProblemType } from '@turni/contracts';
 import type { FastifyReply } from 'fastify';
+import { sendProblem } from '../../platform/http/problem-details.js';
 
 /**
  * The one place HTTP refusals are shaped. Every problem is deliberately
  * generic: a body that explained itself would tell a stranger which guess was
- * close.
+ * close. Sent as RFC 7807 (`application/problem+json`) via
+ * `platform/http/problem-details.ts`.
  */
-export function invalidRequest(reply: FastifyReply): FastifyReply {
-  return reply.code(400).send({
+export function invalidRequest(reply: FastifyReply, detail?: string): FastifyReply {
+  return sendProblem(reply, {
     type: ProblemType.InvalidRequest,
     title: 'Invalid request',
-    status: 400
+    status: 400,
+    ...(detail !== undefined ? { detail } : {})
   });
 }
 
 export function unauthorized(reply: FastifyReply): FastifyReply {
-  return reply.code(401).send({
+  return sendProblem(reply, {
     type: ProblemType.Unauthorized,
     title: 'Unauthorized',
     status: 401
@@ -25,7 +28,7 @@ export function unauthorized(reply: FastifyReply): FastifyReply {
 /** Used both for a missing thing and for another tenant's: a stranger learns
  * nothing about what exists. */
 export function notFound(reply: FastifyReply): FastifyReply {
-  return reply.code(404).send({
+  return sendProblem(reply, {
     type: ProblemType.InvalidRequest,
     title: 'Not found',
     status: 404
@@ -36,18 +39,17 @@ export function rateLimited(
   reply: FastifyReply,
   retryAfterSeconds: number
 ): FastifyReply {
-  return reply
-    .header('retry-after', String(retryAfterSeconds))
-    .code(429)
-    .send({
-      type: ProblemType.InvalidRequest,
-      title: 'Too many requests',
-      status: 429
-    });
+  reply.header('retry-after', String(retryAfterSeconds));
+
+  return sendProblem(reply, {
+    type: ProblemType.InvalidRequest,
+    title: 'Too many requests',
+    status: 429
+  });
 }
 
 export function serviceUnavailable(reply: FastifyReply): FastifyReply {
-  return reply.code(503).send({
+  return sendProblem(reply, {
     type: ProblemType.InvalidRequest,
     title: 'Service unavailable',
     status: 503
@@ -55,7 +57,7 @@ export function serviceUnavailable(reply: FastifyReply): FastifyReply {
 }
 
 export function forbidden(reply: FastifyReply): FastifyReply {
-  return reply.code(403).send({
+  return sendProblem(reply, {
     type: ProblemType.Unauthorized,
     title: 'Forbidden',
     status: 403
@@ -64,7 +66,7 @@ export function forbidden(reply: FastifyReply): FastifyReply {
 
 /** An `Idempotency-Key` reused for a request whose body no longer matches. */
 export function conflict(reply: FastifyReply): FastifyReply {
-  return reply.code(409).send({
+  return sendProblem(reply, {
     type: ProblemType.InvalidRequest,
     title: 'Conflict',
     status: 409
@@ -82,7 +84,7 @@ export function internalFailure(
 ): FastifyReply {
   console.error(context, error);
 
-  return reply.code(500).send({
+  return sendProblem(reply, {
     type: ProblemType.InvalidRequest,
     title: 'Internal error',
     status: 500

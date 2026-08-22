@@ -48,6 +48,7 @@ import { PostgresOwnerRegistrationRepository } from '../../modules/tenancy/infra
 import { PostgresOwnerSessionStore } from '../../modules/tenancy/infrastructure/database/postgres-owner-session-store.js';
 import { InMemoryKeyValueCache } from '../../platform/cache/in-memory-key-value-cache.js';
 import { createPostgresTenantDatabase } from '../../platform/database/postgres-tenant-database.js';
+import { DatabaseReadinessCheck } from '../../platform/http/readiness.js';
 import { readHttpEnv } from '../../platform/env.js';
 import { createNodemailerTransport } from '../../platform/integrations/smtp/nodemailer-transport.js';
 import { GoogleOauthClient } from '../../platform/integrations/google/index.js';
@@ -80,7 +81,8 @@ async function bootstrap(): Promise<void> {
       agent: composeAgent(env, database.database),
       google: composeGoogle(env, database.database),
       channels: channels.cabinet,
-      vkWebhook: channels.webhook
+      vkWebhook: channels.webhook,
+      readiness: new DatabaseReadinessCheck(database.database)
     });
     const fastify = app.getHttpAdapter().getInstance();
     fastify.addHook('onClose', async () => database.close());

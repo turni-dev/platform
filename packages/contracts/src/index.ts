@@ -1,5 +1,5 @@
-export { HealthStatusSchema } from './health.js';
-export type { HealthStatus } from './health.js';
+export { HealthStatusSchema, ReadinessStatusSchema } from './health.js';
+export type { HealthStatus, ReadinessStatus } from './health.js';
 export * from './common.js';
 export * from './events.js';
 export * from './ports/content.js';

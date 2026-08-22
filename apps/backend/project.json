@@ -21,6 +21,9 @@
     },
     "typecheck": {
       "command": "tsc -p apps/backend/tsconfig.app.json --noEmit"
+    },
+    "openapi": {
+      "command": "tsx tools/bootstrap/generate-openapi.ts"
     }
   },
   "tags": [

@@ -1,7 +1,12 @@
 import '@fastify/websocket';
-import { GuestSessionSchema, HealthStatusSchema } from '@turni/contracts';
+import {
+  GuestSessionSchema,
+  HealthStatusSchema,
+  ReadinessStatusSchema
+} from '@turni/contracts';
 import { describe, expect, it } from 'vitest';
 import type { RawData } from 'ws';
+import type { ReadinessPort } from '../../platform/http/readiness.js';
 
 import { DurableGuestSessionService } from '../../modules/channels/application/durable-guest-session.js';
 import { GuestSessionService } from '../../modules/channels/application/guest-session.js';
@@ -46,6 +51,47 @@ describe('HTTP entrypoint', () => {
     try {
       const response = await app.inject({ method: 'GET', url: '/healthz' });
       expect(HealthStatusSchema.parse(response.json())).toEqual({ status: 'ok', service: 'turni-backend' });
+    } finally { await app.close(); }
+  });
+
+  it('reports ready with a database check when no readiness port is composed', async () => {
+    const app = await createHttpApp();
+    try {
+      const response = await app.inject({ method: 'GET', url: '/readyz' });
+      expect(response.statusCode).toBe(200);
+      expect(ReadinessStatusSchema.parse(response.json())).toEqual({
+        status: 'ok',
+        service: 'turni-backend',
+        checks: { database: 'ok' }
+      });
+    } finally { await app.close(); }
+  });
+
+  it('reports ready with a 200 when the composed database check succeeds', async () => {
+    const readiness: ReadinessPort = { ping: () => Promise.resolve() };
+    const app = await createHttpApp({ readiness });
+    try {
+      const response = await app.inject({ method: 'GET', url: '/readyz' });
+      expect(response.statusCode).toBe(200);
+      expect(ReadinessStatusSchema.parse(response.json())).toEqual({
+        status: 'ok',
+        service: 'turni-backend',
+        checks: { database: 'ok' }
+      });
+    } finally { await app.close(); }
+  });
+
+  it('reports 503 as an RFC 7807 problem when the database is unreachable', async () => {
+    const readiness: ReadinessPort = { ping: () => Promise.reject(new Error('connection refused')) };
+    const app = await createHttpApp({ readiness });
+    try {
+      const response = await app.inject({ method: 'GET', url: '/readyz' });
+      expect(response.statusCode).toBe(503);
+      expect(response.headers['content-type']).toContain('application/problem+json');
+      expect(response.json()).toMatchObject({
+        status: 503,
+        title: 'Service unavailable'
+      });
     } finally { await app.close(); }
   });
 

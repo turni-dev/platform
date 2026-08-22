@@ -7,6 +7,9 @@ node_modules/
 .nx/
 dist/
 coverage/
+
+# Generated build artifacts (regenerate via `npm run openapi:generate`)
+apps/backend/openapi/
 .next/
 tmp/
 temp/
