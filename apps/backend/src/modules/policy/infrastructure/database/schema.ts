@@ -35,9 +35,14 @@ export const policies = pgTable(
     createdAt: createdAt()
   },
   (table) => [
+    // 'custom' is a legacy value kept only for rows written before the
+    // workspace/agent/user layer hierarchy (migration 0024); new code never
+    // writes it. See domain/policy-layer.ts for the hierarchy semantics and
+    // domain/policy-layer-resolver.ts for the monotonic-tightening check that
+    // the DB constraint cannot express.
     check(
       'policies_layer_check',
-      sql`${table.layer} in ('locked', 'custom')`
+      sql`${table.layer} in ('locked', 'workspace', 'agent', 'user', 'custom')`
     ),
     uniqueIndex('policies_agent_path_uidx').on(table.agentId, table.path),
     index('policies_tenant_agent_idx').on(table.tenantId, table.agentId),

@@ -57,7 +57,7 @@ const NON_LOCKED_GUARDS: readonly PolicyGuard[] = Object.freeze([
   }
 ]);
 
-const VERDICT_PRIORITY: Readonly<Record<PolicyVerdict, number>> = Object.freeze({
+export const VERDICT_PRIORITY: Readonly<Record<PolicyVerdict, number>> = Object.freeze({
   approval: 5,
   escalate_human: 4,
   refuse: 3,

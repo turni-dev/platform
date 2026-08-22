@@ -10,6 +10,10 @@ const spendCapMigrationUrl = new URL(
   './migrations/0023_spend_cap.sql',
   import.meta.url
 );
+const layerHierarchyMigrationUrl = new URL(
+  './migrations/0024_policy_layer_hierarchy.sql',
+  import.meta.url
+);
 
 describe('policy migration', () => {
   it('creates the complete policy table slice', async () => {
@@ -108,5 +112,19 @@ describe('policy migration', () => {
     expect(migration).toContain('CREATE POLICY agent_run_spend_tenant_isolation');
     expect(migration).not.toMatch(/id uuid [^,\n]*DEFAULT/i);
     expect(migration).not.toMatch(/gen_random_uuid|uuid_generate/i);
+  });
+
+  it('expands the layer hierarchy without dropping the legacy custom value', async () => {
+    const migration = await readFile(layerHierarchyMigrationUrl, 'utf8');
+
+    expect(migration).toContain('ALTER TABLE policies DROP CONSTRAINT policies_layer_check');
+    expect(migration).toMatch(
+      /ALTER TABLE policies ADD CONSTRAINT policies_layer_check\s+CHECK/
+    );
+    expect(migration).toContain(
+      "CHECK (layer IN ('locked', 'workspace', 'agent', 'user', 'custom'))"
+    );
+    expect(migration).not.toContain('CREATE TABLE');
+    expect(migration).not.toContain('DROP TABLE');
   });
 });
