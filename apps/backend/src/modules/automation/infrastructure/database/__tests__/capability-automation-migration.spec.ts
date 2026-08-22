@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 
-const migrationUrl = new URL('../migrations/0025_capability_automation.sql', import.meta.url);
+const migrationUrl = new URL('../migrations/0026_capability_automation.sql', import.meta.url);
 
 describe('capability automation migration', () => {
   it('creates the capability_automation_requests table scoped to a tenant with a uuid id', async () => {
