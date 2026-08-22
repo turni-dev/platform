@@ -45,9 +45,9 @@
 
 - С2b [E2] Master Router passthrough (под мульти-агентов) + Execution Environment контекст (tenant/secrets/budget/capabilities). #Максим · ~1 demo · 🤖
 
-- **(16.08, новое)** С2b [E7] Спенд-кап в двух периодах: **за один прогон** и **за месяц** на тенанта, с WARN на пороге (~80%) и DENY при исчерпании — две разные аварии («один прогон сошёл с ума» vs «месяц выело»), одним счётчиком не ловятся. Референс `cost_budget_guard` + двойной cap в дефолтах AgentArea. #Максим · ~0.5 demo · 🤖
+- **(22.08, код готов)** С2b [E7] Спенд-кап в двух периодах: **за один прогон** и **за месяц** на тенанта, с WARN на пороге (~80%) и DENY при исчерпании. Реализовано в `apps/backend/src/modules/policy/{domain,application,infrastructure}` (`SpendCapGuard`, `SpendCapService`, `PostgresSpendUsageStore`), 71/71 тестов зелёные. ⚠️ Миграция `0023_spend_cap.sql` смёржена в main, но **не применена** — по правилу AGENTS.md миграции требуют founder review перед `db:migrate`. Не подключено: реальный вызов `SpendCapService` из agent-run пайплайна (сам пайплайн ещё не существует). #Максим
 
-- **(16.08, новое)** [MVP-2] Планировщик исходящих: авто-отключение триггера после N ошибок подряд (`failure_threshold` + счётчик, сброс при успехе) — без этого сломанный триггер молча долбит гостей и жжёт токены. Референс `libs/triggers` AgentArea. #Максим · ~0.5 demo · 🤖
+- **(22.08, код готов)** [MVP-2] Планировщик исходящих: авто-отключение триггера после N ошибок подряд. Реализовано в `apps/backend/src/modules/automation/{domain,application,infrastructure}` (`OutboundTrigger`, `TriggerExecutionService`), 31/31 тестов зелёные. ⚠️ Миграция `0022_automation.sql` смёржена в main, но **не применена** — требует founder review. Не подключено: планировщика/очереди (BullMQ), который бы реально вызывал `recordFailure`/`recordSuccess` — этот код только доменная модель триггера, wiring к расписанию отдельной задачей. #Максим
 
 - С2b [E2] API-каркас: RFC7807 + OpenAPI из Zod (артефакт CI) + Idempotency-Key (Postgres) + health /healthz/readyz + prism-mock/schemathesis для фронта. #Максим · ~1.5 demo · 🤖
 
