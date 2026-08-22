@@ -31,4 +31,27 @@ describe('seed content', () => {
   it('has nothing for a slug the site does not seed', () => {
     expect(seedPage('unknown-slug')).toBeUndefined();
   });
+
+  it.each([
+    'legal/offer',
+    'legal/privacy-policy',
+    'legal/cookie-policy',
+    'legal/dpa-subprocessors'
+  ])('serves %s as a single legal-document block marked draft', (slug) => {
+    const page = seedPage(slug);
+
+    expect(page?.blocks).toEqual([expect.objectContaining({ __component: 'blocks.legal-document' })]);
+    const block = page?.blocks[0];
+    expect(block && 'draft' in block ? block.draft : undefined).toBe(true);
+  });
+
+  it('excludes the internal "open questions for the lawyer" section from every legal page', () => {
+    for (const slug of ['legal/offer', 'legal/privacy-policy', 'legal/cookie-policy', 'legal/dpa-subprocessors']) {
+      const block = seedPage(slug)?.blocks[0];
+      const body = block && 'body' in block ? block.body : '';
+
+      expect(body).not.toContain('Открытые вопросы для юриста');
+      expect(body).not.toContain('ЧЕРНОВИК. Сгенерировано');
+    }
+  });
 });

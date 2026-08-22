@@ -39,7 +39,8 @@
         "blocks.bento",
         "blocks.numbered-steps",
         "blocks.stat-card",
-        "blocks.changelog-item"
+        "blocks.changelog-item",
+        "blocks.legal-document"
       ]
     },
     "seo": {

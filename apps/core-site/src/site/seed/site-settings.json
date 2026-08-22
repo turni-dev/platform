@@ -12,12 +12,20 @@
   ],
   "footerLegalLinks": [
     {
-      "label": "Политика обработки данных",
-      "href": "/legal/privacy"
-    },
-    {
       "label": "Оферта",
       "href": "/legal/offer"
+    },
+    {
+      "label": "Политика обработки данных",
+      "href": "/legal/privacy-policy"
+    },
+    {
+      "label": "Cookie-политика",
+      "href": "/legal/cookie-policy"
+    },
+    {
+      "label": "Субобработчики (DPA)",
+      "href": "/legal/dpa-subprocessors"
     }
   ],
   "footerNote": "Скоро — самостоятельный сервис.",

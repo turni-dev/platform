@@ -1,0 +1,27 @@
+{
+  "collectionName": "components_blocks_legal_documents",
+  "info": {
+    "displayName": "Юридический документ",
+    "icon": "file"
+  },
+  "options": {},
+  "attributes": {
+    "heading": {
+      "type": "string",
+      "required": true
+    },
+    "updatedAt": {
+      "type": "date",
+      "required": true
+    },
+    "draft": {
+      "type": "boolean",
+      "required": true,
+      "default": true
+    },
+    "body": {
+      "type": "text",
+      "required": true
+    }
+  }
+}
