@@ -18,6 +18,7 @@ import type {
   WebhookInboxPort
 } from '../../../modules/channels/application/webhook-inbox.port.js';
 import { WebhookRoutingKeyService } from '../../../modules/channels/application/webhook-routing-key.js';
+import { EchoAgent } from '../../../modules/chat/application/echo-agent.js';
 import { FaqChatPipeline } from '../../../modules/chat/application/faq-chat-pipeline.js';
 import { FrontlineWorkflow } from '../../../modules/frontline/application/frontline-workflow.js';
 import { FakePolicyClassifier } from '../../../modules/policy/application/fake-policy-classifier.js';
@@ -191,7 +192,8 @@ function build(): {
     new FrontlineWorkflow([
       { tenantId, question: 'Когда вы работаете?', response: openingHours }
     ]),
-    events
+    events,
+    new EchoAgent()
   );
 
   return {
