@@ -1,6 +1,7 @@
 import { getTableConfig } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
 import {
+  agentRunSpend,
   evalCases,
   modelConfigs,
   policies,
@@ -14,7 +15,8 @@ describe('policy database schema', () => {
       'policies',
       'prompts',
       'model_configs',
-      'eval_cases'
+      'eval_cases',
+      'agent_run_spend'
     ]);
   });
 
@@ -72,5 +74,21 @@ describe('policy database schema', () => {
     expect(provider?.default).toBe('yandex-ai-studio');
     expect(apiKind?.notNull).toBe(true);
     expect(apiKind?.default).toBe('native');
+  });
+
+  it('isolates per-run spend accumulation by tenant and forbids negative totals', () => {
+    const config = getTableConfig(agentRunSpend);
+
+    expect(config.enableRLS).toBe(true);
+    expect(config.policies.map((policy) => policy.name)).toEqual([
+      'agent_run_spend_tenant_isolation'
+    ]);
+    expect(config.checks.map((check) => check.name)).toEqual([
+      'agent_run_spend_spent_micros_check'
+    ]);
+    expect(config.primaryKeys[0]?.columns.map((column) => column.name)).toEqual([
+      'tenant_id',
+      'run_id'
+    ]);
   });
 });

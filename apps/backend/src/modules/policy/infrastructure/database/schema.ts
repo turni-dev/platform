@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   boolean,
   check,
   index,
@@ -8,6 +9,7 @@ import {
   numeric,
   pgPolicy,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -158,9 +160,31 @@ export const evalCases = pgTable(
   ]
 );
 
+export const agentRunSpend = pgTable(
+  'agent_run_spend',
+  {
+    tenantId: uuid('tenant_id').notNull(),
+    runId: uuid('run_id').notNull(),
+    spentMicros: bigint('spent_micros', { mode: 'bigint' }).default(0n).notNull(),
+    createdAt: createdAt(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    primaryKey({ columns: [table.tenantId, table.runId] }),
+    check('agent_run_spend_spent_micros_check', sql`${table.spentMicros} >= 0`),
+    pgPolicy('agent_run_spend_tenant_isolation', {
+      for: 'all',
+      to: 'app_rw',
+      using: sql`${table.tenantId} = ${tenantSetting}`,
+      withCheck: sql`${table.tenantId} = ${tenantSetting}`
+    })
+  ]
+).enableRLS();
+
 export const policyTables = [
   policies,
   prompts,
   modelConfigs,
-  evalCases
+  evalCases,
+  agentRunSpend
 ] as const;

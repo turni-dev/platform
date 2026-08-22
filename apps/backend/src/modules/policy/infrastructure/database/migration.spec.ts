@@ -6,6 +6,10 @@ const modelRoutingMigrationUrl = new URL(
   './migrations/0014_policy_model_routing.sql',
   import.meta.url
 );
+const spendCapMigrationUrl = new URL(
+  './migrations/0022_spend_cap.sql',
+  import.meta.url
+);
 
 describe('policy migration', () => {
   it('creates the complete policy table slice', async () => {
@@ -87,5 +91,22 @@ describe('policy migration', () => {
       /CONSTRAINT model_configs_api_kind_check\s+CHECK/
     );
     expect(migration).not.toContain('CREATE TABLE model_configs');
+  });
+
+  it('adds a tenant-isolated per-run spend counter for the dual-period cap', async () => {
+    const migration = await readFile(spendCapMigrationUrl, 'utf8');
+
+    expect(migration).toContain('CREATE TABLE agent_run_spend');
+    expect(migration).toContain(
+      'PRIMARY KEY (tenant_id, run_id)'
+    );
+    expect(migration).toContain(
+      'CONSTRAINT agent_run_spend_spent_micros_check CHECK (spent_micros >= 0)'
+    );
+    expect(migration).toContain('ALTER TABLE agent_run_spend ENABLE ROW LEVEL SECURITY');
+    expect(migration).toContain('ALTER TABLE agent_run_spend FORCE ROW LEVEL SECURITY');
+    expect(migration).toContain('CREATE POLICY agent_run_spend_tenant_isolation');
+    expect(migration).not.toMatch(/id uuid [^,\n]*DEFAULT/i);
+    expect(migration).not.toMatch(/gen_random_uuid|uuid_generate/i);
   });
 });
