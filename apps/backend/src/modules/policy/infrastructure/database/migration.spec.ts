@@ -7,7 +7,7 @@ const modelRoutingMigrationUrl = new URL(
   import.meta.url
 );
 const spendCapMigrationUrl = new URL(
-  './migrations/0022_spend_cap.sql',
+  './migrations/0023_spend_cap.sql',
   import.meta.url
 );
 
