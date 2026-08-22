@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root {
+      --bg:#ffffff; --bg-layout:#f5f5f5; --text:rgba(0,0,0,.88); --text-secondary:rgba(0,0,0,.65); --text-tertiary:rgba(0,0,0,.45);
+      --border:#d9d9d9; --primary:#176b4d; --primary-bg:#e7f2ed;
+      --success:#52c41a; --success-bg:#f6ffed; --error:#ff4d4f;
+      --radius:6px; --radius-lg:8px;
+      --font:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --shadow: 0 1px 2px -2px rgba(0,0,0,.08), 0 3px 6px 0 rgba(0,0,0,.06), 0 5px 12px 4px rgba(0,0,0,.04);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--font); color: var(--text); font-size:14px; }
+    .btn { font-family:var(--font); border-radius:var(--radius); border:none; cursor:pointer; height:32px; padding:0 14px; font-size:13px; }
+  </style>
+</helmet>
+
+<div style="width:390px; height:844px; background:var(--bg-layout); display:flex; flex-direction:column; overflow:hidden;">
+
+  <div style="padding:16px 20px; background:var(--bg); border-bottom:1px solid var(--border);">
+    <h1 style="font-size:18px; font-weight:600; margin:0;">Подключения</h1>
+    <p style="margin:2px 0 0; font-size:12px; color:var(--text-tertiary);">Чем пользуется агент от вашего имени</p>
+  </div>
+
+  <div style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px;">
+
+    <div style="background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow); padding:16px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:40px; height:40px; border-radius:var(--radius); background:#fff; border:1px solid var(--border); display:flex; align-items:center; justify-content:center;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="#4285F4" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" stroke="#4285F4" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-weight:600; font-size:14px;">Google Календарь</div>
+          <div style="font-size:12px; color:var(--text-tertiary);">consulting.polden@gmail.com</div>
+        </div>
+        <span style="display:flex; align-items:center; gap:4px; font-size:12px; background:var(--success-bg); color:var(--success); padding:2px 9px; border-radius:var(--radius); border:1px solid #b7eb8f;">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Подключено
+        </span>
+      </div>
+      <div style="font-size:12px; color:var(--text-tertiary); border-top:1px solid var(--border); padding-top:10px;">Агент может создавать события — только после вашего одобрения.</div>
+      <button class="btn" style="background:#fff; border:1px solid var(--border); color:var(--error); align-self:flex-start;">Отозвать доступ</button>
+    </div>
+
+    <div style="background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow); padding:16px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:40px; height:40px; border-radius:var(--radius); background:#fff; border:1px solid var(--border); display:flex; align-items:center; justify-content:center;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="#0F9D58" stroke-width="2"/><path d="M3 9h18M9 9v12" stroke="#0F9D58" stroke-width="2"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-weight:600; font-size:14px;">Google Таблицы</div>
+          <div style="font-size:12px; color:var(--text-tertiary);">consulting.polden@gmail.com</div>
+        </div>
+        <span style="display:flex; align-items:center; gap:4px; font-size:12px; background:var(--success-bg); color:var(--success); padding:2px 9px; border-radius:var(--radius); border:1px solid #b7eb8f;">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Подключено
+        </span>
+      </div>
+      <div style="font-size:12px; color:var(--text-tertiary); border-top:1px solid var(--border); padding-top:10px;">Таблица «Записи клиентов» — агент добавляет строки после одобренных встреч.</div>
+      <button class="btn" style="background:#fff; border:1px solid var(--border); color:var(--error); align-self:flex-start;">Отозвать доступ</button>
+    </div>
+
+    <div style="background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow); padding:16px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:40px; height:40px; border-radius:var(--radius); background:#0077FF; display:flex; align-items:center; justify-content:center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 8c.5 6 3 10 8 10M20 8c-.5 6-3 10-8 10M4 8h4c1 4 3 6 4 6M20 8h-4c-1 4-3 6-4 6M12 3v5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-weight:600; font-size:14px;">ВКонтакте</div>
+          <div style="font-size:12px; color:var(--text-tertiary);">Сообщество «Полдень.Консалтинг»</div>
+        </div>
+        <span style="display:flex; align-items:center; gap:4px; font-size:12px; background:var(--success-bg); color:var(--success); padding:2px 9px; border-radius:var(--radius); border:1px solid #b7eb8f;">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Подключено
+        </span>
+      </div>
+      <div style="font-size:12px; color:var(--text-tertiary); border-top:1px solid var(--border); padding-top:10px;">Входящие сообщения сообщества приходят агенту на обработку.</div>
+      <button class="btn" style="background:#fff; border:1px solid var(--border); color:var(--error); align-self:flex-start;">Отозвать доступ</button>
+    </div>
+
+    <div style="border:1px dashed var(--border); border-radius:var(--radius-lg); padding:16px; display:flex; align-items:center; gap:12px; opacity:.7;">
+      <div style="width:40px; height:40px; border-radius:var(--radius); background:#fff; border:1px solid var(--border); display:flex; align-items:center; justify-content:center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22 4 11 14M22 4l-6 18-4-8-8-4 18-6Z" stroke="var(--text-tertiary)" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="flex:1;">
+        <div style="font-weight:600; font-size:14px; color:var(--text-secondary);">Telegram</div>
+        <div style="font-size:12px; color:var(--text-tertiary);">Появится после запуска egress-прокси</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="height:60px; background:var(--bg); border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-around; padding:0 8px; flex-shrink:0;">
+    <div style="display:flex; flex-direction:column; align-items:center; gap:2px; color:var(--text-tertiary);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 11l9-7 9 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span style="font-size:10px; font-weight:600;">Дашборд</span>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:center; gap:2px; color:var(--text-tertiary); position:relative;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 8h4l2 3h6l2-3h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="8" width="18" height="11" rx="2" stroke="currentColor" stroke-width="2"/></svg>
+      <span style="font-size:10px; font-weight:600;">Решения</span>
+      <span style="position:absolute; top:-4px; right:-10px; background:var(--error); color:#fff; font-size:10px; font-weight:700; border-radius:999px; min-width:16px; height:16px; display:flex; align-items:center; justify-content:center; padding:0 4px;">2</span>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:center; gap:2px; color:var(--primary);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 15l6-6M10 6l1-1a4 4 0 0 1 6 6l-1 1M14 18l-1 1a4 4 0 0 1-6-6l1-1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span style="font-size:10px; font-weight:600;">Подключения</span>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:center; gap:2px; color:var(--text-tertiary);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h10M18 6h2M4 18h2M8 18h12M4 12h6M14 12h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="6" r="2" fill="currentColor"/><circle cx="6" cy="18" r="2" fill="currentColor"/><circle cx="10" cy="12" r="2" fill="currentColor"/></svg>
+      <span style="font-size:10px; font-weight:600;">Автоматизации</span>
+    </div>
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>

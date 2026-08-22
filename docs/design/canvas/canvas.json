@@ -1,0 +1,20 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Основы и UI-кит" },
+    { "id": "page-2", "name": "Кабинет (apps/web)" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1400, "h": 980, "title": "Основы", "page": "page-1" },
+    { "file": "Components.dc.html", "x": 1480, "y": 0, "w": 1400, "h": 980, "title": "UI-кит", "page": "page-1" },
+    { "file": "Dashboard.dc.html", "x": 0, "y": 0, "w": 390, "h": 844, "title": "Дашборд (D1)", "page": "page-2" },
+    { "file": "Approvals.dc.html", "x": 470, "y": 0, "w": 390, "h": 844, "title": "Решения — список (A1)", "page": "page-2" },
+    { "file": "ApprovalCard.dc.html", "x": 940, "y": 0, "w": 390, "h": 844, "title": "Решение — карточка (A2)", "page": "page-2" },
+    { "file": "Connections.dc.html", "x": 1410, "y": 0, "w": 390, "h": 844, "title": "Подключения", "page": "page-2" },
+    { "file": "Automations.dc.html", "x": 1880, "y": 0, "w": 390, "h": 844, "title": "Автоматизации", "page": "page-2" }
+  ],
+  "annotations": [
+    { "id": "note-scope", "x": 0, "y": -100, "w": 400, "text": "Основы: цвет/типографика/отступы для Ant Design (решение 22.08 — заменяет shadcn/Radix). UI-кит — компоненты поверх токенов.", "page": "page-1" },
+    { "id": "note-cabinet", "x": 0, "y": -100, "w": 480, "text": "Кабинет владельца (apps/web): 5 экранов, закрывающих главный разрыв бэкенд/фронтенд — approval-инбокс, подключения Google/VK, актуальные автоматизации. Дашборд сейчас в коде — пустая заглушка.", "page": "page-2" }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

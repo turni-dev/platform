@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root {
+      --bg:#ffffff; --bg-layout:#f5f5f5; --text:rgba(0,0,0,.88); --text-secondary:rgba(0,0,0,.65); --text-tertiary:rgba(0,0,0,.45);
+      --border:#d9d9d9; --primary:#176b4d; --primary-bg:#e7f2ed;
+      --success:#52c41a; --warning:#faad14; --error:#ff4d4f; --error-bg:#fff2f0;
+      --radius:6px; --radius-lg:8px;
+      --font:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--font); color: var(--text); font-size:14px; }
+    .btn { font-family:var(--font); font-weight:500; border-radius:var(--radius-lg); border:none; cursor:pointer; }
+  </style>
+</helmet>
+
+<div style="width:390px; height:844px; background:var(--bg); display:flex; flex-direction:column; overflow:hidden;">
+
+  <div style="padding:14px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="var(--text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span style="font-size:15px; font-weight:600; flex:1;">Решения</span>
+    <span style="font-size:12px; color:var(--text-tertiary);">1 из 2</span>
+  </div>
+
+  <div style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:16px;">
+
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div style="width:36px; height:36px; border-radius:999px; background:#fafafa; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:var(--text-tertiary);">М</div>
+      <div>
+        <div style="font-weight:600; font-size:14px;">Мария К.</div>
+        <div style="font-size:12px; color:var(--text-tertiary);">ВКонтакте · 6 минут назад</div>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:8px; background:var(--bg-layout); border-radius:var(--radius-lg); padding:12px;">
+      <div style="display:flex; gap:8px;">
+        <div style="width:22px; height:22px; border-radius:999px; background:#fff; border:1px solid var(--border); flex-shrink:0;"></div>
+        <div style="background:#fff; border-radius:12px 12px 12px 2px; padding:8px 12px; font-size:13px; max-width:80%;">Добрый день! Можно записаться на приём?</div>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <div style="background:var(--primary-bg); border-radius:12px 12px 2px 12px; padding:8px 12px; font-size:13px; max-width:80%;">Конечно! На какое время вам удобно?</div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <div style="width:22px; height:22px; border-radius:999px; background:#fff; border:1px solid var(--border); flex-shrink:0;"></div>
+        <div style="background:#fff; border-radius:12px 12px 12px 2px; padding:8px 12px; font-size:13px; max-width:80%;">Можно записаться на четверг, часам к двум?</div>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <div style="font-size:12px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.04em; font-weight:600;">Черновик ответа</div>
+      <div style="border:1px solid var(--border); border-radius:var(--radius-lg); padding:12px; font-size:14px; line-height:1.5;">Добавлю встречу в календарь на четверг, 14:00, и отмечу в таблице записей. Напишу вам, когда всё будет готово.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:6px; border-left:2px solid var(--primary); padding-left:12px;">
+      <div style="font-size:13px; color:var(--text-secondary); display:flex; align-items:flex-start; gap:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex-shrink:0; margin-top:2px;"><circle cx="12" cy="12" r="9" stroke="var(--primary)" stroke-width="2"/><path d="M12 16v-5M12 8h.01" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>Календарь свободен на четверг, 14:00 — источник: <a href="#" style="color:var(--primary);">Google Календарь</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="padding:14px 16px; border-top:1px solid var(--border); display:flex; gap:8px;">
+    <button class="btn" style="height:48px; flex:1; background:var(--primary); color:#fff; font-size:15px;">✓ Отправить так</button>
+    <button class="btn" style="height:48px; width:48px; padding:0; background:#fff; border:1px solid var(--border); color:var(--text);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="margin:0 auto;"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="btn" style="height:48px; width:48px; padding:0; background:var(--error-bg); border:1px solid var(--error); color:var(--error);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="margin:0 auto;"><path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>

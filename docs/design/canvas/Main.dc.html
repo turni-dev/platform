@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root {
+      --bg:#ffffff; --bg-layout:#f5f5f5; --text:rgba(0,0,0,.88); --text-secondary:rgba(0,0,0,.65); --text-tertiary:rgba(0,0,0,.45);
+      --border:#d9d9d9; --border-secondary:#f0f0f0;
+      --primary:#176b4d; --primary-hover:#1f8862; --primary-bg:#e7f2ed; --primary-border:#a9d4c1;
+      --success:#52c41a; --success-bg:#f6ffed; --warning:#faad14; --warning-bg:#fffbe6;
+      --error:#ff4d4f; --error-bg:#fff2f0;
+      --purple:#722ed1; --purple-bg:#f9f0ff;
+      --radius:6px; --radius-lg:8px; --radius-sm:4px;
+      --font:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --shadow: 0 1px 2px -2px rgba(0,0,0,.08), 0 3px 6px 0 rgba(0,0,0,.06), 0 5px 12px 4px rgba(0,0,0,.04);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--font); color: var(--text); background: var(--bg); font-size:14px; }
+    a { color: var(--primary); } a:hover { color: var(--primary-hover); }
+    .swatch { border-radius: var(--radius); border: 1px solid var(--border); }
+    .num { font-variant-numeric: tabular-nums; }
+  </style>
+</helmet>
+
+<div style="width:1400px; padding:56px; display:flex; flex-direction:column; gap:56px; background:var(--bg);">
+
+  <div style="display:flex; flex-direction:column; gap:8px;">
+    <div style="font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--primary);">Дизайн-система Turni · Ant Design</div>
+    <h1 style="font-size:30px; font-weight:600; margin:0;">Токены</h1>
+    <p style="margin:0; color:var(--text-secondary); font-size:14px; max-width:640px;">Ant Design как база UI-кита (решение 22.08.2026, заменяет shadcn/Radix). Брендовый акцент Turni (#176b4d) прокинут через <code>colorPrimary</code>, остальные семантические токены — стандартная палитра Ant.</p>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:20px;">
+    <h2 style="font-size:16px; font-weight:600; margin:0;">Цвет</h2>
+    <div style="display:grid; grid-template-columns:repeat(6, minmax(0, 1fr)); gap:16px;">
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="swatch" style="height:56px; background:var(--bg-layout);"></div>
+        <div style="font-size:12px; font-weight:600;">colorBgLayout</div><div style="font-size:11px; color:var(--text-tertiary);">#f5f5f5</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="swatch" style="height:56px; background:var(--border);"></div>
+        <div style="font-size:12px; font-weight:600;">colorBorder</div><div style="font-size:11px; color:var(--text-tertiary);">#d9d9d9</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="swatch" style="height:56px; background:#000;"></div>
+        <div style="font-size:12px; font-weight:600;">colorText</div><div style="font-size:11px; color:var(--text-tertiary);">rgba(0,0,0,.88)</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="swatch" style="height:56px; background:var(--primary);"></div>
+        <div style="font-size:12px; font-weight:700; color:var(--primary);">colorPrimary</div><div style="font-size:11px; color:var(--text-tertiary);">#176b4d — бренд Turni</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="swatch" style="height:56px; background:var(--primary-bg); border-color:var(--primary-border);"></div>
+        <div style="font-size:12px; font-weight:600;">primary-1/3</div><div style="font-size:11px; color:var(--text-tertiary);">bg / border tint</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="swatch" style="height:56px; background:var(--purple-bg); border-color:var(--purple);"></div>
+        <div style="font-size:12px; font-weight:600;">purple (owner)</div><div style="font-size:11px; color:var(--text-tertiary);">#722ed1 — реплики владельца</div>
+      </div>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(6, minmax(0, 1fr)); gap:16px;">
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="swatch" style="height:56px; background:var(--success-bg); border-color:var(--success);"></div>
+        <div style="font-size:12px; font-weight:600; color:var(--success);">colorSuccess</div><div style="font-size:11px; color:var(--text-tertiary);">#52c41a</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="swatch" style="height:56px; background:var(--warning-bg); border-color:var(--warning);"></div>
+        <div style="font-size:12px; font-weight:600; color:var(--warning);">colorWarning</div><div style="font-size:11px; color:var(--text-tertiary);">#faad14</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="swatch" style="height:56px; background:var(--error-bg); border-color:var(--error);"></div>
+        <div style="font-size:12px; font-weight:600; color:var(--error);">colorError</div><div style="font-size:11px; color:var(--text-tertiary);">#ff4d4f — деньги/риск</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:20px;">
+    <h2 style="font-size:16px; font-weight:600; margin:0;">Типографика</h2>
+    <p style="margin:0; color:var(--text-secondary); font-size:13px;">Системный стек Ant Design (не отдельная гарнитура) — родное поведение библиотеки на любой ОС.</p>
+    <div style="display:flex; flex-direction:column; gap:16px; padding:24px; background:var(--bg-layout); border-radius:var(--radius-lg);">
+      <div class="num" style="font-weight:600; font-size:38px; line-height:1.2;">42 300 ₽</div>
+      <div style="font-size:11px; color:var(--text-tertiary);">Statistic value — 38/600 tabular-nums</div>
+      <div style="font-weight:600; font-size:24px;">H2 заголовок — 24/1.35</div>
+      <div style="font-weight:600; font-size:20px;">H3 заголовок — 20/1.4</div>
+      <div style="font-weight:600; font-size:16px;">H4 заголовок — 16/1.4</div>
+      <div style="font-size:14px; line-height:1.57;">Base text 14/1.57 — тело интерфейса, черновики ответов.</div>
+      <div style="font-size:14px; line-height:1.57; color:var(--text-secondary);">Secondary text — rgba(0,0,0,.65)</div>
+      <div style="font-size:12px; color:var(--text-tertiary);">Caption 12 — rgba(0,0,0,.45), подписи и метки времени</div>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:40px;">
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <h2 style="font-size:16px; font-weight:600; margin:0;">Отступы (шкала 8px)</h2>
+      <div style="display:flex; align-items:flex-end; gap:10px;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:20px; background:var(--primary); border-radius:2px; height:8px;"></div><div style="font-size:10px; color:var(--text-tertiary);">4</div></div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:20px; background:var(--primary); border-radius:2px; height:16px;"></div><div style="font-size:10px; color:var(--text-tertiary);">8</div></div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:20px; background:var(--primary); border-radius:2px; height:24px;"></div><div style="font-size:10px; color:var(--text-tertiary);">12</div></div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:20px; background:var(--primary); border-radius:2px; height:32px;"></div><div style="font-size:10px; color:var(--text-tertiary);">16</div></div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:20px; background:var(--primary); border-radius:2px; height:48px;"></div><div style="font-size:10px; color:var(--text-tertiary);">24</div></div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:20px; background:var(--primary); border-radius:2px; height:64px;"></div><div style="font-size:10px; color:var(--text-tertiary);">32</div></div>
+      </div>
+      <p style="margin:0; font-size:12px; color:var(--text-tertiary);">Ant `Space`/`padding` — кратно 8px (внутренние 4px допустимы для плотных списков).</p>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <h2 style="font-size:16px; font-weight:600; margin:0;">Радиусы и высоты контролов</h2>
+      <div style="display:flex; gap:16px; align-items:center;">
+        <div style="width:64px; height:32px; background:var(--primary-bg); border:1px solid var(--primary-border); border-radius:var(--radius); display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--primary);">default<br>6px / 32px</div>
+        <div style="width:64px; height:40px; background:var(--primary-bg); border:1px solid var(--primary-border); border-radius:var(--radius-lg); display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--primary);">large<br>8px / 40px</div>
+        <div style="width:44px; height:44px; background:var(--bg-layout); border:2px dashed var(--text-tertiary); border-radius:var(--radius); display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--text-tertiary); text-align:center;">min touch<br>44px</div>
+      </div>
+      <p style="margin:0; font-size:12px; color:var(--text-tertiary);">Мобильный owner-кабинет: значимые CTA увеличены до 44–48px поверх стандартной высоты Ant-контролов (32px рассчитан на десктоп/мышь).</p>
+    </div>
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>
