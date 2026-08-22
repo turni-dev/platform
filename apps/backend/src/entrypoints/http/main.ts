@@ -8,6 +8,7 @@ import { PostgresChannelConnectionRepository } from '../../modules/channels/infr
 import { PostgresGuestConversationStore } from '../../modules/channels/infrastructure/database/postgres-guest-conversation-store.js';
 import { PostgresWebhookInbox } from '../../modules/channels/infrastructure/database/postgres-webhook-inbox.js';
 import { FaqChatPipeline } from '../../modules/chat/application/faq-chat-pipeline.js';
+import { EchoAgent } from '../../modules/chat/application/echo-agent.js';
 import {
   FrontlineWorkflow,
   type FrontlineFaqEntry
@@ -239,6 +240,7 @@ function composeChannels(
     new FakePolicyClassifier(),
     new FakePolicyClassifier()
   );
+  const echoAgent = new EchoAgent();
 
   return {
     cabinet: {
@@ -287,7 +289,8 @@ function composeChannels(
             new FaqChatPipeline(
               { evaluate: (policyInput) => policy.evaluate(policyInput) },
               new FrontlineWorkflow([...(await faqEntries(input.tenantId))]),
-              events
+              events,
+              echoAgent
             ).handle(input)
         },
         messenger: (message) => ({
