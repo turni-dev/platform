@@ -38,6 +38,7 @@
     "react-dom": "^19.2.7",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
+    "yaml": "^2.6.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {

@@ -14,6 +14,10 @@ const layerHierarchyMigrationUrl = new URL(
   './migrations/0024_policy_layer_hierarchy.sql',
   import.meta.url
 );
+const provisioningMigrationUrl = new URL(
+  './migrations/0025_policy_provisioning.sql',
+  import.meta.url
+);
 
 describe('policy migration', () => {
   it('creates the complete policy table slice', async () => {
@@ -126,5 +130,17 @@ describe('policy migration', () => {
     );
     expect(migration).not.toContain('CREATE TABLE');
     expect(migration).not.toContain('DROP TABLE');
+  });
+
+  it('adds a tenant-isolated provisioning tracker keyed by tenant and agent', async () => {
+    const migration = await readFile(provisioningMigrationUrl, 'utf8');
+
+    expect(migration).toContain('CREATE TABLE policy_provisioning');
+    expect(migration).toContain('PRIMARY KEY (tenant_id, agent_id)');
+    expect(migration).toContain('ALTER TABLE policy_provisioning ENABLE ROW LEVEL SECURITY');
+    expect(migration).toContain('ALTER TABLE policy_provisioning FORCE ROW LEVEL SECURITY');
+    expect(migration).toContain('CREATE POLICY policy_provisioning_tenant_isolation');
+    expect(migration).not.toMatch(/id uuid [^,\n]*DEFAULT/i);
+    expect(migration).not.toMatch(/gen_random_uuid|uuid_generate/i);
   });
 });

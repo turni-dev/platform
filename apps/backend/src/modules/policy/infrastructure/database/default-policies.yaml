@@ -1,0 +1,88 @@
+# Default policy seed for a newly provisioned tenant/agent (task-board card
+# "Сид locked-политик (аллергены/деньги/анти-джейлбрейк) + базовые свободные
+# шаблоны"). Parsed and compiled by
+# `../../domain/policy-rule-yaml-parser.ts`/`policy-rule-selector.ts`, applied
+# by `../../application/policy-provisioning-service.ts`.
+#
+# `version` is a human-readable label bumped whenever a rule below is added,
+# removed, or its `target`/`effect`/`params` changes -- provisioning compares
+# a fingerprint over the compiled rule set (not just this string) so an
+# unbumped-but-edited file is still detected, but bumping it keeps the audit
+# trail (`policy_provisioning.defaults_version`) legible for a human
+# reviewing why re-provisioning ran.
+#
+# locked rules are permanent once written to a tenant/agent (the `policies`
+# table's RLS forbids UPDATE/DELETE on layer='locked', and
+# `policy-layer-resolver.ts` never lets anything above a locked row change
+# it) -- amending one here only affects tenants/agents provisioned *after*
+# the change; existing locked rows are untouched by re-provisioning. workspace
+# rules are starting templates: provisioning only inserts them where the path
+# does not already exist for that agent, so an owner's own edit is never
+# clobbered by a later defaults update.
+default_policies:
+  version: "2026-08-22.1"
+  rules:
+    # --- locked (platform floor) ---------------------------------------
+    - id: allergen-health-lock
+      layer: locked
+      target:
+        type: keyword
+        source: "аллерги\\S*|аллерген\\S*|анафилакс\\S*|диабет\\S*|беременност\\S*|медицин\\S*|здоровь\\S*"
+        flags: iu
+      effect: require_approval
+      params:
+        riskScore: 10
+
+    - id: money-financial-lock
+      layer: locked
+      target:
+        type: keyword
+        source: "предоплат\\S*|оплат\\S*|сч[её]т\\S*|ден[еь]г\\S*|стоимост\\S*|цен[ауые]\\S*|чаев\\S*|кредит\\S*|рассрочк\\S*"
+        flags: iu
+      effect: require_approval
+      params:
+        riskScore: 9
+
+    - id: anti-jailbreak-lock
+      layer: locked
+      target:
+        type: keyword
+        source: "игнорир\\S*(?: (?:все )?предыдущ\\S*)? инструкц|системн\\S* промпт|забудь свои правил\\S*|притворись"
+        flags: iu
+      effect: require_approval
+      params:
+        riskScore: 8
+
+    # --- workspace-tier free templates (starting point, owner can tighten
+    #     further at the agent/user layer; never overwritten on re-seed) ---
+    - id: human-handoff-template
+      layer: workspace
+      target:
+        type: keyword
+        source: "позовите|пригласите|оператор\\S*|человек\\S*|сотрудник\\S*|администратор\\S*"
+        flags: iu
+      effect: escalate_human
+      params:
+        riskScore: 5
+
+    - id: spam-refusal-template
+      layer: workspace
+      target:
+        type: keyword
+        source: "купить подписчик\\S*|накрут\\S*|заработ\\S* без вложен|выгодн\\S* предложени\\S*.*https?://"
+        flags: iu
+      effect: refuse
+      params:
+        riskScore: 4
+
+    - id: calendar-write-approval-template
+      layer: workspace
+      target:
+        type: tool
+        toolId: calendar.write
+      effect: allow
+      params:
+        riskScore: 6
+        approvalRequired: true
+        allowlist:
+          - calendar.write

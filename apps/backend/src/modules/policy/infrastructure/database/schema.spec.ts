@@ -5,6 +5,7 @@ import {
   evalCases,
   modelConfigs,
   policies,
+  policyProvisioning,
   policyTables,
   prompts
 } from './schema.js';
@@ -16,7 +17,8 @@ describe('policy database schema', () => {
       'prompts',
       'model_configs',
       'eval_cases',
-      'agent_run_spend'
+      'agent_run_spend',
+      'policy_provisioning'
     ]);
   });
 
@@ -89,6 +91,19 @@ describe('policy database schema', () => {
     expect(config.primaryKeys[0]?.columns.map((column) => column.name)).toEqual([
       'tenant_id',
       'run_id'
+    ]);
+  });
+
+  it('tracks default policy provisioning per tenant/agent with tenant isolation', () => {
+    const config = getTableConfig(policyProvisioning);
+
+    expect(config.enableRLS).toBe(true);
+    expect(config.policies.map((policy) => policy.name)).toEqual([
+      'policy_provisioning_tenant_isolation'
+    ]);
+    expect(config.primaryKeys[0]?.columns.map((column) => column.name)).toEqual([
+      'tenant_id',
+      'agent_id'
     ]);
   });
 });
