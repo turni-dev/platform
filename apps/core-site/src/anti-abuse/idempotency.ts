@@ -1,3 +1,52 @@
+export interface IdempotencyKeyStore {
+  has(key: string): boolean;
+  remember(key: string): void;
+}
+
+/**
+ * Process-local record of idempotency keys that already produced a stored
+ * result. Deliberately in-memory, not a CMS read: the CMS-facing token used
+ * for this form is write-only (create only, no find/findOne on its own
+ * records — see `../../apps/cms/README.md`), so the duplicate pre-check
+ * cannot be backed by asking the CMS "have I seen this key before". The real
+ * safety net against a genuine race between two concurrent submissions is
+ * the CMS unique-index violation surfaced through `isConcurrentDuplicate`;
+ * this store only short-circuits the common case of the same visitor
+ * resubmitting (double-click, retried fetch) without a second round trip.
+ *
+ * Same honest limitation as `InMemoryRateLimiter` in `./rate-limit.ts`: this
+ * counts only within the Node process that holds it. A multi-instance
+ * deployment gets one independent store per instance, so a resubmission
+ * routed to a different instance still reaches the CMS — which is fine,
+ * because the unique-index check still catches it there.
+ */
+export class InMemoryIdempotencyKeyStore implements IdempotencyKeyStore {
+  private readonly seenUntil = new Map<string, number>();
+
+  constructor(private readonly windowMs: number) {}
+
+  has(key: string, now: number = Date.now()): boolean {
+    this.sweep(now);
+
+    const expiresAt = this.seenUntil.get(key);
+
+    return expiresAt !== undefined && expiresAt > now;
+  }
+
+  remember(key: string, now: number = Date.now()): void {
+    this.seenUntil.set(key, now + this.windowMs);
+  }
+
+  /** Drops expired entries so the map does not grow without bound. */
+  private sweep(now: number): void {
+    for (const [key, expiresAt] of this.seenUntil) {
+      if (expiresAt <= now) {
+        this.seenUntil.delete(key);
+      }
+    }
+  }
+}
+
 /**
  * Backs the idempotency check with whatever store the form's write actually
  * goes through (CMS, another API, ...). This layer only orchestrates the

@@ -88,11 +88,17 @@ services:
       PORT: 3002
       # Server-side content fetches target the cms service on the compose network.
       CMS_BASE_URL: http://cms:1337
-      # Read-only token for published CMS content. It remains server-side and
-      # is deliberately distinct from the lead-form write token below.
-      CMS_API_TOKEN: ${CMS_API_TOKEN:-}
-      # Write token for the lead form. Server-side only — it must never reach the
-      # browser. Provision it through sops/age in any shared environment.
+      # Read-only token: find/findOne on pages, settings, navigation, the
+      # integration catalog and booking-slot availability — nothing else. It
+      # remains server-side and is deliberately distinct from the lead-write
+      # token below. See apps/cms/README.md for the exact Strapi permissions
+      # each token must (and must not) carry.
+      CMS_READ_TOKEN: ${CMS_READ_TOKEN:-}
+      # Write-only token: create on lead/feedback plus the booking-slot
+      # reserve action — no find/findOne on lead, so a leaked token cannot
+      # read any visitor's submission. Server-side only — it must never
+      # reach the browser. Provision both tokens through sops/age in any
+      # shared environment (see docs/runbooks/site-cms-token-migration.md).
       CMS_WRITE_TOKEN: ${CMS_WRITE_TOKEN:-}
     ports:
       - "${SITE_BIND_ADDRESS:-127.0.0.1}:${CORE_SITE_PORT:-3002}:3002"

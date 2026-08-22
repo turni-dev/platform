@@ -124,19 +124,25 @@ docker compose --project-name turni-site --env-file ../config/site.env \
 заход в `https://cms.turni.ru/admin` открывает форму **Create your first
 administrator**.
 
-После создания администратора откройте **Settings → API Tokens** и создайте:
+После создания администратора откройте **Settings → API Tokens** и создайте
+два узких токена — не один full-access. Полный список permissions для
+каждого описан в `apps/cms/README.md`, кратко:
 
-1. `turni-site-read` типа **Read-only** — для чтения опубликованного контента.
-2. `turni-site-write` типа **Full access** только для dev — сервер сайта
-   создаёт заявки и резервирует слоты. Для production замените его токеном с
-   минимальными правами.
+1. `site-read` типа **Custom** — только `find`/`findOne` на `page`,
+   `site-setting`, навигацию, `integration` и `booking-slot.available`.
+   Никакого доступа к `lead`/`feedback`.
+2. `site-lead-write` типа **Custom** — только `create` на `lead`/`feedback`
+   и `booking-slot.reserve`. Никакого `find`/`findOne` на `lead`/`feedback` —
+   утёкший токен не должен давать прочитать чужие заявки. Не используйте
+   **Full access** даже в dev: сервер сайта пишет только через этот узкий
+   токен, и стенд должен отражать реальные production-права.
 
 Strapi показывает каждое значение один раз. Сохраните их в `/srv/turni/config/site.env`,
 не в Git и не в чат:
 
 ```dotenv
-CMS_API_TOKEN=<read-token>
-CMS_WRITE_TOKEN=<write-token>
+CMS_READ_TOKEN=<site-read token>
+CMS_WRITE_TOKEN=<site-lead-write token>
 ```
 
 Затем пересоздайте core-site без обязательной пересборки:
@@ -150,7 +156,7 @@ docker compose --project-name turni-site \
   up -d --force-recreate core-site
 ```
 
-`CMS_API_TOKEN` передаётся в core-site только в актуальном `main`. Если в
+`CMS_READ_TOKEN` передаётся в core-site только в актуальном `main`. Если в
 логах CMS видны `401` для `/api/pages`, `/api/site-setting` или navigation,
 сначала выполните `git pull --ff-only origin main`, затем создайте read-токен
 и пересоздайте core-site.

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { runIdempotently, type IdempotencyGuard } from '../idempotency';
+import { InMemoryIdempotencyKeyStore, runIdempotently, type IdempotencyGuard } from '../idempotency';
 
 describe('runIdempotently', () => {
   it('performs the action and returns its result when the key is new', async () => {
@@ -49,5 +49,39 @@ describe('runIdempotently', () => {
     const perform = vi.fn().mockRejectedValue(new Error('network down'));
 
     await expect(runIdempotently('key-1', guard, perform)).rejects.toThrow('network down');
+  });
+});
+
+describe('InMemoryIdempotencyKeyStore', () => {
+  it('reports a key as unseen before it is remembered', () => {
+    const store = new InMemoryIdempotencyKeyStore(60_000);
+
+    expect(store.has('key-1')).toBe(false);
+  });
+
+  it('reports a remembered key as seen within the window', () => {
+    const store = new InMemoryIdempotencyKeyStore(60_000);
+    const now = 1_000;
+
+    store.remember('key-1', now);
+
+    expect(store.has('key-1', now + 1_000)).toBe(true);
+  });
+
+  it('forgets a key once its window has elapsed', () => {
+    const store = new InMemoryIdempotencyKeyStore(60_000);
+    const now = 1_000;
+
+    store.remember('key-1', now);
+
+    expect(store.has('key-1', now + 60_000)).toBe(false);
+  });
+
+  it('keeps keys independent of one another', () => {
+    const store = new InMemoryIdempotencyKeyStore(60_000);
+
+    store.remember('key-1', 0);
+
+    expect(store.has('key-2', 0)).toBe(false);
   });
 });
